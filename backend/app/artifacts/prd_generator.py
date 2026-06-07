@@ -1,9 +1,8 @@
 from app.artifacts.base import ArtifactGenerator
-from app.schemas.architecture import ArchitecturePackage, Feature, UserStory
+from app.schemas.architecture import ArchitecturePackage
+from app.schemas.challenge import ChallengeIntelligence
 from app.schemas.idea import Idea
 from app.schemas.problem import ProblemAnalysis
-from app.schemas.challenge import ChallengeIntelligence
-from app.schemas.opportunity import OpportunityAnalysis
 
 
 class PRDGenerator(ArtifactGenerator):
@@ -15,7 +14,7 @@ class PRDGenerator(ArtifactGenerator):
         selected: Idea | None = state.get("selected_idea")
         problem: ProblemAnalysis | None = state.get("problem_analysis")
         challenge: ChallengeIntelligence | None = state.get("challenge_intelligence")
-        opportunity: OpportunityAnalysis | None = state.get("opportunity_analysis")
+        state.get("opportunity_analysis")
         arch: ArchitecturePackage | None = state.get("architecture")
         project = state.get("project", {})
         project_name = project.get("name", "Hackathon Project") if isinstance(project, dict) else getattr(project, "name", "Hackathon Project")

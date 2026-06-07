@@ -1,8 +1,8 @@
 from app.artifacts.base import ArtifactGenerator
-from app.schemas.pitch import PitchPackage
-from app.schemas.presentation import PresentationPackage, Slide
 from app.schemas.architecture import ArchitecturePackage
 from app.schemas.idea import Idea
+from app.schemas.pitch import PitchPackage
+from app.schemas.presentation import PresentationPackage, Slide
 from app.schemas.problem import ProblemAnalysis
 from app.schemas.team import TeamProfile
 
@@ -156,7 +156,7 @@ class PitchGenerator(ArtifactGenerator):
         lines = ["## Key Talking Points"]
 
         if selected:
-            lines.append(f"\n### Core Message")
+            lines.append("\n### Core Message")
             lines.append(f"**{selected.title}** — {selected.description}")
 
             scores = []

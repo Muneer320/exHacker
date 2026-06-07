@@ -1,17 +1,15 @@
+import logging
 from typing import Any
 
 from app.core.config import settings
 from app.services.llm.cost_tracker import CostTracker
 from app.services.llm.fallback import FallbackChain
-from app.services.llm.providers.base import LLMProvider, LLMResponse
 from app.services.llm.providers import (
-    OpenAIProvider,
-    GrokProvider,
     GeminiProvider,
+    GrokProvider,
+    OpenAIProvider,
 )
-from app.services.llm.providers.ollama_provider import OllamaProvider
-
-import logging
+from app.services.llm.providers.base import LLMProvider
 
 logger = logging.getLogger(__name__)
 

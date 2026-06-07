@@ -65,7 +65,7 @@ class OpenAIProvider(LLMProvider):
         client = self._get_client()
         start = time.monotonic()
 
-        schema = self._model_to_json_schema(response_format)
+        self._model_to_json_schema(response_format)
 
         response = await client.chat.completions.create(
             model=self.config.model,
@@ -78,7 +78,7 @@ class OpenAIProvider(LLMProvider):
             max_tokens=self.config.max_tokens,
         )
 
-        duration = int((time.monotonic() - start) * 1000)
+        int((time.monotonic() - start) * 1000)
         content = response.choices[0].message.content or "{}"
 
         try:

@@ -1,7 +1,7 @@
 from app.artifacts.base import ArtifactGenerator
-from app.schemas.architecture import ArchitecturePackage, ApiDefinition
-from app.schemas.tech_stack import TechStack
+from app.schemas.architecture import ApiDefinition, ArchitecturePackage
 from app.schemas.idea import Idea
+from app.schemas.tech_stack import TechStack
 
 
 class ArchitectureGenerator(ArtifactGenerator):
