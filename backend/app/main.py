@@ -11,6 +11,8 @@ from app.agents.idea_validator import IdeaValidatorAgent
 from app.agents.opportunity_planner import OpportunityPlannerAgent
 from app.agents.problem_analyst import ProblemAnalystAgent
 from app.agents.registry import AgentRegistry
+from app.agents.solution_architect import SolutionArchitectAgent
+from app.agents.tech_stack_advisor import TechStackAdvisorAgent
 from app.agents.user_profiler import UserProfilerAgent
 from app.api.router import api_router
 from app.core.config import settings
@@ -26,6 +28,8 @@ def register_agents() -> None:
     AgentRegistry.register(OpportunityPlannerAgent())
     AgentRegistry.register(IdeaGeneratorAgent())
     AgentRegistry.register(IdeaValidatorAgent())
+    AgentRegistry.register(SolutionArchitectAgent())
+    AgentRegistry.register(TechStackAdvisorAgent())
     logger.info("agents_registered", count=len(AgentRegistry.get_all()))
 
 

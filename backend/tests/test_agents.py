@@ -8,6 +8,8 @@ from app.agents.idea_validator import IdeaValidatorAgent
 from app.agents.opportunity_planner import OpportunityPlannerAgent
 from app.agents.problem_analyst import ProblemAnalystAgent
 from app.agents.registry import AgentRegistry
+from app.agents.solution_architect import SolutionArchitectAgent
+from app.agents.tech_stack_advisor import TechStackAdvisorAgent
 from app.agents.user_profiler import UserProfilerAgent
 
 
@@ -274,9 +276,130 @@ async def test_challenge_intelligence_no_statements() -> None:
     assert not result.success
 
 
+@pytest.fixture
+def mock_architect_llm():
+    mock = AsyncMock()
+    mock.generate.return_value = (
+        '{"vision": "AI health platform", "product_scope": "MVP", '
+        '"features": [{"title": "Dashboard", "description": "Health dashboard", '
+        '"priority": "critical"}], '
+        '"user_stories": [{"actor": "Doctor", "goal": "view patient data", '
+        '"benefit": "better care"}], '
+        '"architecture": {"description": "Web app with API", '
+        '"components": [], "connections": []}, '
+        '"api_design": [{"path": "/api/health", "method": "GET", '
+        '"description": "Get health data"}], '
+        '"database_schema": {"tables": [], "relationships": []}, '
+        '"integrations": [{"name": "OpenAI", '
+        '"description": "AI analysis", "type": "api"}]}'
+    )
+    return mock
+
+
+@pytest.fixture
+def mock_tech_stack_llm():
+    mock = AsyncMock()
+    mock.generate.return_value = (
+        '{"frontend": "Next.js", "backend": "FastAPI", "database": "PostgreSQL", '
+        '"hosting": "Vercel", "ai_models": ["GPT-4"], '
+        '"vector_db": "Pinecone", "auth_provider": "Clerk"}'
+    )
+    return mock
+
+
 @pytest.mark.asyncio
-async def test_idea_validator_no_ideas() -> None:
-    agent = IdeaValidatorAgent()
-    state = {"idea_generator": {"ideas": []}, "challenge_intelligence": {}}
+async def test_solution_architect_agent(mock_architect_llm) -> None:
+    agent = SolutionArchitectAgent(llm=mock_architect_llm)
+    state = {
+        "selected_idea": {
+            "id": "test-1",
+            "title": "AI Health Monitor",
+            "description": "Monitor health with AI",
+            "target_users": ["Patients", "Doctors"],
+            "key_features": ["Monitoring", "Alerts"],
+            "innovation_score": 85,
+            "feasibility_score": 70,
+        },
+        "user_profiler": {
+            "complexity_budget": "medium",
+            "recommended_scope": "mvp",
+            "skills": ["frontend", "backend"],
+        },
+        "project": {
+            "team_data": {
+                "team_size": 4,
+                "duration_hours": 24,
+                "skills": ["frontend", "backend"],
+            }
+        },
+    }
+    result = await agent.run(state)
+    assert result.success
+    assert result.output is not None
+    assert "vision" in result.output
+    assert len(result.output["features"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_tech_stack_advisor_agent(mock_tech_stack_llm) -> None:
+    agent = TechStackAdvisorAgent(llm=mock_tech_stack_llm)
+    state = {
+        "solution_architect": {
+            "features": [{"title": "Dashboard", "priority": "critical"}],
+            "api_design": [{"path": "/api/health", "method": "GET"}],
+            "integrations": [{"name": "OpenAI", "type": "api"}],
+        },
+        "user_profiler": {
+            "complexity_budget": "medium",
+            "skills": ["frontend", "backend"],
+        },
+        "challenge_intelligence": {
+            "themes": ["AI Healthcare"],
+            "evaluation_focus": ["Innovation"],
+        },
+        "project": {
+            "team_data": {
+                "team_size": 4,
+                "duration_hours": 24,
+                "skills": ["frontend", "backend"],
+                "experience_level": "intermediate",
+            }
+        },
+    }
+    result = await agent.run(state)
+    assert result.success
+    assert result.output is not None
+    assert result.output["frontend"] == "Next.js"
+    assert result.output["backend"] == "FastAPI"
+
+
+@pytest.mark.asyncio
+async def test_solution_architect_no_idea() -> None:
+    agent = SolutionArchitectAgent()
+    state = {
+        "selected_idea": {},
+        "idea_generator": {"ideas": []},
+        "project": {"team_data": {}},
+    }
     result = await agent.run(state)
     assert not result.success
+
+
+@pytest.mark.asyncio
+async def test_agent_registry_full() -> None:
+    AgentRegistry.clear()
+    AgentRegistry.register(UserProfilerAgent())
+    AgentRegistry.register(ChallengeIntelligenceAgent())
+    AgentRegistry.register(ProblemAnalystAgent())
+    AgentRegistry.register(OpportunityPlannerAgent())
+    AgentRegistry.register(IdeaGeneratorAgent())
+    AgentRegistry.register(IdeaValidatorAgent())
+    AgentRegistry.register(SolutionArchitectAgent())
+    AgentRegistry.register(TechStackAdvisorAgent())
+
+    assert len(AgentRegistry.get_all()) == 8
+    assert AgentRegistry.get("solution_architect") is not None
+    assert AgentRegistry.get("tech_stack_advisor") is not None
+
+    critical = AgentRegistry.get_critical_agents()
+    assert len(critical) == 3
