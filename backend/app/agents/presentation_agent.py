@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.presentation_agent import PRESENTATION_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.presentation import PresentationPackage
 from app.services.llm import LLMService, llm_service
 
 
@@ -16,14 +16,13 @@ class PresentationAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("solution_architect", {})
-        validated = state.get("idea_validator", {})
-        ideas = state.get("idea_generator", {}).get("ideas", [])
+        arch = state.get("architecture", {})
+        ideas = state.get("generated_ideas", [])
         selected = state.get("selected_idea", ideas[0] if ideas else {})
+        reports = state.get("validation_reports", [])
+        report = reports[0] if reports else {}
 
         features = arch.get("features", [])
-        reports = validated.get("validation_reports", [])
-        report = reports[0] if reports else {}
 
         user_prompt = PRESENTATION_TEMPLATE.format(
             project_title=selected.get("title", "Untitled"),
@@ -40,27 +39,15 @@ class PresentationAgent(BaseAgent):
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            pres = json.loads(result_text)
-        except json.JSONDecodeError:
-            pres = {}
-
-        return AgentResult(
-            success=True,
-            output={
-                "slides": [
-                    {"title": s.get("title", ""), "content": s.get("content", ""),
-                     "type": s.get("type", "slide")}
-                    for s in pres.get("slides", [])
-                ],
-                "diagrams": [
-                    {"title": d.get("title", ""), "description": d.get("description", ""),
-                     "diagram_type": d.get("diagram_type", "architecture"),
-                     "content": d.get("content", "")}
-                    for d in pres.get("diagrams", [])
-                ],
-                "demo_story": pres.get("demo_story", ""),
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, PresentationPackage, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        presentation = PresentationPackage(
+            slides=parsed.get("slides", []),
+            diagrams=parsed.get("diagrams", []),
+            demo_story=parsed.get("demo_story", ""),
+        )
+
+        return AgentResult(success=True, output=presentation.model_dump())

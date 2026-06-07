@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.idea_validator import SYSTEM_PROMPT, VALIDATION_TEMPLATE
+from app.schemas.idea import Idea, ValidationReport
 from app.services.llm import LLMService, llm_service
 
 
@@ -16,7 +16,7 @@ class IdeaValidatorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        ideas = state.get("idea_generator", {}).get("ideas", [])
+        ideas = state.get("generated_ideas", [])
         challenge = state.get("challenge_intelligence", {})
 
         if not ideas:
@@ -30,7 +30,8 @@ class IdeaValidatorAgent(BaseAgent):
             f"Eval Focus: {', '.join(challenge.get('evaluation_focus', []))}"
         )
 
-        validated: list[dict[str, Any]] = []
+        validated_ideas: list[dict[str, Any]] = []
+        reports: list[dict[str, Any]] = []
         for idea in ideas:
             user_prompt = VALIDATION_TEMPLATE.format(
                 idea_title=idea.get("title", "Untitled"),
@@ -40,12 +41,10 @@ class IdeaValidatorAgent(BaseAgent):
                 challenge_context=challenge_context,
             )
 
-            result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-            try:
-                analysis = json.loads(result_text)
-            except json.JSONDecodeError:
-                analysis = {}
+            result = await self._llm.generate_structured(
+                SYSTEM_PROMPT, user_prompt, dict, agent_name=self.name,
+            )
+            analysis = result.get("parsed", {})
 
             innovation = float(analysis.get("innovation", 0))
             feasibility = float(analysis.get("feasibility", 0))
@@ -56,44 +55,37 @@ class IdeaValidatorAgent(BaseAgent):
                 + hackathon_fit * 0.2 + tech_wow * 0.2
             )
 
-            validated.append({
-                "idea_id": idea["id"],
-                "competitors": [
-                    {"name": c.get("name", ""), "description": c.get("description", ""),
-                     "strengths": c.get("strengths", []), "weaknesses": c.get("weaknesses", [])}
-                    for c in analysis.get("competitors", [])
-                ],
-                "open_source_projects": [
-                    {"name": o.get("name", ""), "description": o.get("description", ""),
-                     "url": o.get("url", "")}
-                    for o in analysis.get("open_source_projects", [])
-                ],
-                "available_apis": [
-                    {"name": a.get("name", ""), "description": a.get("description", ""),
-                     "url": a.get("url", "")}
-                    for a in analysis.get("available_apis", [])
-                ],
-                "strengths": analysis.get("strengths", []),
-                "weaknesses": analysis.get("weaknesses", []),
-                "risks": analysis.get("risks", []),
-                "final_score": round(final_score, 1),
-                "innovation": round(innovation, 1),
-                "feasibility": round(feasibility, 1),
-                "hackathon_fit": round(hackathon_fit, 1),
-                "technical_wow": round(tech_wow, 1),
-            })
+            report = ValidationReport(
+                idea_id=idea["id"],
+                competitors=analysis.get("competitors", []),
+                open_source_projects=analysis.get("open_source_projects", []),
+                available_apis=analysis.get("available_apis", []),
+                strengths=analysis.get("strengths", []),
+                weaknesses=analysis.get("weaknesses", []),
+                risks=analysis.get("risks", []),
+                final_score=round(final_score, 1),
+            )
 
-            # Update idea scores from validation
-            idea["innovation_score"] = round(innovation, 1)
-            idea["feasibility_score"] = round(feasibility, 1)
-            idea["hackathon_fit_score"] = round(hackathon_fit, 1)
-            idea["technical_wow_score"] = round(tech_wow, 1)
-            idea["final_score"] = round(final_score, 1)
+            updated_idea = Idea(
+                id=idea["id"],
+                title=idea.get("title", "Untitled"),
+                description=idea.get("description", ""),
+                target_users=idea.get("target_users", []),
+                key_features=idea.get("key_features", []),
+                innovation_score=round(innovation, 1),
+                feasibility_score=round(feasibility, 1),
+                hackathon_fit_score=round(hackathon_fit, 1),
+                technical_wow_score=round(tech_wow, 1),
+                final_score=round(final_score, 1),
+            )
+
+            validated_ideas.append(updated_idea.model_dump())
+            reports.append(report.model_dump())
 
         return AgentResult(
             success=True,
             output={
-                "ideas": ideas,
-                "validation_reports": validated,
+                "ideas": validated_ideas,
+                "validation_reports": reports,
             },
         )

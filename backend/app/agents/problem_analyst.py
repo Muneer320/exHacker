@@ -2,6 +2,7 @@ from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.problem_analyst import PROBLEM_ANALYSIS_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.problem import ProblemAnalysis
 from app.services.llm import LLMService, llm_service
 
 
@@ -15,14 +16,14 @@ class ProblemAnalystAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        challenge = state.get("challenge_intelligence", {})
+        challenge_intel = state.get("challenge_intelligence", {})
         project = state.get("project", {})
         challenge_data = project.get("challenge_data", {})
 
-        challenge_statements = challenge.get("challenge_statements", [])
-        themes = challenge.get("themes", [])
-        opportunities = challenge.get("opportunities", [])
-        evaluation_focus = challenge.get("evaluation_focus", [])
+        challenge_statements = challenge_intel.get("challenge_statements", [])
+        themes = challenge_intel.get("themes", [])
+        opportunities = challenge_intel.get("opportunities", [])
+        evaluation_focus = challenge_intel.get("evaluation_focus", [])
 
         if not challenge_statements and not challenge_data.get("challenge_statements"):
             return AgentResult(
@@ -42,30 +43,17 @@ class ProblemAnalystAgent(BaseAgent):
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            import json
-            analysis = json.loads(result_text)
-        except json.JSONDecodeError:
-            analysis = {
-                "stakeholders": [],
-                "pain_points": [],
-                "assumptions": [],
-                "success_metrics": [],
-                "problem_definition": statements[0] if statements else "",
-            }
-
-        return AgentResult(
-            success=True,
-            output={
-                "stakeholders": analysis.get("stakeholders", []),
-                "pain_points": analysis.get("pain_points", []),
-                "assumptions": analysis.get("assumptions", []),
-                "success_metrics": analysis.get("success_metrics", []),
-                "problem_definition": (
-                    analysis.get("problem_definition", statements[0] if statements else "")
-                ),
-                "themes": themes,
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, ProblemAnalysis, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        analysis = ProblemAnalysis(
+            stakeholders=parsed.get("stakeholders", []),
+            pain_points=parsed.get("pain_points", []),
+            assumptions=parsed.get("assumptions", []),
+            success_metrics=parsed.get("success_metrics", []),
+            problem_definition=parsed.get("problem_definition", statements[0] if statements else ""),
+        )
+
+        return AgentResult(success=True, output=analysis.model_dump())

@@ -45,6 +45,17 @@ class Settings(BaseSettings):
     openai_temperature: float = 0.7
     openai_max_tokens: int = 4096
 
+    xai_api_key: str | None = None
+    xai_model: str = "grok-2-latest"
+
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.0-flash"
+
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2"
+
+    llm_provider: str = "auto"
+
     cors_origins: list[str] = ["http://localhost:3000"]
     cors_allow_credentials: bool = True
     cors_allow_methods: list[str] = ["*"]

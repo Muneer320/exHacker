@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.build_accelerator import BUILD_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.prompts import PromptPackage
 from app.services.llm import LLMService, llm_service
 
 
@@ -16,8 +16,8 @@ class BuildAcceleratorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("solution_architect", {})
-        tech = state.get("tech_stack_advisor", {})
+        arch = state.get("architecture", {})
+        tech = state.get("tech_stack", {})
         project = state.get("project", {})
         challenge = state.get("challenge_intelligence", {})
         team_data = project.get("team_data", {})
@@ -46,21 +46,18 @@ class BuildAcceleratorAgent(BaseAgent):
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            prompts = json.loads(result_text)
-        except json.JSONDecodeError:
-            prompts = {}
-
-        return AgentResult(
-            success=True,
-            output={
-                "frontend_prompts": prompts.get("frontend_prompts", []),
-                "backend_prompts": prompts.get("backend_prompts", []),
-                "database_prompts": prompts.get("database_prompts", []),
-                "ai_prompts": prompts.get("ai_prompts", []),
-                "testing_prompts": prompts.get("testing_prompts", []),
-                "deployment_prompts": prompts.get("deployment_prompts", []),
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, PromptPackage, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        prompts = PromptPackage(
+            frontend_prompts=parsed.get("frontend_prompts", []),
+            backend_prompts=parsed.get("backend_prompts", []),
+            database_prompts=parsed.get("database_prompts", []),
+            ai_prompts=parsed.get("ai_prompts", []),
+            testing_prompts=parsed.get("testing_prompts", []),
+            deployment_prompts=parsed.get("deployment_prompts", []),
+        )
+
+        return AgentResult(success=True, output=prompts.model_dump())

@@ -41,6 +41,10 @@ class AgentError(BaseModel):
     timestamp: str
     message: str
     severity: AgentErrorSeverity = AgentErrorSeverity.WARNING
+    duration_ms: int = 0
+    provider: str = ""
+    model: str = ""
+    cost: float = 0.0
 
 
 class ExHackerState(BaseModel):
@@ -60,3 +64,5 @@ class ExHackerState(BaseModel):
     current_stage: WorkflowStage = WorkflowStage.INPUT
     completed_agents: list[str] = Field(default_factory=list)
     errors: list[AgentError] = Field(default_factory=list)
+    export_data: dict[str, object] = Field(default_factory=dict)
+    agent_metadata: dict[str, object] = Field(default_factory=dict)

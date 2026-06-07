@@ -2,6 +2,7 @@ from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.challenge_intelligence import CHALLENGE_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.challenge import ChallengeIntelligence
 from app.services.llm import LLMService, llm_service
 
 
@@ -41,35 +42,20 @@ class ChallengeIntelligenceAgent(BaseAgent):
             criteria=", ".join(evaluation_criteria) if evaluation_criteria else "Not specified",
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            import json
-            analysis = json.loads(result_text)
-        except json.JSONDecodeError:
-            analysis = {
-                "themes": [s[:100] for s in challenge_statements],
-                "opportunities": [],
-                "constraints": [],
-                "resource_opportunities": [
-                    *[f"Dataset: {d}" for d in datasets],
-                    *[f"API: {a}" for a in apis],
-                ],
-                "evaluation_focus": evaluation_criteria,
-            }
-
-        return AgentResult(
-            success=True,
-            output={
-                "themes": analysis.get("themes", []),
-                "opportunities": analysis.get("opportunities", []),
-                "constraints": analysis.get("constraints", []),
-                "resource_opportunities": analysis.get("resource_opportunities", []),
-                "evaluation_focus": analysis.get("evaluation_focus", evaluation_criteria),
-                "challenge_statements": challenge_statements,
-                "tracks": tracks,
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, ChallengeIntelligence, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        intelligence = ChallengeIntelligence(
+            themes=parsed.get("themes", []),
+            opportunities=parsed.get("opportunities", []),
+            constraints=parsed.get("constraints", []),
+            resource_opportunities=parsed.get("resource_opportunities", []),
+            evaluation_focus=parsed.get("evaluation_focus", evaluation_criteria),
+        )
+
+        return AgentResult(success=True, output=intelligence.model_dump())
 
     def validate_inputs(self, state: dict[str, Any]) -> list[str]:
         errors: list[str] = []

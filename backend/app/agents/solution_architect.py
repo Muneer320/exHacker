@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.solution_architect import ARCHITECTURE_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.architecture import ArchitecturePackage
 from app.services.llm import LLMService, llm_service
 
 
@@ -17,20 +17,19 @@ class SolutionArchitectAgent(BaseAgent):
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
         selected = state.get("selected_idea", {})
-        profiler = state.get("user_profiler", {})
+        team = state.get("team_profile", {})
+        project = state.get("project", {})
 
         if not selected or not selected.get("id"):
-            # Try to find selected idea from generated ideas
-            ideas = state.get("idea_generator", {}).get("ideas", [])
-            validated = state.get("idea_validator", {}).get("ideas", [])
-            selected = validated[0] if validated else (ideas[0] if ideas else {})
+            ideas = state.get("generated_ideas", [])
+            selected = ideas[0] if ideas else {}
             if not selected:
                 return AgentResult(
                     success=False,
                     error="No selected idea available",
                 )
 
-        team_data = state.get("project", {}).get("team_data", {})
+        team_data = project.get("team_data", {})
 
         user_prompt = ARCHITECTURE_TEMPLATE.format(
             idea_title=selected.get("title", "Untitled"),
@@ -41,65 +40,25 @@ class SolutionArchitectAgent(BaseAgent):
             feasibility=selected.get("feasibility_score", 0),
             team_size=team_data.get("team_size", 4),
             duration_hours=team_data.get("duration_hours", 24),
-            skills=", ".join(profiler.get("skills", team_data.get("skills", []))),
-            complexity_budget=profiler.get("complexity_budget", "medium"),
-            recommended_scope=profiler.get("recommended_scope", "mvp"),
+            skills=", ".join(team.get("skills", team_data.get("skills", []))),
+            complexity_budget=team.get("complexity_budget", "medium"),
+            recommended_scope=team.get("recommended_scope", "mvp"),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            arch = json.loads(result_text)
-        except json.JSONDecodeError:
-            arch = {}
-
-        return AgentResult(
-            success=True,
-            output={
-                "vision": arch.get("vision", selected.get("description", "")),
-                "product_scope": arch.get("product_scope", "MVP"),
-                "features": [
-                    {
-                        "title": f.get("title", ""),
-                        "description": f.get("description", ""),
-                        "priority": f.get("priority", "medium"),
-                    }
-                    for f in arch.get("features", [])
-                ],
-                "user_stories": [
-                    {
-                        "actor": u.get("actor", ""),
-                        "goal": u.get("goal", ""),
-                        "benefit": u.get("benefit", ""),
-                    }
-                    for u in arch.get("user_stories", [])
-                ],
-                "architecture": {
-                    "description": arch.get("architecture", {}).get("description", ""),
-                    "components": arch.get("architecture", {}).get("components", []),
-                    "connections": arch.get("architecture", {}).get("connections", []),
-                },
-                "api_design": [
-                    {
-                        "path": a.get("path", ""),
-                        "method": a.get("method", "GET"),
-                        "description": a.get("description", ""),
-                        "request_body": a.get("request_body"),
-                        "response_body": a.get("response_body"),
-                    }
-                    for a in arch.get("api_design", [])
-                ],
-                "database_schema": {
-                    "tables": arch.get("database_schema", {}).get("tables", []),
-                    "relationships": arch.get("database_schema", {}).get("relationships", []),
-                },
-                "integrations": [
-                    {
-                        "name": i.get("name", ""),
-                        "description": i.get("description", ""),
-                        "type": i.get("type", "api"),
-                    }
-                    for i in arch.get("integrations", [])
-                ],
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, ArchitecturePackage, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        arch = ArchitecturePackage(
+            vision=parsed.get("vision", selected.get("description", "")),
+            product_scope=parsed.get("product_scope", "MVP"),
+            features=parsed.get("features", []),
+            user_stories=parsed.get("user_stories", []),
+            architecture=parsed.get("architecture", {}),
+            api_design=parsed.get("api_design", []),
+            database_schema=parsed.get("database_schema", {}),
+            integrations=parsed.get("integrations", []),
+        )
+
+        return AgentResult(success=True, output=arch.model_dump())

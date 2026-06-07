@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.pitch_coach import PITCH_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.pitch import PitchPackage
 from app.services.llm import LLMService, llm_service
 
 
@@ -16,16 +16,14 @@ class PitchCoachAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("solution_architect", {})
-        tech = state.get("tech_stack_advisor", {})
-        validated = state.get("idea_validator", {})
+        arch = state.get("architecture", {})
+        tech = state.get("tech_stack", {})
         challenge = state.get("challenge_intelligence", {})
-        ideas = state.get("idea_generator", {}).get("ideas", [])
+        ideas = state.get("generated_ideas", [])
         selected = state.get("selected_idea", ideas[0] if ideas else {})
-        project = state.get("project", {})
-
-        reports = validated.get("validation_reports", [])
+        reports = state.get("validation_reports", [])
         report = reports[0] if reports else {}
+        project = state.get("project", {})
 
         user_prompt = PITCH_TEMPLATE.format(
             project_title=selected.get("title", "Untitled"),
@@ -47,23 +45,17 @@ class PitchCoachAgent(BaseAgent):
             duration_minutes=project.get("pitch_duration", 5),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            pitch = json.loads(result_text)
-        except json.JSONDecodeError:
-            pitch = {}
-
-        return AgentResult(
-            success=True,
-            output={
-                "pitch_30": pitch.get("pitch_30", ""),
-                "pitch_120": pitch.get("pitch_120", ""),
-                "pitch_300": pitch.get("pitch_300", ""),
-                "qa": [
-                    {"question": q.get("question", ""), "answer": q.get("answer", "")}
-                    for q in pitch.get("qa", [])
-                ],
-                "demo_script": pitch.get("demo_script", ""),
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, PitchPackage, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        pitch = PitchPackage(
+            pitch_30=parsed.get("pitch_30", ""),
+            pitch_120=parsed.get("pitch_120", ""),
+            pitch_300=parsed.get("pitch_300", ""),
+            qa=parsed.get("qa", []),
+            demo_script=parsed.get("demo_script", ""),
+        )
+
+        return AgentResult(success=True, output=pitch.model_dump())

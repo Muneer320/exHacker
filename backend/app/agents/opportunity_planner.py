@@ -2,6 +2,7 @@ from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.opportunity_planner import OPPORTUNITY_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.opportunity import OpportunityAnalysis
 from app.services.llm import LLMService, llm_service
 
 
@@ -17,7 +18,7 @@ class OpportunityPlannerAgent(BaseAgent):
     async def execute(self, state: dict[str, Any]) -> AgentResult:
         problem = state.get("problem_analysis", {})
         challenge = state.get("challenge_intelligence", {})
-        profiler = state.get("user_profiler", {})
+        team = state.get("team_profile", {})
 
         user_prompt = OPPORTUNITY_TEMPLATE.format(
             problem_analysis=(
@@ -31,31 +32,22 @@ class OpportunityPlannerAgent(BaseAgent):
                 f"Constraints: {', '.join(challenge.get('constraints', []))}"
             ),
             team_profile=(
-                f"Complexity Budget: {profiler.get('complexity_budget', 'medium')}\n"
-                f"Scope: {profiler.get('recommended_scope', 'mvp')}\n"
-                f"Skills: {', '.join(profiler.get('skills', []))}"
+                f"Complexity Budget: {team.get('complexity_budget', 'medium')}\n"
+                f"Scope: {team.get('recommended_scope', 'mvp')}\n"
+                f"Skills: {', '.join(team.get('skills', []))}"
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            import json
-            analysis = json.loads(result_text)
-        except json.JSONDecodeError:
-            analysis = {
-                "market_gaps": [],
-                "innovation_opportunities": [],
-                "high_impact_areas": [],
-                "technical_opportunities": [],
-            }
-
-        return AgentResult(
-            success=True,
-            output={
-                "market_gaps": analysis.get("market_gaps", []),
-                "innovation_opportunities": analysis.get("innovation_opportunities", []),
-                "high_impact_areas": analysis.get("high_impact_areas", []),
-                "technical_opportunities": analysis.get("technical_opportunities", []),
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, OpportunityAnalysis, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        analysis = OpportunityAnalysis(
+            market_gaps=parsed.get("market_gaps", []),
+            innovation_opportunities=parsed.get("innovation_opportunities", []),
+            high_impact_areas=parsed.get("high_impact_areas", []),
+            technical_opportunities=parsed.get("technical_opportunities", []),
+        )
+
+        return AgentResult(success=True, output=analysis.model_dump())

@@ -1,9 +1,9 @@
-import json
 import uuid
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.idea_generator import IDEA_GENERATION_TEMPLATE, SYSTEM_PROMPT
+from app.schemas.idea import Idea
 from app.services.llm import LLMService, llm_service
 
 
@@ -20,7 +20,7 @@ class IdeaGeneratorAgent(BaseAgent):
         challenge = state.get("challenge_intelligence", {})
         problem = state.get("problem_analysis", {})
         opportunity = state.get("opportunity_analysis", {})
-        profiler = state.get("user_profiler", {})
+        team = state.get("team_profile", {})
 
         challenge_context = (
             f"Themes: {', '.join(challenge.get('themes', []))}\n"
@@ -41,38 +41,29 @@ class IdeaGeneratorAgent(BaseAgent):
                 f"High Impact: {', '.join(opportunity.get('high_impact_areas', []))}"
             ),
             team_profile=(
-                f"Budget: {profiler.get('complexity_budget', 'medium')}\n"
-                f"Scope: {profiler.get('recommended_scope', 'mvp')}\n"
-                f"Skills: {', '.join(profiler.get('skills', []))}"
+                f"Budget: {team.get('complexity_budget', 'medium')}\n"
+                f"Scope: {team.get('recommended_scope', 'mvp')}\n"
+                f"Skills: {', '.join(team.get('skills', []))}"
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            data = json.loads(result_text)
-            raw_ideas = data.get("ideas", [])
-        except json.JSONDecodeError:
-            raw_ideas = []
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, dict, agent_name=self.name,
+        )
+        parsed = result.get("parsed", {})
+        raw_ideas = parsed.get("ideas", [])
 
         ideas = []
         for raw in raw_ideas:
-            ideas.append({
-                "id": str(uuid.uuid4()),
-                "title": raw.get("title", "Untitled"),
-                "description": raw.get("description", ""),
-                "target_users": raw.get("target_users", []),
-                "key_features": raw.get("key_features", []),
-                "innovation_score": float(raw.get("innovation_score", 0)),
-                "feasibility_score": 0.0,
-                "hackathon_fit_score": 0.0,
-                "technical_wow_score": 0.0,
-                "final_score": float(raw.get("innovation_score", 0)),
-            })
+            idea = Idea(
+                id=str(uuid.uuid4()),
+                title=raw.get("title", "Untitled"),
+                description=raw.get("description", ""),
+                target_users=raw.get("target_users", []),
+                key_features=raw.get("key_features", []),
+                innovation_score=float(raw.get("innovation_score", 0)),
+                final_score=float(raw.get("innovation_score", 0)),
+            )
+            ideas.append(idea.model_dump())
 
-        return AgentResult(
-            success=True,
-            output={
-                "ideas": ideas,
-            },
-        )
+        return AgentResult(success=True, output={"ideas": ideas})

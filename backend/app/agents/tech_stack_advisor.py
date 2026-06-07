@@ -1,8 +1,8 @@
-import json
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.tech_stack_advisor import SYSTEM_PROMPT, TECH_STACK_TEMPLATE
+from app.schemas.tech_stack import TechStack
 from app.services.llm import LLMService, llm_service
 
 
@@ -16,15 +16,11 @@ class TechStackAdvisorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("solution_architect", {})
-        profiler = state.get("user_profiler", {})
+        arch = state.get("architecture", {})
+        team = state.get("team_profile", {})
         challenge = state.get("challenge_intelligence", {})
         project = state.get("project", {})
         team_data = project.get("team_data", {})
-
-        # If no architecture from agent, use selected idea
-        if not arch.get("features"):
-            arch = state.get("architecture", {})
 
         features = arch.get("features", [])
         apis = arch.get("api_design", [])
@@ -39,9 +35,9 @@ class TechStackAdvisorAgent(BaseAgent):
             team_profile=(
                 f"Size: {team_data.get('team_size', 4)}\n"
                 f"Duration: {team_data.get('duration_hours', 24)}h\n"
-                f"Skills: {', '.join(profiler.get('skills', team_data.get('skills', [])))}\n"
+                f"Skills: {', '.join(team.get('skills', team_data.get('skills', [])))}\n"
                 f"Experience: {team_data.get('experience_level', 'intermediate')}\n"
-                f"Budget: {profiler.get('complexity_budget', 'medium')}"
+                f"Budget: {team.get('complexity_budget', 'medium')}"
             ),
             challenge_context=(
                 f"Themes: {', '.join(challenge.get('themes', []))}\n"
@@ -49,22 +45,19 @@ class TechStackAdvisorAgent(BaseAgent):
             ),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            tech = json.loads(result_text)
-        except json.JSONDecodeError:
-            tech = {}
-
-        return AgentResult(
-            success=True,
-            output={
-                "frontend": tech.get("frontend", ""),
-                "backend": tech.get("backend", ""),
-                "database": tech.get("database", ""),
-                "hosting": tech.get("hosting", ""),
-                "ai_models": tech.get("ai_models", []),
-                "vector_db": tech.get("vector_db"),
-                "auth_provider": tech.get("auth_provider"),
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, TechStack, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        tech_stack = TechStack(
+            frontend=parsed.get("frontend", ""),
+            backend=parsed.get("backend", ""),
+            database=parsed.get("database", ""),
+            hosting=parsed.get("hosting", ""),
+            ai_models=parsed.get("ai_models", []),
+            vector_db=parsed.get("vector_db"),
+            auth_provider=parsed.get("auth_provider"),
+        )
+
+        return AgentResult(success=True, output=tech_stack.model_dump())

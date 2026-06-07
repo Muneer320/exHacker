@@ -2,6 +2,7 @@ from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
 from app.prompts.user_profiler import SYSTEM_PROMPT, USER_PROFILE_TEMPLATE
+from app.schemas.team import TeamProfile
 from app.services.llm import LLMService, llm_service
 
 
@@ -36,29 +37,19 @@ class UserProfilerAgent(BaseAgent):
             skills=", ".join(skills),
         )
 
-        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
-
-        try:
-            import json
-            analysis = json.loads(result_text)
-        except json.JSONDecodeError:
-            analysis = {
-                "complexity_budget": "medium",
-                "recommended_scope": "mvp",
-                "risk_tolerance": "medium",
-                "execution_capacity_score": 70.0,
-            }
-
-        return AgentResult(
-            success=True,
-            output={
-                "complexity_budget": analysis.get("complexity_budget", "medium"),
-                "recommended_scope": analysis.get("recommended_scope", "mvp"),
-                "risk_tolerance": analysis.get("risk_tolerance", "medium"),
-                "execution_capacity_score": analysis.get("execution_capacity_score", 70.0),
-                "team_size": team_size,
-                "duration_hours": duration_hours,
-                "skills": skills,
-                "experience_level": experience_level,
-            },
+        result = await self._llm.generate_structured(
+            SYSTEM_PROMPT, user_prompt, TeamProfile, agent_name=self.name,
         )
+        parsed = result.get("parsed", {})
+
+        profile = TeamProfile(
+            team_size=team_size,
+            experience_level=experience_level,
+            skills=skills,
+            complexity_budget=parsed.get("complexity_budget", "medium"),
+            recommended_scope=parsed.get("recommended_scope", "mvp"),
+            risk_tolerance=parsed.get("risk_tolerance", "medium"),
+            execution_capacity_score=float(parsed.get("execution_capacity_score", 70.0)),
+        )
+
+        return AgentResult(success=True, output=profile.model_dump())
