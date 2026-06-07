@@ -5,10 +5,13 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agents.build_accelerator import BuildAcceleratorAgent
 from app.agents.challenge_intelligence import ChallengeIntelligenceAgent
 from app.agents.idea_generator import IdeaGeneratorAgent
 from app.agents.idea_validator import IdeaValidatorAgent
 from app.agents.opportunity_planner import OpportunityPlannerAgent
+from app.agents.pitch_coach import PitchCoachAgent
+from app.agents.presentation_agent import PresentationAgent
 from app.agents.problem_analyst import ProblemAnalystAgent
 from app.agents.registry import AgentRegistry
 from app.agents.solution_architect import SolutionArchitectAgent
@@ -30,6 +33,9 @@ def register_agents() -> None:
     AgentRegistry.register(IdeaValidatorAgent())
     AgentRegistry.register(SolutionArchitectAgent())
     AgentRegistry.register(TechStackAdvisorAgent())
+    AgentRegistry.register(BuildAcceleratorAgent())
+    AgentRegistry.register(PresentationAgent())
+    AgentRegistry.register(PitchCoachAgent())
     logger.info("agents_registered", count=len(AgentRegistry.get_all()))
 
 

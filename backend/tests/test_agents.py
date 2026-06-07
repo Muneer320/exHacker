@@ -2,10 +2,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from app.agents.build_accelerator import BuildAcceleratorAgent
 from app.agents.challenge_intelligence import ChallengeIntelligenceAgent
 from app.agents.idea_generator import IdeaGeneratorAgent
 from app.agents.idea_validator import IdeaValidatorAgent
 from app.agents.opportunity_planner import OpportunityPlannerAgent
+from app.agents.pitch_coach import PitchCoachAgent
+from app.agents.presentation_agent import PresentationAgent
 from app.agents.problem_analyst import ProblemAnalystAgent
 from app.agents.registry import AgentRegistry
 from app.agents.solution_architect import SolutionArchitectAgent
@@ -403,3 +406,146 @@ async def test_agent_registry_full() -> None:
 
     critical = AgentRegistry.get_critical_agents()
     assert len(critical) == 3
+
+
+@pytest.fixture
+def mock_build_llm():
+    mock = AsyncMock()
+    mock.generate.return_value = (
+        '{"frontend_prompts": ["Create Next.js app with Tailwind"], '
+        '"backend_prompts": ["Set up FastAPI with routes"], '
+        '"database_prompts": ["Define SQLAlchemy models"], '
+        '"ai_prompts": ["Integrate OpenAI"], '
+        '"testing_prompts": ["Write pytest tests"], '
+        '"deployment_prompts": ["Deploy to Vercel"]}'
+    )
+    return mock
+
+
+@pytest.fixture
+def mock_presentation_llm():
+    mock = AsyncMock()
+    mock.generate.return_value = (
+        '{"slides": [{"title": "Problem", "content": "Health data is siloed", '
+        '"type": "slide"}], '
+        '"diagrams": [{"title": "Architecture", "description": "System diagram", '
+        '"diagram_type": "architecture", "content": "Web -> API -> DB"}], '
+        '"demo_story": "Start with problem, show solution, end with impact"}'
+    )
+    return mock
+
+
+@pytest.fixture
+def mock_pitch_llm():
+    mock = AsyncMock()
+    mock.generate.return_value = (
+        '{"pitch_30": "We solve health data silos with AI", '
+        '"pitch_120": "Our platform connects health data", '
+        '"pitch_300": "Full pitch with demo", '
+        '"qa": [{"question": "How is this different?", "answer": "AI-first approach"}], '
+        '"demo_script": "1. Open app, 2. Upload data, 3. See insights"}'
+    )
+    return mock
+
+
+@pytest.mark.asyncio
+async def test_build_accelerator_agent(mock_build_llm) -> None:
+    agent = BuildAcceleratorAgent(llm=mock_build_llm)
+    state = {
+        "solution_architect": {
+            "vision": "Health platform",
+            "product_scope": "MVP",
+            "features": [{"title": "Dashboard", "priority": "critical"}],
+            "api_design": [{"path": "/api/health", "method": "GET"}],
+        },
+        "tech_stack_advisor": {
+            "frontend": "Next.js", "backend": "FastAPI",
+            "database": "PostgreSQL", "hosting": "Vercel",
+            "ai_models": ["GPT-4"],
+        },
+        "project": {"team_data": {"duration_hours": 24, "team_size": 4}},
+        "challenge_intelligence": {"themes": ["AI Healthcare"]},
+    }
+    result = await agent.run(state)
+    assert result.success
+    assert result.output is not None
+    assert len(result.output["frontend_prompts"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_presentation_agent(mock_presentation_llm) -> None:
+    agent = PresentationAgent(llm=mock_presentation_llm)
+    state = {
+        "solution_architect": {
+            "vision": "Health platform",
+            "features": [{"title": "Dashboard", "priority": "critical"}],
+        },
+        "idea_generator": {
+            "ideas": [{"title": "AI Health", "description": "Health AI"}]
+        },
+        "selected_idea": {"title": "AI Health", "description": "Health AI"},
+        "idea_validator": {
+            "validation_reports": [{
+                "final_score": 85,
+                "strengths": ["AI powered"],
+                "risks": ["Data privacy"],
+            }]
+        },
+    }
+    result = await agent.run(state)
+    assert result.success
+    assert result.output is not None
+    assert len(result.output["slides"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_pitch_coach_agent(mock_pitch_llm) -> None:
+    agent = PitchCoachAgent(llm=mock_pitch_llm)
+    state = {
+        "solution_architect": {
+            "vision": "Health platform",
+            "features": [{"title": "Dashboard"}],
+        },
+        "tech_stack_advisor": {
+            "frontend": "Next.js", "backend": "FastAPI",
+            "ai_models": ["GPT-4"],
+        },
+        "idea_generator": {
+            "ideas": [{"title": "AI Health", "description": "Health AI"}]
+        },
+        "selected_idea": {"title": "AI Health", "description": "Health AI"},
+        "idea_validator": {
+            "validation_reports": [{
+                "final_score": 85,
+                "strengths": ["AI powered"],
+            }]
+        },
+        "challenge_intelligence": {"evaluation_focus": ["Innovation"]},
+        "project": {"pitch_duration": 5},
+    }
+    result = await agent.run(state)
+    assert result.success
+    assert result.output is not None
+    assert "pitch_30" in result.output
+    assert len(result.output["qa"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_registry_all_agents() -> None:
+    AgentRegistry.clear()
+    AgentRegistry.register(UserProfilerAgent())
+    AgentRegistry.register(ChallengeIntelligenceAgent())
+    AgentRegistry.register(ProblemAnalystAgent())
+    AgentRegistry.register(OpportunityPlannerAgent())
+    AgentRegistry.register(IdeaGeneratorAgent())
+    AgentRegistry.register(IdeaValidatorAgent())
+    AgentRegistry.register(SolutionArchitectAgent())
+    AgentRegistry.register(TechStackAdvisorAgent())
+    AgentRegistry.register(BuildAcceleratorAgent())
+    AgentRegistry.register(PresentationAgent())
+    AgentRegistry.register(PitchCoachAgent())
+
+    assert len(AgentRegistry.get_all()) == 11
+    assert AgentRegistry.get("build_accelerator") is not None
+    assert AgentRegistry.get("presentation_agent") is not None
+    assert AgentRegistry.get("pitch_coach") is not None
