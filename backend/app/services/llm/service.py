@@ -6,7 +6,8 @@ from app.services.llm.cost_tracker import CostTracker
 from app.services.llm.fallback import FallbackChain
 from app.services.llm.providers import (
     GeminiProvider,
-    GrokProvider,
+    GroqProvider,
+    OllamaProvider,
     OpenAIProvider,
 )
 from app.services.llm.providers.base import LLMProvider
@@ -29,14 +30,16 @@ class LLMService:
             return self._providers
 
         api_keys = {
-            "openai": settings.OPENAI_API_KEY,
-            "grok": settings.XAI_API_KEY,
+            "groq": settings.GROQ_API_KEY,
             "gemini": settings.GEMINI_API_KEY,
+            "ollama": "ollama",
+            "openai": settings.OPENAI_API_KEY,
         }
 
         priority: list[type[LLMProvider]] = [
-            GrokProvider,
+            GroqProvider,
             GeminiProvider,
+            OllamaProvider,
             OpenAIProvider,
         ]
 
@@ -46,12 +49,17 @@ class LLMService:
             key = api_keys.get(name)
             if key:
                 try:
-                    providers.append(self._create_provider(provider_cls, key))
+                    if name == "ollama":
+                        from app.services.llm.providers.base import ProviderConfig
+                        providers.append(OllamaProvider(ProviderConfig(
+                            api_key="",
+                            base_url=settings.OLLAMA_BASE_URL,
+                            model=settings.OLLAMA_MODEL,
+                        )))
+                    else:
+                        providers.append(self._create_provider(provider_cls, key))
                 except Exception as e:
                     logger.warning("Failed to create provider %s: %s", name, e)
-
-        if not providers:
-            providers.append(OpenAIProvider())
 
         self._providers = providers
         return providers

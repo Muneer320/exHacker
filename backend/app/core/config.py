@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     openai_temperature: float = 0.7
     openai_max_tokens: int = 4096
 
-    xai_api_key: str | None = None
-    xai_model: str = "grok-2-latest"
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
 
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.0-flash"

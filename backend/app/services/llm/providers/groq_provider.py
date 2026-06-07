@@ -12,14 +12,14 @@ from app.services.llm.providers.base import (
 )
 
 
-class GrokProvider(LLMProvider):
-    name = "grok"
+class GroqProvider(LLMProvider):
+    name = "groq"
     cost_rates = CostRate(input_per_1k=0.0, output_per_1k=0.0)
 
     def __init__(self, config: ProviderConfig | None = None) -> None:
         super().__init__(config or ProviderConfig(
-            model="grok-2-latest",
-            base_url="https://api.x.ai/v1",
+            model="llama-3.3-70b-versatile",
+            base_url="https://api.groq.com/openai/v1",
         ))
         self._client: AsyncOpenAI | None = None
 
