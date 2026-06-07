@@ -16,73 +16,160 @@ from app.agents.tech_stack_advisor import TechStackAdvisorAgent
 from app.agents.user_profiler import UserProfilerAgent
 
 
+def _make_structured(parsed: dict) -> dict:
+    return {"parsed": parsed, "content": str(parsed)}
+
+
 @pytest.fixture
 def mock_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"complexity_budget": "medium", "recommended_scope": "mvp", '
-        '"risk_tolerance": "medium", "execution_capacity_score": 75.0}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "complexity_budget": "medium",
+        "recommended_scope": "mvp",
+        "risk_tolerance": "medium",
+        "execution_capacity_score": 75.0,
+    }))
     return mock
 
 
 @pytest.fixture
 def mock_challenge_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"themes": ["AI Healthcare"], "opportunities": ["Health monitoring"], '
-        '"constraints": ["Data privacy"], "resource_opportunities": ["Use health dataset"], '
-        '"evaluation_focus": ["innovation"]}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "themes": ["AI Healthcare"],
+        "opportunities": ["Health monitoring"],
+        "constraints": ["Data privacy"],
+        "resource_opportunities": ["Use health dataset"],
+        "evaluation_focus": ["innovation"],
+    }))
     return mock
 
 
 @pytest.fixture
 def mock_problem_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"stakeholders": ["Patients", "Doctors"], "pain_points": ["Manual tracking"], '
-        '"assumptions": ["Data available"], "success_metrics": ["Accuracy > 90%"], '
-        '"problem_definition": "Improve health monitoring"}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "stakeholders": ["Patients", "Doctors"],
+        "pain_points": ["Manual tracking"],
+        "assumptions": ["Data available"],
+        "success_metrics": ["Accuracy > 90%"],
+        "problem_definition": "Improve health monitoring",
+    }))
     return mock
 
 
 @pytest.fixture
 def mock_opportunity_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"market_gaps": ["No AI solution for X"], '
-        '"innovation_opportunities": ["Use LLM for Y"], '
-        '"high_impact_areas": ["Patient outcomes"], '
-        '"technical_opportunities": ["Real-time processing"]}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "market_gaps": ["No AI solution for X"],
+        "innovation_opportunities": ["Use LLM for Y"],
+        "high_impact_areas": ["Patient outcomes"],
+        "technical_opportunities": ["Real-time processing"],
+    }))
     return mock
 
 
 @pytest.fixture
 def mock_idea_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"ideas": [{"title": "AI Health Monitor", '
-        '"description": "Monitor patient health with AI", '
-        '"target_users": ["Patients", "Doctors"], '
-        '"key_features": ["Real-time monitoring", "Alerts", "Dashboard"], '
-        '"innovation_score": 85}]}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "ideas": [{
+            "title": "AI Health Monitor",
+            "description": "Monitor patient health with AI",
+            "target_users": ["Patients", "Doctors"],
+            "key_features": ["Real-time monitoring", "Alerts", "Dashboard"],
+            "innovation_score": 85,
+        }],
+    }))
     return mock
 
 
 @pytest.fixture
 def mock_validator_llm():
     mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"innovation": 80, "feasibility": 70, "hackathon_fit": 90, '
-        '"technical_wow": 85, "competitors": [], '
-        '"open_source_projects": [], "available_apis": [], '
-        '"strengths": ["Strong impact"], "weaknesses": ["Complex"], '
-        '"risks": ["Data privacy"]}'
-    )
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "innovation": 80,
+        "feasibility": 70,
+        "hackathon_fit": 90,
+        "technical_wow": 85,
+        "competitors": [],
+        "open_source_projects": [],
+        "available_apis": [],
+        "strengths": ["Strong impact"],
+        "weaknesses": ["Complex"],
+        "risks": ["Data privacy"],
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_architect_llm():
+    mock = AsyncMock()
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "vision": "AI health platform",
+        "product_scope": "MVP",
+        "features": [{"title": "Dashboard", "description": "Health dashboard", "priority": "critical"}],
+        "user_stories": [{"actor": "Doctor", "goal": "view patient data", "benefit": "better care"}],
+        "architecture": {"description": "Web app with API", "components": [], "connections": []},
+        "api_design": [{"path": "/api/health", "method": "GET", "description": "Get health data"}],
+        "database_schema": {"tables": [], "relationships": []},
+        "integrations": [{"name": "OpenAI", "description": "AI analysis", "type": "api"}],
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_tech_stack_llm():
+    mock = AsyncMock()
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "frontend": "Next.js",
+        "backend": "FastAPI",
+        "database": "PostgreSQL",
+        "hosting": "Vercel",
+        "ai_models": ["GPT-4"],
+        "vector_db": "Pinecone",
+        "auth_provider": "Clerk",
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_build_llm():
+    mock = AsyncMock()
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "frontend_prompts": ["Create Next.js app with Tailwind"],
+        "backend_prompts": ["Set up FastAPI with routes"],
+        "database_prompts": ["Define SQLAlchemy models"],
+        "ai_prompts": ["Integrate OpenAI"],
+        "testing_prompts": ["Write pytest tests"],
+        "deployment_prompts": ["Deploy to Vercel"],
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_presentation_llm():
+    mock = AsyncMock()
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "slides": [{"title": "Problem", "content": "Health data is siloed", "type": "slide"}],
+        "diagrams": [{"title": "Architecture", "description": "System diagram",
+                       "diagram_type": "architecture", "content": "Web -> API -> DB"}],
+        "demo_story": "Start with problem, show solution, end with impact",
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_pitch_llm():
+    mock = AsyncMock()
+    mock.generate_structured = AsyncMock(return_value=_make_structured({
+        "pitch_30": "We solve health data silos with AI",
+        "pitch_120": "Our platform connects health data",
+        "pitch_300": "Full pitch with demo",
+        "qa": [{"question": "How is this different?", "answer": "AI-first approach"}],
+        "demo_script": "1. Open app, 2. Upload data, 3. See insights",
+    }))
     return mock
 
 
@@ -180,7 +267,7 @@ async def test_opportunity_planner_agent(mock_opportunity_llm) -> None:
             "opportunities": ["Health monitoring"],
             "constraints": ["Data privacy"],
         },
-        "user_profiler": {
+        "team_profile": {
             "complexity_budget": "medium",
             "recommended_scope": "mvp",
             "skills": ["frontend", "backend"],
@@ -211,7 +298,7 @@ async def test_idea_generator_agent(mock_idea_llm) -> None:
             "innovation_opportunities": ["LLM"],
             "high_impact_areas": ["Health"],
         },
-        "user_profiler": {
+        "team_profile": {
             "complexity_budget": "medium",
             "recommended_scope": "mvp",
             "skills": ["frontend", "backend"],
@@ -230,16 +317,14 @@ async def test_idea_validator_agent(mock_validator_llm, mock_idea_llm) -> None:
     gen_state = {
         "challenge_intelligence": {"themes": ["AI"], "constraints": [], "evaluation_focus": []},
         "problem_analysis": {"problem_definition": "", "pain_points": [], "stakeholders": []},
-        "opportunity_analysis": {
-            "market_gaps": [], "innovation_opportunities": [], "high_impact_areas": []
-        },
-        "user_profiler": {"complexity_budget": "medium", "recommended_scope": "mvp", "skills": []},
+        "opportunity_analysis": {"market_gaps": [], "innovation_opportunities": [], "high_impact_areas": []},
+        "team_profile": {"complexity_budget": "medium", "recommended_scope": "mvp", "skills": []},
     }
     gen_result = await gen_agent.run(gen_state)
 
     agent = IdeaValidatorAgent(llm=mock_validator_llm)
     state = {
-        "idea_generator": gen_result.output,
+        "generated_ideas": gen_result.output["ideas"],
         "challenge_intelligence": {
             "themes": ["AI Healthcare"],
             "evaluation_focus": ["Innovation"],
@@ -250,7 +335,7 @@ async def test_idea_validator_agent(mock_validator_llm, mock_idea_llm) -> None:
     assert result.output is not None
     assert "validation_reports" in result.output
     assert len(result.output["validation_reports"]) > 0
-    assert result.output["validation_reports"][0]["innovation"] == 80.0
+    assert result.output["validation_reports"][0]["final_score"] == 80.0
 
 
 @pytest.mark.asyncio
@@ -279,37 +364,6 @@ async def test_challenge_intelligence_no_statements() -> None:
     assert not result.success
 
 
-@pytest.fixture
-def mock_architect_llm():
-    mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"vision": "AI health platform", "product_scope": "MVP", '
-        '"features": [{"title": "Dashboard", "description": "Health dashboard", '
-        '"priority": "critical"}], '
-        '"user_stories": [{"actor": "Doctor", "goal": "view patient data", '
-        '"benefit": "better care"}], '
-        '"architecture": {"description": "Web app with API", '
-        '"components": [], "connections": []}, '
-        '"api_design": [{"path": "/api/health", "method": "GET", '
-        '"description": "Get health data"}], '
-        '"database_schema": {"tables": [], "relationships": []}, '
-        '"integrations": [{"name": "OpenAI", '
-        '"description": "AI analysis", "type": "api"}]}'
-    )
-    return mock
-
-
-@pytest.fixture
-def mock_tech_stack_llm():
-    mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"frontend": "Next.js", "backend": "FastAPI", "database": "PostgreSQL", '
-        '"hosting": "Vercel", "ai_models": ["GPT-4"], '
-        '"vector_db": "Pinecone", "auth_provider": "Clerk"}'
-    )
-    return mock
-
-
 @pytest.mark.asyncio
 async def test_solution_architect_agent(mock_architect_llm) -> None:
     agent = SolutionArchitectAgent(llm=mock_architect_llm)
@@ -323,7 +377,7 @@ async def test_solution_architect_agent(mock_architect_llm) -> None:
             "innovation_score": 85,
             "feasibility_score": 70,
         },
-        "user_profiler": {
+        "team_profile": {
             "complexity_budget": "medium",
             "recommended_scope": "mvp",
             "skills": ["frontend", "backend"],
@@ -347,12 +401,12 @@ async def test_solution_architect_agent(mock_architect_llm) -> None:
 async def test_tech_stack_advisor_agent(mock_tech_stack_llm) -> None:
     agent = TechStackAdvisorAgent(llm=mock_tech_stack_llm)
     state = {
-        "solution_architect": {
+        "architecture": {
             "features": [{"title": "Dashboard", "priority": "critical"}],
             "api_design": [{"path": "/api/health", "method": "GET"}],
             "integrations": [{"name": "OpenAI", "type": "api"}],
         },
-        "user_profiler": {
+        "team_profile": {
             "complexity_budget": "medium",
             "skills": ["frontend", "backend"],
         },
@@ -381,7 +435,7 @@ async def test_solution_architect_no_idea() -> None:
     agent = SolutionArchitectAgent()
     state = {
         "selected_idea": {},
-        "idea_generator": {"ideas": []},
+        "generated_ideas": [],
         "project": {"team_data": {}},
     }
     result = await agent.run(state)
@@ -408,57 +462,17 @@ async def test_agent_registry_full() -> None:
     assert len(critical) == 3
 
 
-@pytest.fixture
-def mock_build_llm():
-    mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"frontend_prompts": ["Create Next.js app with Tailwind"], '
-        '"backend_prompts": ["Set up FastAPI with routes"], '
-        '"database_prompts": ["Define SQLAlchemy models"], '
-        '"ai_prompts": ["Integrate OpenAI"], '
-        '"testing_prompts": ["Write pytest tests"], '
-        '"deployment_prompts": ["Deploy to Vercel"]}'
-    )
-    return mock
-
-
-@pytest.fixture
-def mock_presentation_llm():
-    mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"slides": [{"title": "Problem", "content": "Health data is siloed", '
-        '"type": "slide"}], '
-        '"diagrams": [{"title": "Architecture", "description": "System diagram", '
-        '"diagram_type": "architecture", "content": "Web -> API -> DB"}], '
-        '"demo_story": "Start with problem, show solution, end with impact"}'
-    )
-    return mock
-
-
-@pytest.fixture
-def mock_pitch_llm():
-    mock = AsyncMock()
-    mock.generate.return_value = (
-        '{"pitch_30": "We solve health data silos with AI", '
-        '"pitch_120": "Our platform connects health data", '
-        '"pitch_300": "Full pitch with demo", '
-        '"qa": [{"question": "How is this different?", "answer": "AI-first approach"}], '
-        '"demo_script": "1. Open app, 2. Upload data, 3. See insights"}'
-    )
-    return mock
-
-
 @pytest.mark.asyncio
 async def test_build_accelerator_agent(mock_build_llm) -> None:
     agent = BuildAcceleratorAgent(llm=mock_build_llm)
     state = {
-        "solution_architect": {
+        "architecture": {
             "vision": "Health platform",
             "product_scope": "MVP",
             "features": [{"title": "Dashboard", "priority": "critical"}],
             "api_design": [{"path": "/api/health", "method": "GET"}],
         },
-        "tech_stack_advisor": {
+        "tech_stack": {
             "frontend": "Next.js", "backend": "FastAPI",
             "database": "PostgreSQL", "hosting": "Vercel",
             "ai_models": ["GPT-4"],
@@ -476,21 +490,17 @@ async def test_build_accelerator_agent(mock_build_llm) -> None:
 async def test_presentation_agent(mock_presentation_llm) -> None:
     agent = PresentationAgent(llm=mock_presentation_llm)
     state = {
-        "solution_architect": {
+        "architecture": {
             "vision": "Health platform",
             "features": [{"title": "Dashboard", "priority": "critical"}],
         },
-        "idea_generator": {
-            "ideas": [{"title": "AI Health", "description": "Health AI"}]
-        },
+        "generated_ideas": [{"title": "AI Health", "description": "Health AI"}],
         "selected_idea": {"title": "AI Health", "description": "Health AI"},
-        "idea_validator": {
-            "validation_reports": [{
-                "final_score": 85,
-                "strengths": ["AI powered"],
-                "risks": ["Data privacy"],
-            }]
-        },
+        "validation_reports": [{
+            "final_score": 85,
+            "strengths": ["AI powered"],
+            "risks": ["Data privacy"],
+        }],
     }
     result = await agent.run(state)
     assert result.success
@@ -502,24 +512,20 @@ async def test_presentation_agent(mock_presentation_llm) -> None:
 async def test_pitch_coach_agent(mock_pitch_llm) -> None:
     agent = PitchCoachAgent(llm=mock_pitch_llm)
     state = {
-        "solution_architect": {
+        "architecture": {
             "vision": "Health platform",
             "features": [{"title": "Dashboard"}],
         },
-        "tech_stack_advisor": {
+        "tech_stack": {
             "frontend": "Next.js", "backend": "FastAPI",
             "ai_models": ["GPT-4"],
         },
-        "idea_generator": {
-            "ideas": [{"title": "AI Health", "description": "Health AI"}]
-        },
+        "generated_ideas": [{"title": "AI Health", "description": "Health AI"}],
         "selected_idea": {"title": "AI Health", "description": "Health AI"},
-        "idea_validator": {
-            "validation_reports": [{
-                "final_score": 85,
-                "strengths": ["AI powered"],
-            }]
-        },
+        "validation_reports": [{
+            "final_score": 85,
+            "strengths": ["AI powered"],
+        }],
         "challenge_intelligence": {"evaluation_focus": ["Innovation"]},
         "project": {"pitch_duration": 5},
     }
