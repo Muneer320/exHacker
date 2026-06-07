@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.agents.challenge_intelligence import ChallengeIntelligenceAgent
+from app.agents.opportunity_planner import OpportunityPlannerAgent
 from app.agents.problem_analyst import ProblemAnalystAgent
 from app.agents.registry import AgentRegistry
 from app.agents.user_profiler import UserProfilerAgent
@@ -20,6 +21,7 @@ def register_agents() -> None:
     AgentRegistry.register(UserProfilerAgent())
     AgentRegistry.register(ChallengeIntelligenceAgent())
     AgentRegistry.register(ProblemAnalystAgent())
+    AgentRegistry.register(OpportunityPlannerAgent())
     logger.info("agents_registered", count=len(AgentRegistry.get_all()))
 
 

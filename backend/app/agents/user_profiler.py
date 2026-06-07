@@ -1,6 +1,8 @@
 from typing import Any
 
 from app.agents.base import AgentResult, BaseAgent
+from app.prompts.user_profiler import SYSTEM_PROMPT, USER_PROFILE_TEMPLATE
+from app.services.llm import LLMService, llm_service
 
 
 class UserProfilerAgent(BaseAgent):
@@ -8,12 +10,18 @@ class UserProfilerAgent(BaseAgent):
     description = "Analyzes team constraints and establishes project scope boundaries"
     critical = False
 
+    def __init__(self, llm: LLMService | None = None) -> None:
+        super().__init__()
+        self._llm = llm or llm_service
+
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        team = state.get("project", {}).get("team_data", {})
-        team_size = team.get("team_size", 4)
-        duration = team.get("duration_hours", 24)
-        skills = team.get("skills", [])
-        experience = team.get("experience_level", "intermediate")
+        project = state.get("project", {})
+        team_data = project.get("team_data", {})
+
+        team_size = team_data.get("team_size", 4)
+        duration_hours = team_data.get("duration_hours", 24)
+        experience_level = team_data.get("experience_level", "intermediate")
+        skills = team_data.get("skills", [])
 
         if not skills:
             return AgentResult(
@@ -21,33 +29,36 @@ class UserProfilerAgent(BaseAgent):
                 error="Team skills list is empty",
             )
 
-        # Capacity scoring logic
-        capacity = min(100.0, (team_size / 5.0) * 40 + (duration / 48.0) * 30 + len(skills) * 5)
-        if experience == "advanced":
-            capacity += 20
-        elif experience == "beginner":
-            capacity -= 10
+        user_prompt = USER_PROFILE_TEMPLATE.format(
+            team_size=team_size,
+            duration_hours=duration_hours,
+            experience_level=experience_level,
+            skills=", ".join(skills),
+        )
 
-        complexity_budget = "medium"
-        if capacity >= 80:
-            complexity_budget = "high"
-        elif capacity <= 50:
-            complexity_budget = "low"
+        result_text = await self._llm.generate(SYSTEM_PROMPT, user_prompt)
 
-        recommended_scope = "advanced_mvp" if capacity >= 70 else "mvp"
+        try:
+            import json
+            analysis = json.loads(result_text)
+        except json.JSONDecodeError:
+            analysis = {
+                "complexity_budget": "medium",
+                "recommended_scope": "mvp",
+                "risk_tolerance": "medium",
+                "execution_capacity_score": 70.0,
+            }
 
         return AgentResult(
             success=True,
             output={
-                "complexity_budget": complexity_budget,
-                "recommended_scope": recommended_scope,
-                "risk_tolerance": (
-                    "high" if capacity >= 80 else "medium" if capacity >= 50 else "low"
-                ),
-                "execution_capacity_score": round(capacity, 1),
+                "complexity_budget": analysis.get("complexity_budget", "medium"),
+                "recommended_scope": analysis.get("recommended_scope", "mvp"),
+                "risk_tolerance": analysis.get("risk_tolerance", "medium"),
+                "execution_capacity_score": analysis.get("execution_capacity_score", 70.0),
                 "team_size": team_size,
-                "duration_hours": duration,
+                "duration_hours": duration_hours,
                 "skills": skills,
-                "experience_level": experience,
+                "experience_level": experience_level,
             },
         )

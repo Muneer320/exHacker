@@ -30,12 +30,24 @@ class Project(Base):
         nullable=False,
     )
     current_stage: Mapped[str] = mapped_column(String(100), default="input", nullable=False)
-    team_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True, default=None)
-    challenge_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True, default=None)
-    resource_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True, default=None)
-    state: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True, default=None)
-    completed_agents: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, default=list)
-    error_log: Mapped[list[dict[str, str]] | None] = mapped_column(JSONB, nullable=True, default=list)
+    team_data: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
+    challenge_data: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
+    resource_data: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
+    state: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
+    completed_agents: Mapped[list[str] | None] = mapped_column(
+        JSONB, nullable=True, default=list
+    )
+    error_log: Mapped[list[dict[str, str]] | None] = mapped_column(
+        JSONB, nullable=True, default=list
+    )
     duration_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
