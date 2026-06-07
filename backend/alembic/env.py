@@ -9,8 +9,11 @@ from alembic import context
 from app.core.config import settings
 from app.db.session import Base
 
+# Import all models so Alembic can detect them
+import app.models.project  # noqa: F401
+import app.models.agent_run  # noqa: F401
+
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_sync_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -19,7 +22,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+    url = settings.database_sync_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -38,7 +41,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.database_sync_url
+    configuration["sqlalchemy.url"] = settings.database_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
