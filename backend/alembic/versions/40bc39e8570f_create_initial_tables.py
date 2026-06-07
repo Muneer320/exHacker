@@ -1,19 +1,20 @@
 """create initial tables
 
 Revision ID: 40bc39e8570f
-Revises: 
+Revises:
 Create Date: 2026-06-08 04:24:30.266115
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = '40bc39e8570f'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -21,7 +22,10 @@ def upgrade() -> None:
     op.create_table('projects',
     sa.Column('id', sa.UUID(as_uuid=False), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('status', sa.Enum('draft', 'researching', 'idea_generation', 'architecture', 'completed', name='project_status'), nullable=False),
+    sa.Column('status', sa.Enum(
+        'draft', 'researching', 'idea_generation', 'architecture', 'completed',
+        name='project_status'
+    ), nullable=False),
     sa.Column('current_stage', sa.String(length=100), nullable=False),
     sa.Column('team_data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('challenge_data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
