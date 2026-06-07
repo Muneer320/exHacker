@@ -1,3 +1,5 @@
+from typing import Any
+
 import structlog
 
 from app.research.base import ResearchProvider, ResearchResult
@@ -10,7 +12,7 @@ class CompetitorSearchProvider:
     def __init__(self, web_provider: ResearchProvider | None = None) -> None:
         self._web = web_provider or WebSearchProvider()
 
-    async def find_competitors(self, idea_description: str) -> list[dict]:
+    async def find_competitors(self, idea_description: str) -> list[dict[str, Any]]:
         logger.debug("competitor_search_started", idea=idea_description)
 
         queries = [
@@ -20,7 +22,7 @@ class CompetitorSearchProvider:
             f"{idea_description} market landscape",
         ]
 
-        all_results: list[dict] = []
+        all_results: list[dict[str, Any]] = []
         seen: set[str] = set()
 
         for query in queries:

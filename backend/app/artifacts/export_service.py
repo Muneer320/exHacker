@@ -1,6 +1,7 @@
 import io
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -24,7 +25,7 @@ class ExportService:
             "pitch": PitchGenerator(),
         }
 
-    async def generate_all(self, state: ExHackerState | dict, output_dir: Path) -> dict[str, Path]:
+    async def generate_all(self, state: ExHackerState | dict[str, Any], output_dir: Path) -> dict[str, Path]:
         state_dict = self._to_dict(state)
         results: dict[str, Path] = {}
         for name, gen in self.generators.items():
@@ -37,7 +38,7 @@ class ExportService:
                 raise
         return results
 
-    async def generate_zip(self, state: ExHackerState | dict) -> bytes:
+    async def generate_zip(self, state: ExHackerState | dict[str, Any]) -> bytes:
         state_dict = self._to_dict(state)
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -51,7 +52,7 @@ class ExportService:
                     raise
         return buf.getvalue()
 
-    def _to_dict(self, state: ExHackerState | dict) -> dict:
+    def _to_dict(self, state: ExHackerState | dict[str, Any]) -> dict[str, Any]:
         if isinstance(state, ExHackerState):
             return state.model_dump()
         return state

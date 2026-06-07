@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -15,10 +16,10 @@ class ArtifactGenerator(ABC):
         self.logger = logger.bind(generator=self.name)
 
     @abstractmethod
-    async def generate(self, state: dict) -> str:
+    async def generate(self, state: dict[str, Any]) -> str:
         ...
 
-    async def save(self, state: dict, output_dir: Path) -> Path:
+    async def save(self, state: dict[str, Any], output_dir: Path) -> Path:
         output_dir.mkdir(parents=True, exist_ok=True)
         markdown = await self.generate(state)
         file_path = output_dir / self.filename

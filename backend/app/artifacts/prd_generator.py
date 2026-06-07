@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.artifacts.base import ArtifactGenerator
 from app.schemas.architecture import ArchitecturePackage
 from app.schemas.challenge import ChallengeIntelligence
@@ -10,7 +12,7 @@ class PRDGenerator(ArtifactGenerator):
     name = "prd"
     filename = "PRD.md"
 
-    async def generate(self, state: dict) -> str:
+    async def generate(self, state: dict[str, Any]) -> str:
         selected: Idea | None = state.get("selected_idea")
         problem: ProblemAnalysis | None = state.get("problem_analysis")
         challenge: ChallengeIntelligence | None = state.get("challenge_intelligence")
@@ -114,9 +116,9 @@ class PRDGenerator(ArtifactGenerator):
         lines.append("")
         lines.append("### MVP (Must-Have)")
         if arch and arch.features:
-            for f in arch.features:
-                if f.priority.lower() in ("high", "critical", "p0", "p1"):
-                    lines.append(f"- **{f.title}:** {f.description}")
+            for feat in arch.features:
+                if feat.priority.lower() in ("high", "critical", "p0", "p1"):
+                    lines.append(f"- **{feat.title}:** {feat.description}")
         elif selected and selected.key_features:
             for f in selected.key_features:
                 lines.append(f"- {f}")
@@ -128,9 +130,9 @@ class PRDGenerator(ArtifactGenerator):
         lines.append("")
         lines.append("### Advanced / Stretch Goals")
         if arch and arch.features:
-            for f in arch.features:
-                if f.priority.lower() in ("low", "medium", "p2", "p3", "nice-to-have"):
-                    lines.append(f"- **{f.title}:** {f.description}")
+            for feat in arch.features:
+                if feat.priority.lower() in ("low", "medium", "p2", "p3", "nice-to-have"):
+                    lines.append(f"- **{feat.title}:** {feat.description}")
         else:
             lines.append("- Real-time collaboration features")
             lines.append("- Advanced analytics dashboard")
@@ -144,8 +146,8 @@ class PRDGenerator(ArtifactGenerator):
         features: list[tuple[str, str, str]] = []
 
         if arch and arch.features:
-            for f in arch.features:
-                features.append((f.title, f.description, f.priority))
+            for feat in arch.features:
+                features.append((feat.title, feat.description, feat.priority))
         elif selected and selected.key_features:
             for f in selected.key_features:
                 features.append((f, "", "medium"))

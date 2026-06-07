@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any
+from typing import Any, cast
 
 from app.services.llm.providers.base import (
     CostRate,
@@ -60,7 +60,7 @@ class GeminiProvider(LLMProvider):
     ) -> dict[str, Any]:
         result = await self.generate(system_prompt, user_prompt)
         try:
-            return json.loads(result.content)
+            return cast(dict[str, Any], json.loads(result.content))
         except json.JSONDecodeError:
             return {}
 

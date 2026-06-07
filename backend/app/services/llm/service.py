@@ -30,10 +30,10 @@ class LLMService:
             return self._providers
 
         api_keys = {
-            "groq": settings.GROQ_API_KEY,
-            "gemini": settings.GEMINI_API_KEY,
+            "groq": settings.groq_api_key,
+            "gemini": settings.gemini_api_key,
             "ollama": "ollama",
-            "openai": settings.OPENAI_API_KEY,
+            "openai": settings.openai_api_key,
         }
 
         priority: list[type[LLMProvider]] = [
@@ -53,8 +53,8 @@ class LLMService:
                         from app.services.llm.providers.base import ProviderConfig
                         providers.append(OllamaProvider(ProviderConfig(
                             api_key="",
-                            base_url=settings.OLLAMA_BASE_URL,
-                            model=settings.OLLAMA_MODEL,
+                            base_url=settings.ollama_base_url,
+                            model=settings.ollama_model,
                         )))
                     else:
                         providers.append(self._create_provider(provider_cls, key))

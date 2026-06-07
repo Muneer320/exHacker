@@ -231,7 +231,8 @@ class WorkflowOrchestrator:
         events: list[dict[str, Any]] = []
         async for event in self.graph.astream(initial_state, config=config):
             events.append(event)
-        final_state = events[-1] if events else initial_state
+        snapshot = await self.graph.aget_state(config)
+        final_state = ExHackerState.model_validate(snapshot.values)
         logger.info("workflow_completed", project_id=initial_state.project.id, thread_id=thread_id)
         return final_state
 
@@ -243,7 +244,8 @@ class WorkflowOrchestrator:
         events: list[dict[str, Any]] = []
         async for event in self.graph.astream(state, config=config):
             events.append(event)
-        return events[-1] if events else state
+        snapshot = await self.graph.aget_state(config)
+        return ExHackerState.model_validate(snapshot.values)
 
     async def run_agent_single(
         self, state: ExHackerState, agent_name: str

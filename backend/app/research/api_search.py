@@ -1,3 +1,5 @@
+from typing import Any
+
 import structlog
 
 from app.research.base import ResearchProvider, ResearchResult
@@ -10,7 +12,7 @@ class APISearchProvider:
     def __init__(self, web_provider: ResearchProvider | None = None) -> None:
         self._web = web_provider or WebSearchProvider()
 
-    async def find_apis(self, requirements: list[str]) -> list[dict]:
+    async def find_apis(self, requirements: list[str]) -> list[dict[str, Any]]:
         logger.debug("api_search_started", requirements=requirements)
 
         query = " ".join(requirements)
@@ -20,7 +22,7 @@ class APISearchProvider:
             f"top {query} APIs",
         ]
 
-        all_results: list[dict] = []
+        all_results: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 
         for q in queries:

@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import httpx
 import structlog
@@ -107,7 +108,7 @@ class GitHubSearchProvider(ResearchProvider):
                 error=str(exc),
             )
 
-    async def search_repos(self, query: str) -> list[dict]:
+    async def search_repos(self, query: str) -> list[dict[str, Any]]:
         result = await self.search(query, num_results=10)
         repos = []
 

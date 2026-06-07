@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 
 @dataclass
@@ -47,7 +47,7 @@ class LLMProvider(ABC):
         raw = await self.generate(system_prompt, user_prompt)
         try:
             import json
-            return json.loads(raw.content)
+            return cast(dict[str, Any], json.loads(raw.content))
         except json.JSONDecodeError:
             return {}
 

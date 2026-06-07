@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any
+from typing import Any, cast
 
 from openai import AsyncOpenAI
 
@@ -82,7 +82,7 @@ class OpenAIProvider(LLMProvider):
         content = response.choices[0].message.content or "{}"
 
         try:
-            return json.loads(content)
+            return cast(dict[str, Any], json.loads(content))
         except json.JSONDecodeError:
             return {}
 

@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.artifacts.base import ArtifactGenerator
 from app.schemas.architecture import ArchitecturePackage
 from app.schemas.idea import Idea
@@ -9,7 +11,7 @@ class ReadmeGenerator(ArtifactGenerator):
     name = "readme"
     filename = "README.md"
 
-    async def generate(self, state: dict) -> str:
+    async def generate(self, state: dict[str, Any]) -> str:
         team: TeamProfile | None = state.get("team_profile")
         selected: Idea | None = state.get("selected_idea")
         arch: ArchitecturePackage | None = state.get("architecture")
@@ -56,16 +58,16 @@ class ReadmeGenerator(ArtifactGenerator):
                     lines.append(f"- {f}")
                     seen.add(key)
         if arch:
-            for f in arch.features:
-                key = f.title.lower().strip()
+            for feature in arch.features:
+                key = feature.title.lower().strip()
                 if key not in seen:
-                    lines.append(f"- **{f.title}**: {f.description}")
+                    lines.append(f"- **{feature.title}**: {feature.description}")
                     seen.add(key)
         if len(lines) == 1:
             lines.append("- Feature planning in progress")
         return "\n".join(lines)
 
-    def _tech_stack(self, state: dict) -> str:
+    def _tech_stack(self, state: dict[str, Any]) -> str:
         ts = state.get("tech_stack")
         lines = ["## Tech Stack"]
         if ts:

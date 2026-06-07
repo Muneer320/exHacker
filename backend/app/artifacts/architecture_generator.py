@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.artifacts.base import ArtifactGenerator
 from app.schemas.architecture import ApiDefinition, ArchitecturePackage
 from app.schemas.idea import Idea
@@ -9,7 +11,7 @@ class ArchitectureGenerator(ArtifactGenerator):
     name = "architecture"
     filename = "ARCHITECTURE.md"
 
-    async def generate(self, state: dict) -> str:
+    async def generate(self, state: dict[str, Any]) -> str:
         arch: ArchitecturePackage | None = state.get("architecture")
         tech_stack: TechStack | None = state.get("tech_stack")
         selected: Idea | None = state.get("selected_idea")
@@ -187,7 +189,7 @@ class ArchitectureGenerator(ArtifactGenerator):
                 lines.append("")
                 lines.append(f"### {table_name}")
                 columns = table.get("columns", table.get("fields", []))
-                if columns:
+                if columns and isinstance(columns, list):
                     lines.append("| Column | Type | Constraints | Description |")
                     lines.append("|--------|------|-------------|-------------|")
                     for col in columns:

@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.artifacts.base import ArtifactGenerator
 from app.schemas.architecture import ArchitecturePackage
 from app.schemas.idea import Idea
@@ -12,7 +14,7 @@ class PitchGenerator(ArtifactGenerator):
     name = "pitch"
     filename = "PITCH_DECK.md"
 
-    async def generate(self, state: dict) -> str:
+    async def generate(self, state: dict[str, Any]) -> str:
         pitch: PitchPackage | None = state.get("pitch")
         presentation: PresentationPackage | None = state.get("presentation")
         arch: ArchitecturePackage | None = state.get("architecture")
