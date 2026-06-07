@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: exhacker
+          POSTGRES_PASSWORD: exhacker
+          POSTGRES_DB: exhacker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync
+
+      - name: Lint
+        working-directory: ./backend
+        run: uv run ruff check .
+
+      - name: Type check
+        working-directory: ./backend
+        run: uv run mypy app
+
+      - name: Test
+        working-directory: ./backend
+        run: uv run pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://exhacker:exhacker@localhost:5432/exhacker
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Type check
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: ./frontend
+        run: npm run build
