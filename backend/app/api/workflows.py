@@ -122,28 +122,20 @@ async def _run_workflow_background(project_id: str) -> None:
         if not proj:
             return
 
-        thread_id = final_state.agent_metadata.get("thread_id", "")
-        is_interrupted = final_state.agent_metadata.get("interrupted", False)
+        thread_id = cast(str, final_state.agent_metadata.get("thread_id", ""))
+        is_interrupted = cast(bool, final_state.agent_metadata.get("interrupted", False))
 
         proj.thread_id = thread_id or None
         proj.current_agent = None
         proj.completed_agents = final_state.completed_agents
-        proj.state = final_state.model_dump(mode="json")
+        proj.state = cast("dict[str, object]", final_state.model_dump(mode="json"))
 
         logs = cast(list[dict[str, Any]], final_state.agent_metadata.get("logs", []))
         proj.agent_logs = logs
         proj.error_log = [e.model_dump() for e in final_state.errors]
 
         if is_interrupted:
-            # Determine which checkpoint from the interrupt value
-            checkpoint_stage = "idea_selection"
-            try:
-                if snapshot.tasks and snapshot.tasks[0].interrupts:
-                    interrupt_val = snapshot.tasks[0].interrupts[0].value
-                    if isinstance(interrupt_val, dict):
-                        checkpoint_stage = interrupt_val.get("stage", "idea_selection")
-            except Exception:
-                pass
+            checkpoint_stage = cast(str, final_state.agent_metadata.get("checkpoint_stage", "idea_selection"))
             proj.status = "idea_selection"
             proj.current_stage = checkpoint_stage
             await session.commit()
@@ -264,10 +256,6 @@ async def approve_checkpoint(
     if not thread_id:
         raise HTTPException(status_code=409, detail="No thread_id found — workflow may not have been started")
 
-    raw_state = (project.state or {})
-    raw_state["project"] = ProjectResponse.model_validate(project).model_dump(mode="json")
-    state = ExHackerState.model_validate(raw_state)
-
     orchestrator = get_orchestrator()
     try:
         config = {"configurable": {"thread_id": thread_id}}
@@ -331,11 +319,6 @@ async def select_idea(
     thread_id = project.thread_id
     if not thread_id:
         raise HTTPException(status_code=409, detail="No thread_id found — workflow may not have been started")
-
-    # Build state from stored project state
-    raw_state = (project.state or {})
-    raw_state["project"] = ProjectResponse.model_validate(project).model_dump(mode="json")
-    state = ExHackerState.model_validate(raw_state)
 
     orchestrator = get_orchestrator()
     try:

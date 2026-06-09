@@ -3,24 +3,24 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.agents.registry import AgentRegistry
-from app.agents.user_profiler import UserProfilerAgent
+from app.agents.build_accelerator import BuildAcceleratorAgent
 from app.agents.challenge_intelligence import ChallengeIntelligenceAgent
-from app.agents.problem_analyst import ProblemAnalystAgent
-from app.agents.opportunity_planner import OpportunityPlannerAgent
 from app.agents.idea_generator import IdeaGeneratorAgent
 from app.agents.idea_validator import IdeaValidatorAgent
+from app.agents.opportunity_planner import OpportunityPlannerAgent
+from app.agents.pitch_coach import PitchCoachAgent
+from app.agents.presentation_agent import PresentationAgent
+from app.agents.problem_analyst import ProblemAnalystAgent
+from app.agents.registry import AgentRegistry
 from app.agents.solution_architect import SolutionArchitectAgent
 from app.agents.tech_stack_advisor import TechStackAdvisorAgent
-from app.agents.build_accelerator import BuildAcceleratorAgent
-from app.agents.presentation_agent import PresentationAgent
-from app.agents.pitch_coach import PitchCoachAgent
-from app.schemas.state import ExHackerState, WorkflowStage
-from app.schemas.project import ProjectResponse, ProjectStatus
-from app.schemas.idea import Idea
+from app.agents.user_profiler import UserProfilerAgent
 from app.schemas.architecture import ArchitecturePackage, Feature, UserStory
-from app.schemas.tech_stack import TechStack
+from app.schemas.idea import Idea
+from app.schemas.project import ProjectResponse, ProjectStatus
 from app.schemas.prompts import PromptPackage
+from app.schemas.state import ExHackerState, WorkflowStage
+from app.schemas.tech_stack import TechStack
 from app.services.llm.cost_tracker import CostTracker
 from app.services.llm.fallback import FallbackChain
 from app.services.llm.providers.base import (
@@ -33,7 +33,6 @@ from app.workflows.orchestrator import (
     AGENT_TO_STATE_KEY,
     WorkflowOrchestrator,
 )
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures
@@ -440,7 +439,10 @@ class TestAgentCache:
         mock_future = AsyncMock()
         mock_future.success = True
         mock_future.output = {"ideas": [{"title": "New Idea", "description": "Fresh"}]}
-        mock_future.metadata = {"provider": "groq", "model": "llama", "input_tokens": 10, "output_tokens": 20, "cost": 0.0}
+        mock_future.metadata = {
+            "provider": "groq", "model": "llama",
+            "input_tokens": 10, "output_tokens": 20, "cost": 0.0,
+        }
         mock_agent_instance.run = AsyncMock(return_value=mock_future)
 
         def mock_get(name):
@@ -464,8 +466,14 @@ class TestAgentCache:
 class TestCostTracker:
     def test_tracks_costs(self):
         tracker = CostTracker()
-        tracker.record(provider="groq", model="llama", input_tokens=100, output_tokens=50, total_tokens=150, estimated_cost=0.0)
-        tracker.record(provider="gemini", model="gemini-pro", input_tokens=200, output_tokens=100, total_tokens=300, estimated_cost=0.0)
+        tracker.record(
+            provider="groq", model="llama",
+            input_tokens=100, output_tokens=50, total_tokens=150, estimated_cost=0.0,
+        )
+        tracker.record(
+            provider="gemini", model="gemini-pro",
+            input_tokens=200, output_tokens=100, total_tokens=300, estimated_cost=0.0,
+        )
         assert tracker.total_tokens == 450
         assert len(tracker.entries) == 2
 

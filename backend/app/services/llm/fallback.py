@@ -2,7 +2,7 @@ import asyncio
 import logging
 import random
 from collections import OrderedDict
-from typing import Any
+from typing import Any, cast
 
 from app.services.llm.cost_tracker import CostTracker
 from app.services.llm.providers.base import LLMProvider
@@ -166,7 +166,7 @@ class FallbackChain:
         if match:
             text = match.group(0)
         try:
-            return json.loads(text)
+            return cast(dict[str, Any], json.loads(text))
         except json.JSONDecodeError:
             return {}
 

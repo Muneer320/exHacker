@@ -7,7 +7,7 @@ from uuid import uuid4
 import structlog
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
-from langgraph.types import Command, interrupt, StreamWriter
+from langgraph.types import interrupt
 
 from app.agents.registry import AgentRegistry
 from app.schemas.architecture import ArchitecturePackage
@@ -538,6 +538,12 @@ class WorkflowOrchestrator:
         final_state.agent_metadata["thread_id"] = thread_id
         if snapshot.tasks:
             final_state.agent_metadata["interrupted"] = True
+            try:
+                interrupt_value = snapshot.tasks[0].interrupts[0].value
+                if isinstance(interrupt_value, dict):
+                    final_state.agent_metadata["checkpoint_stage"] = interrupt_value.get("stage", "idea_selection")
+            except Exception:
+                final_state.agent_metadata["checkpoint_stage"] = "idea_selection"
         return final_state
 
     async def resume_workflow(
