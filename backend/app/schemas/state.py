@@ -64,5 +64,6 @@ class ExHackerState(BaseModel):
     current_stage: WorkflowStage = WorkflowStage.INPUT
     completed_agents: list[str] = Field(default_factory=list)
     errors: list[AgentError] = Field(default_factory=list)
+    idea_generation_attempts: int = 0
     export_data: dict[str, object] = Field(default_factory=dict)
     agent_metadata: dict[str, object] = Field(default_factory=dict)

@@ -52,7 +52,7 @@ class Project(Base):
     agent_logs: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB, nullable=True, default=list
     )
-    error_log: Mapped[list[dict[str, str]] | None] = mapped_column(
+    error_log: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB, nullable=True, default=list
     )
     duration_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)

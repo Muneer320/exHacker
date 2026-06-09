@@ -48,7 +48,7 @@ class ProjectResponse(BaseModel):
     state: dict[str, object] | None = None
     completed_agents: list[str] = Field(default_factory=list)
     agent_logs: list[dict[str, object]] = Field(default_factory=list)
-    error_log: list[dict[str, str]] = Field(default_factory=list)
+    error_log: list[dict[str, Any]] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

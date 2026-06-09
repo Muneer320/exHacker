@@ -176,6 +176,11 @@ class WorkflowOrchestrator:
                     [e.model_dump() for e in state.errors],
                 )
 
+            # Track idea generation retries to break infinite loop
+            update_extras: dict[str, Any] = {}
+            if agent_name == "idea_generator":
+                update_extras["idea_generation_attempts"] = state.idea_generation_attempts + 1
+
             state_dict = state.model_dump()
             try:
                 result = await agent.run(state_dict)
@@ -187,7 +192,7 @@ class WorkflowOrchestrator:
                     error=str(exc),
                 )
                 elapsed = int((time.monotonic() - start) * 1000)
-                return {
+                crash_update: dict[str, Any] = {
                     "completed_agents": [*state.completed_agents, agent_name],
                     "current_stage": AGENT_TO_STAGE.get(agent_name, state.current_stage),
                     "errors": [*state.errors, AgentError(
@@ -197,6 +202,9 @@ class WorkflowOrchestrator:
                         severity=AgentErrorSeverity.CRITICAL,
                     )],
                 }
+                if update_extras:
+                    crash_update.update(update_extras)
+                return crash_update
             elapsed = int((time.monotonic() - start) * 1000)
 
             # Build structured log entry
@@ -283,6 +291,8 @@ class WorkflowOrchestrator:
                 "logs": existing_logs,
                 agent_name: {"duration_ms": elapsed, **(result.metadata or {})},
             }
+            if update_extras:
+                update.update(update_extras)
 
             # Notify DB: agent finished, clear current_agent
             if self._progress_callback:
@@ -313,9 +323,24 @@ class WorkflowOrchestrator:
             "export_data": self._generate_export_package(state),
         }
 
+    MAX_IDEA_GENERATION_ATTEMPTS = 3
+
     def _route_after_validation(self, state: ExHackerState) -> str:
         if not state.validation_reports:
-            logger.warning("no_validation_reports_regenerating", project_id=state.project.id)
+            attempts = state.idea_generation_attempts
+            if attempts >= self.MAX_IDEA_GENERATION_ATTEMPTS:
+                logger.warning(
+                    "max_idea_generation_attempts_reached",
+                    project_id=state.project.id,
+                    attempts=attempts,
+                )
+                return "human_approval"
+            logger.warning(
+                "no_validation_reports_regenerating",
+                project_id=state.project.id,
+                attempt=attempts + 1,
+                max_attempts=self.MAX_IDEA_GENERATION_ATTEMPTS,
+            )
             return "idea_generator"
         return "human_approval"
 

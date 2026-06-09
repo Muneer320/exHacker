@@ -27,7 +27,7 @@ class OpenAIProvider(LLMProvider):
 
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
-            self._client = AsyncOpenAI(api_key=self.config.api_key)
+            self._client = AsyncOpenAI(api_key=self.config.api_key, timeout=120.0)
         return self._client
 
     async def generate(self, system_prompt: str, user_prompt: str) -> LLMResponse:
