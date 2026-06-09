@@ -16,11 +16,18 @@ class GroqProvider(LLMProvider):
     name = "groq"
     cost_rates = CostRate(input_per_1k=0.0, output_per_1k=0.0)
 
+    DEFAULTS = ProviderConfig(
+        model="llama-3.3-70b-versatile",
+        base_url="https://api.groq.com/openai/v1",
+    )
+
     def __init__(self, config: ProviderConfig | None = None) -> None:
-        super().__init__(config or ProviderConfig(
-            model="llama-3.3-70b-versatile",
-            base_url="https://api.groq.com/openai/v1",
-        ))
+        merged = config or ProviderConfig()
+        if not merged.model:
+            merged.model = self.DEFAULTS.model
+        if not merged.base_url:
+            merged.base_url = self.DEFAULTS.base_url
+        super().__init__(merged)
         self._client: AsyncOpenAI | None = None
 
     def _get_client(self) -> AsyncOpenAI:

@@ -16,9 +16,9 @@ class TechStackAdvisorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("architecture", {})
-        team = state.get("team_profile", {})
-        challenge = state.get("challenge_intelligence", {})
+        arch = state.get("architecture") or {}
+        team = state.get("team_profile") or {}
+        challenge = state.get("challenge_intelligence") or {}
         project = state.get("project", {})
         team_data = project.get("team_data", {})
 

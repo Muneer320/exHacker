@@ -16,10 +16,10 @@ class BuildAcceleratorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("architecture", {})
-        tech = state.get("tech_stack", {})
-        project = state.get("project", {})
-        challenge = state.get("challenge_intelligence", {})
+        arch = state.get("architecture") or {}
+        tech = state.get("tech_stack") or {}
+        challenge = state.get("challenge_intelligence") or {}
+        project = state.get("project") or {}
         team_data = project.get("team_data", {})
 
         features = arch.get("features", [])

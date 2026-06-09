@@ -132,20 +132,19 @@ class LLMService:
         from app.services.llm.providers.base import ProviderConfig
 
         provider_name = provider_cls.name
-        # Pull model and base_url from settings (e.g. groq_model, groq_base_url)
-        model = getattr(settings, f"{provider_name}_model", "") or ""
+        # Pull model/base_url from settings if defined; leave empty so the
+        # provider's own defaults are used when undefined in settings.
+        model = getattr(settings, f"{provider_name}_model", None) or ""
         base_url = getattr(settings, f"{provider_name}_base_url", None)
 
-        config = ProviderConfig(
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            temperature=0.7,
-            max_tokens=4096,
-        )
+        config = ProviderConfig(api_key=api_key)
+        if model:
+            config.model = model
+        if base_url:
+            config.base_url = base_url
         logger.info(
             "Provider config for %s: model=%s, base_url=%s",
-            provider_name, model or "(default)", base_url or "(default)",
+            provider_name, config.model or "(default)", config.base_url or "(default)",
         )
         return provider_cls(config)
 

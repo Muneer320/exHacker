@@ -16,7 +16,7 @@ class ProblemAnalystAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        challenge_intel = state.get("challenge_intelligence", {})
+        challenge_intel = state.get("challenge_intelligence") or {}
         project = state.get("project", {})
         challenge_data = project.get("challenge_data", {})
 

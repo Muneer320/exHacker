@@ -17,10 +17,10 @@ class IdeaGeneratorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        challenge = state.get("challenge_intelligence", {})
-        problem = state.get("problem_analysis", {})
-        opportunity = state.get("opportunity_analysis", {})
-        team = state.get("team_profile", {})
+        challenge = state.get("challenge_intelligence") or {}
+        problem = state.get("problem_analysis") or {}
+        opportunity = state.get("opportunity_analysis") or {}
+        team = state.get("team_profile") or {}
 
         challenge_context = (
             f"Themes: {', '.join(challenge.get('themes', []))}\n"

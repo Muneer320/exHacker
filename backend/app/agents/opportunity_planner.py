@@ -16,9 +16,9 @@ class OpportunityPlannerAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        problem = state.get("problem_analysis", {})
-        challenge = state.get("challenge_intelligence", {})
-        team = state.get("team_profile", {})
+        problem = state.get("problem_analysis") or {}
+        challenge = state.get("challenge_intelligence") or {}
+        team = state.get("team_profile") or {}
 
         user_prompt = OPPORTUNITY_TEMPLATE.format(
             problem_analysis=(

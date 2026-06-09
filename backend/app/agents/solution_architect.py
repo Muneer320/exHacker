@@ -16,12 +16,12 @@ class SolutionArchitectAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        selected = state.get("selected_idea", {})
-        team = state.get("team_profile", {})
+        selected = state.get("selected_idea") or {}
+        team = state.get("team_profile") or {}
         project = state.get("project", {})
 
         if not selected or not selected.get("id"):
-            ideas = state.get("generated_ideas", [])
+            ideas = state.get("generated_ideas") or []
             selected = ideas[0] if ideas else {}
             if not selected:
                 return AgentResult(

@@ -16,14 +16,14 @@ class PitchCoachAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("architecture", {})
-        tech = state.get("tech_stack", {})
-        challenge = state.get("challenge_intelligence", {})
-        ideas = state.get("generated_ideas", [])
-        selected = state.get("selected_idea", ideas[0] if ideas else {})
-        reports = state.get("validation_reports", [])
+        arch = state.get("architecture") or {}
+        tech = state.get("tech_stack") or {}
+        challenge = state.get("challenge_intelligence") or {}
+        ideas = state.get("generated_ideas") or []
+        selected = state.get("selected_idea") or (ideas[0] if ideas else {})
+        reports = state.get("validation_reports") or []
         report = reports[0] if reports else {}
-        project = state.get("project", {})
+        project = state.get("project") or {}
 
         user_prompt = PITCH_TEMPLATE.format(
             project_title=selected.get("title", "Untitled"),

@@ -16,8 +16,8 @@ class IdeaValidatorAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        ideas = state.get("generated_ideas", [])
-        challenge = state.get("challenge_intelligence", {})
+        ideas = state.get("generated_ideas") or []
+        challenge = state.get("challenge_intelligence") or {}
 
         if not ideas:
             return AgentResult(

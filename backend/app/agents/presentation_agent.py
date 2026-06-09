@@ -16,10 +16,10 @@ class PresentationAgent(BaseAgent):
         self._llm = llm or llm_service
 
     async def execute(self, state: dict[str, Any]) -> AgentResult:
-        arch = state.get("architecture", {})
-        ideas = state.get("generated_ideas", [])
-        selected = state.get("selected_idea", ideas[0] if ideas else {})
-        reports = state.get("validation_reports", [])
+        arch = state.get("architecture") or {}
+        ideas = state.get("generated_ideas") or []
+        selected = state.get("selected_idea") or (ideas[0] if ideas else {})
+        reports = state.get("validation_reports") or []
         report = reports[0] if reports else {}
 
         features = arch.get("features", [])

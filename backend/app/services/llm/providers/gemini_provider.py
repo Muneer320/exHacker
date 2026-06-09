@@ -14,10 +14,13 @@ class GeminiProvider(LLMProvider):
     name = "gemini"
     cost_rates = CostRate(input_per_1k=0.0, output_per_1k=0.0)
 
+    DEFAULTS = ProviderConfig(model="gemini-2.0-flash")
+
     def __init__(self, config: ProviderConfig | None = None) -> None:
-        super().__init__(config or ProviderConfig(
-            model="gemini-2.0-flash",
-        ))
+        merged = config or ProviderConfig()
+        if not merged.model:
+            merged.model = self.DEFAULTS.model
+        super().__init__(merged)
         self._client: Any = None
 
     async def generate(self, system_prompt: str, user_prompt: str) -> LLMResponse:
