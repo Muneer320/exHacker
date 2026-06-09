@@ -3,6 +3,7 @@ export type ProjectStatus =
   | "researching"
   | "idea_generation"
   | "architecture"
+  | "idea_selection"
   | "completed"
   | "failed";
 
@@ -58,7 +59,7 @@ export interface HackathonProject {
   completedAgents: string[];
   agentLogs: AgentLogEntry[];
   errorLog: AgentError[];
-  state?: Record<string, unknown>;
+  state?: Record<string, unknown> | null;
 }
 
 export interface WorkflowProgress {

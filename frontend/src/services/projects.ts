@@ -37,4 +37,16 @@ export const projectsService = {
       `/workflows/${projectId}/run-agent/${agentName}`,
       {},
     ),
+
+  selectIdea: (projectId: string, selectedIdeaId: string) =>
+    api.post<{ status: string; project_id: string }>(
+      `/workflows/${projectId}/select-idea`,
+      { selected_idea_id: selectedIdeaId },
+    ),
+
+  regenerateIdeas: (projectId: string) =>
+    api.post<{ status: string; project_id: string }>(
+      `/workflows/${projectId}/regenerate-ideas`,
+      {},
+    ),
 };

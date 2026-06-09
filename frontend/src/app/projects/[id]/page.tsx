@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProject, useStartWorkflow, useWorkflowProgress } from "@/hooks/use-projects";
 import { projectsService } from "@/services/projects";
-import { AgentLogEntry, AgentError } from "@/types";
+import type { AgentLogEntry, AgentError } from "@/types";
 
 const workflowSteps = [
   { key: "user_profiler", label: "User Profile" },
@@ -25,6 +26,67 @@ const workflowSteps = [
   { key: "pitch_coach", label: "Pitch Coach" },
 ];
 
+function LogEntry({ log }: { log: AgentLogEntry }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded bg-background p-2 text-sm shadow-sm">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="font-semibold text-primary">{log.agent}</span>
+        <div className="flex items-center gap-2">
+          {!log.success && log.error && (
+            <span className="text-xs text-destructive">Failed</span>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {(log.durationMs / 1000).toFixed(1)}s
+          </span>
+          <span className="text-xs text-muted-foreground">{expanded ? "▲" : "▼"}</span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="mt-2 space-y-1.5 border-t pt-2 text-xs text-muted-foreground">
+          {log.provider && (
+            <div>
+              <span className="font-medium">Provider:</span> {log.provider}
+              {log.model && <> / {log.model}</>}
+            </div>
+          )}
+          {log.cost !== undefined && (
+            <div>
+              <span className="font-medium">Cost:</span> ${log.cost.toFixed(4)}
+            </div>
+          )}
+          {log.inputTokens !== undefined && (
+            <div>
+              <span className="font-medium">Tokens:</span> {log.inputTokens} in / {log.outputTokens} out
+            </div>
+          )}
+          {log.startedAt && (
+            <div>
+              <span className="font-medium">Started:</span> {new Date(log.startedAt).toLocaleTimeString()}
+            </div>
+          )}
+          {log.finishedAt && (
+            <div>
+              <span className="font-medium">Finished:</span> {new Date(log.finishedAt).toLocaleTimeString()}
+            </div>
+          )}
+          {!log.success && log.error && (
+            <div className="rounded bg-destructive/10 p-1 text-destructive">
+              <span className="font-medium">Error:</span> {log.error}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[] }) {
   if (logs.length === 0 && errors.length === 0) {
     return (
@@ -35,29 +97,10 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
   }
 
   return (
-    <ScrollArea className="h-64 rounded-md border bg-black/5 p-4 dark:bg-white/5">
-      <div className="space-y-3">
+    <ScrollArea className="h-80 rounded-md border bg-black/5 p-4 dark:bg-white/5">
+      <div className="space-y-2">
         {logs.map((log, i) => (
-          <div key={i} className="flex flex-col gap-1 rounded bg-background p-2 text-sm shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-primary">{log.agent}</span>
-              <span className="text-xs text-muted-foreground">
-                {(log.durationMs / 1000).toFixed(1)}s
-              </span>
-            </div>
-            <div className="flex gap-2 text-xs text-muted-foreground">
-              {log.provider && (
-                <Badge variant="outline" className="text-[10px]">
-                  {log.provider}
-                </Badge>
-              )}
-              {log.model && <span>{log.model}</span>}
-              {log.cost !== undefined && <span>${log.cost.toFixed(4)}</span>}
-            </div>
-            {!log.success && log.error && (
-              <div className="mt-1 text-destructive">{log.error}</div>
-            )}
-          </div>
+          <LogEntry key={i} log={log} />
         ))}
         {errors.map((err, i) => (
           <div key={`err-${i}`} className="rounded bg-destructive/10 p-2 text-sm text-destructive">
@@ -69,21 +112,220 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: any[]; projectId: string; onSelect: () => void; onRegenerate: () => void }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+
+  return (
+    <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+      <CardHeader>
+        <CardTitle className="text-amber-700 dark:text-amber-400">
+          Select an Idea ({ideas.length} generated)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-amber-600 dark:text-amber-300">
+          Review the generated ideas and pick one to continue, or regenerate.
+        </p>
+        <ScrollArea className="max-h-64">
+          <div className="space-y-2">
+            {ideas.map((idea) => {
+              const id = (idea as Record<string, string>).id || "";
+              const title = (idea as Record<string, string>).title || "Untitled";
+              const desc = (idea as Record<string, string>).description || "";
+              const score = (idea as Record<string, number>).innovationScore ?? (idea as Record<string, number>).innovation_score ?? 0;
+              const features = (idea as Record<string, string[]>).keyFeatures || (idea as Record<string, string[]>).key_features || [];
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`w-full rounded border p-3 text-left text-sm transition-all ${
+                    selected === id
+                      ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30"
+                      : "border-transparent bg-background hover:border-amber-500/50"
+                  }`}
+                  onClick={() => setSelected(id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{title}</span>
+                    <Badge variant="outline" className="text-xs">
+                      Score: {typeof score === "number" ? score.toFixed(1) : score}
+                    </Badge>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{desc}</div>
+                  {features.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {features.slice(0, 4).map((f: string, fi: number) => (
+                        <span key={fi} className="rounded bg-muted px-1.5 py-0.5 text-[10px]">{f}</span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+
+        <div className="flex gap-2">
+          <Button
+            onClick={async () => {
+              if (!selected) return;
+              await projectsService.selectIdea(projectId, selected);
+              onSelect();
+            }}
+            disabled={!selected}
+            className="flex-1"
+          >
+            Build This Idea
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setRegenerating(true);
+              await projectsService.regenerateIdeas(projectId);
+              setRegenerating(false);
+              onRegenerate();
+            }}
+            disabled={regenerating}
+          >
+            {regenerating ? "Generating..." : "Regenerate Ideas"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: any[]; arch: any; techStack: any; prompts: any }) {
+  return (
+    <div className="space-y-3">
+      {ideas.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Generated Ideas ({ideas.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
+            {ideas.map((idea, i) => {
+              const title = (idea as Record<string, string>).title || "Untitled";
+              const desc = (idea as Record<string, string>).description || "";
+              const score = (idea as Record<string, number>).innovationScore ?? (idea as Record<string, number>).innovation_score ?? 0;
+              return (
+                <div key={i} className="rounded border p-2">
+                  <div className="font-medium">{title}</div>
+                  <div className="text-xs text-muted-foreground">{desc}</div>
+                  <div className="mt-1 text-xs">Score: {typeof score === "number" ? score.toFixed(1) : score}</div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {arch && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Architecture</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {arch.vision && <p className="text-muted-foreground">{arch.vision as string}</p>}
+            {arch.features && (arch.features as string[]).length > 0 && (
+              <div><span className="font-medium">Features: </span><span className="text-muted-foreground">{(arch.features as string[]).join(", ")}</span></div>
+            )}
+            {arch.userStories && (arch.userStories as string[]).length > 0 && (
+              <div>
+                <span className="font-medium">User Stories: </span>
+                <ul className="mt-1 list-inside list-disc text-muted-foreground">
+                  {(arch.userStories as string[]).map((s: string, i: number) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {arch.architecture && (
+              <div>
+                <span className="font-medium">Architecture: </span>
+                <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs">
+                  {JSON.stringify(arch.architecture, null, 2)}
+                </pre>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {techStack && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Tech Stack</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {(techStack.frontend as Record<string, string[]> | undefined) && (
+              <div><span className="font-medium">Frontend: </span><span className="text-muted-foreground">{((techStack.frontend as Record<string, string[]>).frameworks || (techStack.frontend as Record<string, string[]>).languages || []).join(", ")}</span></div>
+            )}
+            {(techStack.backend as Record<string, string[]> | undefined) && (
+              <div><span className="font-medium">Backend: </span><span className="text-muted-foreground">{((techStack.backend as Record<string, string[]>).frameworks || (techStack.backend as Record<string, string[]>).languages || []).join(", ")}</span></div>
+            )}
+            {techStack.databases && (techStack.databases as string[]).length > 0 && (
+              <div><span className="font-medium">Databases: </span><span className="text-muted-foreground">{(techStack.databases as string[]).join(", ")}</span></div>
+            )}
+            {techStack.devops && (techStack.devops as string[]).length > 0 && (
+              <div><span className="font-medium">DevOps: </span><span className="text-muted-foreground">{(techStack.devops as string[]).join(", ")}</span></div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {prompts && (prompts.prompts as Array<{ title: string; prompt: string }>)?.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Build Prompts</CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
+            {(prompts.prompts as Array<{ title: string; prompt: string }>).map((p, i) => (
+              <div key={i} className="rounded bg-muted p-2">
+                <div className="font-medium">{p.title}</div>
+                <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.prompt}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  
+
   const { data: project, isLoading, refetch } = useProject(params.id);
   const startWorkflow = useStartWorkflow();
 
-  const isWorkflowActive = project?.status === "researching" || project?.status === "idea_generation" || project?.status === "architecture";
-  const isFailed = project?.status === "failed";
-  const { data: progressData } = useWorkflowProgress(params.id, isWorkflowActive || isFailed);
+  const isWorkflowActive = project?.status === "researching"
+    || project?.status === "idea_generation"
+    || project?.status === "architecture"
+    || project?.status === "idea_selection"
+    || project?.status === "failed";
 
-  const handleRunAgent = async (agentName: string) => {
-    await projectsService.runAgent(params.id, agentName);
-    refetch();
-  };
+  const { data: progressData } = useWorkflowProgress(params.id, isWorkflowActive);
+
+  const completedAgents = progressData?.completedAgents || project?.completedAgents || [];
+  const completedSet = new Set(completedAgents);
+  const currentAgent = progressData?.currentAgent || project?.currentAgent || null;
+  const agentLogs = progressData?.agentLogs || project?.agentLogs || [];
+  const errorLog = progressData?.errorLog || project?.errorLog || [];
+  const state = project?.state ?? null;
+  const arch = (state as any)?.architecture ?? null;
+  const techStack = (state as any)?.techStack ?? null;
+  const prompts = (state as any)?.prompts ?? null;
+  const ideas = (state as any)?.generatedIdeas ?? [];
+
+  const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));
+  const progressCount = completedInPipeline.length;
+  const progressTotal = workflowSteps.length;
 
   if (isLoading) {
     return (
@@ -104,21 +346,11 @@ export default function ProjectDetailPage() {
     );
   }
 
-  // Merge local progress state with project state
-  const completedAgents = progressData?.completedAgents || project.completedAgents || [];
-  const completedSet = new Set(completedAgents);
-  const currentAgent = progressData?.currentAgent || project.currentAgent || null;
-  const agentLogs = progressData?.agentLogs || project.agentLogs || [];
-  const errorLog = progressData?.errorLog || project.errorLog || [];
-  const state = project.state || null;
-  const arch = state?.architecture || null;
-  const techStack = state?.techStack || null;
-  const prompts = state?.prompts || null;
-  const ideas = state?.generatedIdeas || [];
-
-  // Only count pipeline steps (deduplicates loops, excludes "export"/"human_approval")
-  const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));
-  const progressPct = Math.min(100, Math.round((completedInPipeline.length / workflowSteps.length) * 100));
+  const statusBadgeVariant =
+    project.status === "completed" ? "default" as const
+      : project.status === "failed" ? "destructive" as const
+        : project.status === "idea_selection" ? "outline" as const
+          : "secondary" as const;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -129,18 +361,13 @@ export default function ProjectDetailPage() {
             <div className="text-muted-foreground mt-1 flex items-center gap-2">
               <span>Status:</span>
               <Badge
-                variant={
-                  project.status === "completed"
-                    ? "default"
-                    : project.status === "failed"
-                      ? "destructive"
-                      : "secondary"
-                }
+                variant={statusBadgeVariant}
                 className={
-                  project.status === "researching" ? "animate-pulse" : ""
+                  (project.status === "researching" || project.status === "idea_selection")
+                    ? "animate-pulse" : ""
                 }
               >
-                {project.status}
+                {project.status === "idea_selection" ? "awaiting selection" : project.status}
               </Badge>
             </div>
           </div>
@@ -149,18 +376,8 @@ export default function ProjectDetailPage() {
               <Button
                 onClick={() => startWorkflow.mutate(params.id)}
                 disabled={startWorkflow.isPending}
-                className="relative overflow-hidden"
               >
-                {startWorkflow.isPending ? (
-                  <>
-                    <span className="opacity-0">Start Analysis</span>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    </div>
-                  </>
-                ) : (
-                  "Start Analysis"
-                )}
+                {startWorkflow.isPending ? "Starting..." : "Start Analysis"}
               </Button>
             )}
             <Button variant="outline" onClick={() => router.push("/projects")}>
@@ -172,9 +389,9 @@ export default function ProjectDetailPage() {
         <div className="mt-8">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-medium text-muted-foreground">Overall Progress</span>
-            <span className="font-bold">{progressPct}%</span>
+            <span className="font-bold">{progressCount}/{progressTotal}</span>
           </div>
-          <Progress value={progressPct} className="h-3" />
+          <Progress value={(progressCount / progressTotal) * 100} className="h-3" />
         </div>
       </div>
 
@@ -185,12 +402,12 @@ export default function ProjectDetailPage() {
             {workflowSteps.map((step, idx) => {
               const isCompleted = completedSet.has(step.key);
               const isRunning = currentAgent === step.key;
-              const hasError = errorLog.some(e => e.agent_name === step.key);
-              
+              const hasError = errorLog.some(e => e.agentName === step.key);
+
               let statusColor = "bg-muted text-muted-foreground";
               let statusRing = "border-transparent";
               let statusIcon: string | number = idx + 1;
-              
+
               if (isCompleted) {
                 statusColor = "bg-green-500 text-white";
                 statusIcon = "✓";
@@ -213,7 +430,7 @@ export default function ProjectDetailPage() {
                       statusIcon
                     )}
                   </div>
-                  
+
                   <Card className={`w-full transition-all duration-300 ${
                     isRunning
                       ? "border-primary shadow-lg scale-[1.02] animate-pulse"
@@ -221,26 +438,13 @@ export default function ProjectDetailPage() {
                         ? "border-destructive/50"
                         : "hover:border-primary/50"
                   }`}>
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-                      <div className="flex flex-col">
-                        <CardTitle className="text-sm">{step.label}</CardTitle>
-                        {isRunning && (
-                          <span className="text-xs text-primary animate-pulse mt-0.5 font-medium">Processing...</span>
-                        )}
-                        {hasError && (
-                          <span className="text-xs text-destructive mt-0.5">Failed</span>
-                        )}
-                      </div>
-                      
-                      {(!isWorkflowActive && project.status !== "completed" && project.status !== "draft") && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleRunAgent(step.key)}
-                        >
-                          Run
-                        </Button>
+                    <CardHeader className="py-3 px-4">
+                      <CardTitle className="text-sm">{step.label}</CardTitle>
+                      {isRunning && (
+                        <span className="text-xs text-primary animate-pulse mt-0.5 font-medium">Processing...</span>
+                      )}
+                      {hasError && (
+                        <span className="text-xs text-destructive mt-0.5">Failed</span>
                       )}
                     </CardHeader>
                   </Card>
@@ -257,120 +461,21 @@ export default function ProjectDetailPage() {
               <LogPanel logs={agentLogs} errors={errorLog} />
             </CardContent>
           </Card>
-          
-          {project.status === "completed" && (
-            <div className="space-y-3">
-              {arch && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Architecture</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    {arch.vision && <p className="text-muted-foreground">{arch.vision}</p>}
-                    {arch.features && arch.features.length > 0 && (
-                      <div>
-                        <span className="font-medium">Features: </span>
-                        <span className="text-muted-foreground">{arch.features.join(", ")}</span>
-                      </div>
-                    )}
-                    {arch.user_stories && arch.user_stories.length > 0 && (
-                      <div>
-                        <span className="font-medium">User Stories: </span>
-                        <ul className="mt-1 list-inside list-disc text-muted-foreground">
-                          {arch.user_stories.map((s: string, i: number) => (
-                            <li key={i}>{s}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {arch.architecture && (
-                      <div>
-                        <span className="font-medium">Architecture: </span>
-                        <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs">
-                          {JSON.stringify(arch.architecture, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
 
-              {techStack && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Tech Stack</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    {techStack.frontend && (
-                      <div>
-                        <span className="font-medium">Frontend: </span>
-                        <span className="text-muted-foreground">
-                          {(techStack.frontend.frameworks || techStack.frontend.languages || []).join(", ")}
-                        </span>
-                      </div>
-                    )}
-                    {techStack.backend && (
-                      <div>
-                        <span className="font-medium">Backend: </span>
-                        <span className="text-muted-foreground">
-                          {(techStack.backend.frameworks || techStack.backend.languages || []).join(", ")}
-                        </span>
-                      </div>
-                    )}
-                    {techStack.databases && techStack.databases.length > 0 && (
-                      <div>
-                        <span className="font-medium">Databases: </span>
-                        <span className="text-muted-foreground">{techStack.databases.join(", ")}</span>
-                      </div>
-                    )}
-                    {techStack.devops && techStack.devops.length > 0 && (
-                      <div>
-                        <span className="font-medium">DevOps: </span>
-                        <span className="text-muted-foreground">{techStack.devops.join(", ")}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {prompts && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Build Prompts</CardTitle>
-                  </CardHeader>
-                  <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
-                    {prompts.prompts && prompts.prompts.map((p: { title: string; prompt: string }, i: number) => (
-                      <div key={i} className="rounded bg-muted p-2">
-                        <div className="font-medium">{p.title}</div>
-                        <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.prompt}</div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {ideas.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Generated Ideas ({ideas.length})</CardTitle>
-                  </CardHeader>
-                  <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
-                    {ideas.map((idea: { id: string; title: string; description: string; innovation_score: number }, i: number) => (
-                      <div key={i} className="rounded border p-2">
-                        <div className="font-medium">{idea.title}</div>
-                        <div className="text-xs text-muted-foreground">{idea.description}</div>
-                        {idea.innovation_score !== undefined && (
-                          <div className="mt-1 text-xs">Score: {typeof idea.innovation_score === 'number' ? idea.innovation_score.toFixed(1) : idea.innovation_score}</div>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+          {project.status === "idea_selection" && ideas.length > 0 && (
+            <IdeaPicker
+              ideas={ideas}
+              projectId={project.id}
+              onSelect={() => refetch()}
+              onRegenerate={() => refetch()}
+            />
           )}
 
-          {isFailed && (
+          {project.status === "completed" && (
+            <ResultPanel ideas={ideas} arch={arch} techStack={techStack} prompts={prompts} />
+          )}
+
+          {project.status === "failed" && (
             <Card className="border-destructive/50 bg-destructive/10">
               <CardHeader>
                 <CardTitle className="text-destructive">Workflow Failed</CardTitle>
@@ -381,14 +486,11 @@ export default function ProjectDetailPage() {
                   <div className="rounded bg-destructive/20 p-2 font-mono text-xs">
                     {errorLog.map((err, i) => (
                       <div key={i} className="mb-1 last:mb-0">
-                        <span className="font-semibold">{err.agent_name}:</span> {err.message}
+                        <span className="font-semibold">{err.agentName}:</span> {err.message}
                       </div>
                     ))}
                   </div>
                 )}
-                <p className="text-muted-foreground text-xs">
-                  Check your API keys in the .env file and try creating a new project.
-                </p>
               </CardContent>
             </Card>
           )}
