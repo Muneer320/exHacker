@@ -3,6 +3,8 @@ from typing import Any, cast
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from langgraph.types import Command
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -97,7 +99,6 @@ async def _run_workflow_background(project_id: str) -> None:
             final_state = await orchestrator.run_workflow(initial_state)
         except Exception as exc:
             logger.exception("background_workflow_failed", project_id=project_id, error=str(exc))
-            # Mark project as failed
             result2 = await session.execute(select(Project).where(Project.id == project_id))
             proj = result2.scalar_one_or_none()
             if proj:
@@ -118,19 +119,34 @@ async def _run_workflow_background(project_id: str) -> None:
         # ── Persist final state ───────────────────────────────────────────────
         result3 = await session.execute(select(Project).where(Project.id == project_id))
         proj = result3.scalar_one_or_none()
-        if proj:
+        if not proj:
+            return
+
+        thread_id = final_state.agent_metadata.get("thread_id", "")
+        is_interrupted = final_state.agent_metadata.get("interrupted", False)
+
+        proj.thread_id = thread_id or None
+        proj.current_agent = None
+        proj.completed_agents = final_state.completed_agents
+        proj.state = final_state.model_dump(mode="json")
+
+        logs = cast(list[dict[str, Any]], final_state.agent_metadata.get("logs", []))
+        proj.agent_logs = logs
+        proj.error_log = [e.model_dump() for e in final_state.errors]
+
+        if is_interrupted:
+            proj.status = "idea_selection"
+            proj.current_stage = "idea_selection"
+            await session.commit()
+            logger.info(
+                "background_workflow_interrupted",
+                project_id=project_id,
+                thread_id=thread_id,
+                completed_agents=final_state.completed_agents,
+            )
+        else:
             proj.status = "completed"
             proj.current_stage = str(final_state.current_stage)
-            proj.current_agent = None
-            proj.completed_agents = final_state.completed_agents
-            proj.state = final_state.model_dump(mode="json")
-
-            logs: list[dict[str, Any]] = cast(
-                list[dict[str, Any]], final_state.agent_metadata.get("logs", []),
-            )
-            proj.agent_logs = logs
-
-            proj.error_log = [e.model_dump() for e in final_state.errors]
             await session.commit()
             logger.info(
                 "background_workflow_completed",
@@ -210,6 +226,121 @@ async def get_workflow_progress(
         "error_log": project.error_log or [],
         "updated_at": project.updated_at.isoformat() if project.updated_at else None,
     }
+
+
+class SelectIdeaRequest(BaseModel):
+    selected_idea_id: str
+
+
+@router.post("/{project_id}/select-idea")
+async def select_idea(
+    project_id: str,
+    body: SelectIdeaRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, str]:
+    """Resume workflow after human-in-the-loop idea selection."""
+    result = await session.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.status != "idea_selection":
+        raise HTTPException(status_code=409, detail=f"Project is in status '{project.status}', not 'idea_selection'")
+
+    thread_id = project.thread_id
+    if not thread_id:
+        raise HTTPException(status_code=409, detail="No thread_id found — workflow may not have been started")
+
+    # Build state from stored project state
+    raw_state = (project.state or {})
+    raw_state["project"] = ProjectResponse.model_validate(project).model_dump(mode="json")
+    state = ExHackerState.model_validate(raw_state)
+
+    orchestrator = get_orchestrator()
+    try:
+        config = {"configurable": {"thread_id": thread_id}}
+        async for _ in orchestrator.graph.astream(
+            Command(resume={"selected_idea_id": body.selected_idea_id}),
+            config=config,
+        ):
+            pass
+
+        snapshot = await orchestrator.graph.aget_state(config)
+        final_state = ExHackerState.model_validate(snapshot.values)
+
+        project.thread_id = None
+        project.current_agent = None
+        project.completed_agents = final_state.completed_agents
+        project.state = final_state.model_dump(mode="json")
+
+        logs = cast(list[dict[str, Any]], final_state.agent_metadata.get("logs", []))
+        project.agent_logs = logs
+        project.error_log = [e.model_dump() for e in final_state.errors]
+
+        # Check if interrupted again
+        if snapshot.tasks:
+            project.status = "idea_selection"
+            project.current_stage = "idea_selection"
+            project.thread_id = thread_id
+        else:
+            project.status = "completed"
+            project.current_stage = str(final_state.current_stage)
+
+        await session.flush()
+        logger.info("workflow_resumed_after_selection", project_id=project_id, idea_id=body.selected_idea_id)
+    except Exception as exc:
+        logger.exception("workflow_resume_failed", project_id=project_id, error=str(exc))
+        raise HTTPException(status_code=500, detail=f"Failed to resume workflow: {exc}")
+
+    return {"status": "resumed", "project_id": project_id}
+
+
+@router.post("/{project_id}/regenerate-ideas")
+async def regenerate_ideas(
+    project_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, str]:
+    """Re-run idea_generator and idea_validator for the project."""
+    result = await session.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project.thread_id = None
+    project.status = "researching"
+    project.current_stage = "idea_generation"
+
+    raw_state = (project.state or {})
+    raw_state["project"] = ProjectResponse.model_validate(project).model_dump(mode="json")
+    state = ExHackerState.model_validate(raw_state)
+
+    orchestrator = get_orchestrator()
+    try:
+        state = await orchestrator.run_agent_single(state, "idea_generator")
+        state = await orchestrator.run_agent_single(state, "idea_validator")
+
+        project.current_agent = None
+        project.completed_agents = state.completed_agents
+        project.state = state.model_dump(mode="json")
+
+        logs = cast(list[dict[str, Any]], state.agent_metadata.get("logs", []))
+        project.agent_logs = logs
+        project.error_log = [e.model_dump() for e in state.errors]
+
+        ideas = state.generated_ideas or []
+        if ideas:
+            project.status = "idea_selection"
+            project.current_stage = "idea_selection"
+        else:
+            project.status = "completed"
+            project.current_stage = str(state.current_stage)
+
+        await session.flush()
+        logger.info("ideas_regenerated", project_id=project_id, count=len(ideas))
+    except Exception as exc:
+        logger.exception("regenerate_ideas_failed", project_id=project_id, error=str(exc))
+        raise HTTPException(status_code=500, detail=f"Failed to regenerate ideas: {exc}")
+
+    return {"status": "regenerated", "project_id": project_id}
 
 
 @router.post("/{project_id}/run-agent/{agent_name}")

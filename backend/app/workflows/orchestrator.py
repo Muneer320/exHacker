@@ -7,7 +7,7 @@ from uuid import uuid4
 import structlog
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
-from langgraph.types import Command, interrupt
+from langgraph.types import Command, interrupt, StreamWriter
 
 from app.agents.registry import AgentRegistry
 from app.schemas.architecture import ArchitecturePackage
@@ -432,7 +432,6 @@ class WorkflowOrchestrator:
 
         try:
             async for event in self.graph.astream(initial_state, config=config):
-                # Log each graph event for visibility
                 for node_name, node_output in event.items():
                     if isinstance(node_output, dict):
                         completed = node_output.get("completed_agents", [])
@@ -462,6 +461,11 @@ class WorkflowOrchestrator:
             completed_agents=final_state.completed_agents,
             errors=[e.agent_name for e in final_state.errors],
         )
+
+        # Attach thread_id and interrupt status for the caller to inspect
+        final_state.agent_metadata["thread_id"] = thread_id
+        if snapshot.tasks:
+            final_state.agent_metadata["interrupted"] = True
         return final_state
 
     async def resume_workflow(

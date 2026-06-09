@@ -10,7 +10,9 @@ class ProjectStatus(StrEnum):
     RESEARCHING = "researching"
     IDEA_GENERATION = "idea_generation"
     ARCHITECTURE = "architecture"
+    IDEA_SELECTION = "idea_selection"
     COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class ProjectCreate(BaseModel):
