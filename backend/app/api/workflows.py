@@ -123,7 +123,7 @@ async def _run_workflow_background(project_id: str) -> None:
             proj.current_stage = str(final_state.current_stage)
             proj.current_agent = None
             proj.completed_agents = final_state.completed_agents
-            proj.state = final_state.model_dump()
+            proj.state = final_state.model_dump(mode="json")
 
             logs: list[dict[str, Any]] = cast(
                 list[dict[str, Any]], final_state.agent_metadata.get("logs", []),
@@ -234,7 +234,7 @@ async def run_single_agent(
     )
     updated = await orchestrator.run_agent_single(state, agent_name)
 
-    project.state = updated.model_dump()
+    project.state = updated.model_dump(mode="json")
     project.completed_agents = updated.completed_agents
     project.current_stage = str(updated.current_stage)
     project.error_log = [e.model_dump() for e in updated.errors]

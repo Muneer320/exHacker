@@ -110,8 +110,15 @@ export default function ProjectDetailPage() {
   const currentAgent = progressData?.current_agent || project.currentAgent || null;
   const agentLogs = progressData?.agent_logs || project.agentLogs || [];
   const errorLog = progressData?.error_log || project.errorLog || [];
+  const state = (project as any).state || null;
+  const arch = state?.architecture || null;
+  const techStack = state?.tech_stack || null;
+  const prompts = state?.prompts || null;
+  const ideas = state?.generated_ideas || [];
 
-  const progressPct = Math.round((completedSet.size / workflowSteps.length) * 100);
+  // Only count pipeline steps (deduplicates loops, excludes "export"/"human_approval")
+  const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));
+  const progressPct = Math.min(100, Math.round((completedInPipeline.length / workflowSteps.length) * 100));
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -252,15 +259,115 @@ export default function ProjectDetailPage() {
           </Card>
           
           {project.status === "completed" && (
-            <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
-              <CardHeader>
-                <CardTitle className="text-green-700 dark:text-green-400">Analysis Complete!</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-green-600 dark:text-green-300">
-                All agents have successfully processed the project parameters.
-                You can now export the results or view the generated architecture.
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              {arch && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Architecture</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {arch.vision && <p className="text-muted-foreground">{arch.vision}</p>}
+                    {arch.features && arch.features.length > 0 && (
+                      <div>
+                        <span className="font-medium">Features: </span>
+                        <span className="text-muted-foreground">{arch.features.join(", ")}</span>
+                      </div>
+                    )}
+                    {arch.user_stories && arch.user_stories.length > 0 && (
+                      <div>
+                        <span className="font-medium">User Stories: </span>
+                        <ul className="mt-1 list-inside list-disc text-muted-foreground">
+                          {arch.user_stories.map((s: string, i: number) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {arch.architecture && (
+                      <div>
+                        <span className="font-medium">Architecture: </span>
+                        <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs">
+                          {JSON.stringify(arch.architecture, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {techStack && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Tech Stack</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {techStack.frontend && (
+                      <div>
+                        <span className="font-medium">Frontend: </span>
+                        <span className="text-muted-foreground">
+                          {(techStack.frontend.frameworks || techStack.frontend.languages || []).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                    {techStack.backend && (
+                      <div>
+                        <span className="font-medium">Backend: </span>
+                        <span className="text-muted-foreground">
+                          {(techStack.backend.frameworks || techStack.backend.languages || []).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                    {techStack.databases && techStack.databases.length > 0 && (
+                      <div>
+                        <span className="font-medium">Databases: </span>
+                        <span className="text-muted-foreground">{techStack.databases.join(", ")}</span>
+                      </div>
+                    )}
+                    {techStack.devops && techStack.devops.length > 0 && (
+                      <div>
+                        <span className="font-medium">DevOps: </span>
+                        <span className="text-muted-foreground">{techStack.devops.join(", ")}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {prompts && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Build Prompts</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
+                    {prompts.prompts && prompts.prompts.map((p: { title: string; prompt: string }, i: number) => (
+                      <div key={i} className="rounded bg-muted p-2">
+                        <div className="font-medium">{p.title}</div>
+                        <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.prompt}</div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {ideas.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Generated Ideas ({ideas.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
+                    {ideas.map((idea: { id: string; title: string; description: string; innovation_score: number }, i: number) => (
+                      <div key={i} className="rounded border p-2">
+                        <div className="font-medium">{idea.title}</div>
+                        <div className="text-xs text-muted-foreground">{idea.description}</div>
+                        {idea.innovation_score !== undefined && (
+                          <div className="mt-1 text-xs">Score: {typeof idea.innovation_score === 'number' ? idea.innovation_score.toFixed(1) : idea.innovation_score}</div>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {isFailed && (

@@ -57,6 +57,7 @@ export interface HackathonProject {
   completedAgents: string[];
   agentLogs: AgentLogEntry[];
   errorLog: AgentError[];
+  state?: Record<string, unknown>;
 }
 
 export interface WorkflowProgress {

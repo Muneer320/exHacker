@@ -71,7 +71,7 @@ class LLMService:
                     getattr(settings, f"{name}_model", "default"),
                 )
             else:
-                logger.warning("No API key configured for %s — skipping", name)
+                logger.debug("No API key configured for %s — skipping", name)
 
         # Optionally include Ollama after a lightweight health‑check
         enable_ollama = os.getenv("ENABLE_OLLAMA", "false").lower() == "true"

@@ -346,7 +346,21 @@ class WorkflowOrchestrator:
 
     def _route_after_approval(self, state: ExHackerState) -> str:
         if state.selected_idea is None:
-            logger.warning("no_idea_selected_regenerating", project_id=state.project.id)
+            attempts = state.idea_generation_attempts
+            if attempts >= self.MAX_IDEA_GENERATION_ATTEMPTS:
+                logger.warning(
+                    "max_idea_generation_attempts_reached_approval",
+                    project_id=state.project.id,
+                    attempts=attempts,
+                    ideas_count=len(state.generated_ideas or []),
+                )
+                return "solution_architect"
+            logger.warning(
+                "no_idea_selected_regenerating",
+                project_id=state.project.id,
+                attempt=attempts + 1,
+                max_attempts=self.MAX_IDEA_GENERATION_ATTEMPTS,
+            )
             return "idea_generator"
         return "solution_architect"
 

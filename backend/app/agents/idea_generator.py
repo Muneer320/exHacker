@@ -53,6 +53,12 @@ class IdeaGeneratorAgent(BaseAgent):
         parsed = result.get("parsed", {})
         raw_ideas = parsed.get("ideas", [])
 
+        if not raw_ideas:
+            return AgentResult(
+                success=False,
+                error="LLM returned no ideas — check API quota or prompt",
+            )
+
         ideas = []
         for raw in raw_ideas:
             idea = Idea(
