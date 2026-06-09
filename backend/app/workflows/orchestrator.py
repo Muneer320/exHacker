@@ -7,6 +7,7 @@ from uuid import uuid4
 import structlog
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
+from langgraph.types import Command, interrupt
 
 from app.agents.registry import AgentRegistry
 from app.schemas.architecture import ArchitecturePackage
@@ -310,6 +311,23 @@ class WorkflowOrchestrator:
 
     async def _human_approval_node(self, state: ExHackerState) -> dict[str, Any]:
         logger.info("waiting_for_human_approval", project_id=state.project.id)
+        ideas = [i.model_dump() for i in (state.generated_ideas or [])]
+        payload = {
+            "stage": "idea_selection",
+            "ideas": ideas,
+            "attempts": state.idea_generation_attempts,
+        }
+        selected = interrupt(payload)
+        if isinstance(selected, dict) and selected.get("selected_idea_id"):
+            sid = selected["selected_idea_id"]
+            for idea in (state.generated_ideas or []):
+                if idea.id == sid:
+                    return {
+                        "selected_idea": idea,
+                        "current_stage": WorkflowStage.IDEA_SELECTION,
+                        "completed_agents": [*state.completed_agents, "human_approval"],
+                    }
+            logger.warning("selected_idea_id_not_found", idea_id=sid)
         return {
             "current_stage": WorkflowStage.IDEA_SELECTION,
             "completed_agents": [*state.completed_agents, "human_approval"],

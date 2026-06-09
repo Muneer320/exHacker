@@ -55,6 +55,9 @@ class Project(Base):
     error_log: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB, nullable=True, default=list
     )
+    thread_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
     duration_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
