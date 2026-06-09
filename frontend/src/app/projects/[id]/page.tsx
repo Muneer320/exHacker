@@ -42,7 +42,7 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
             <div className="flex items-center justify-between">
               <span className="font-semibold text-primary">{log.agent}</span>
               <span className="text-xs text-muted-foreground">
-                {(log.duration_ms / 1000).toFixed(1)}s
+                {(log.durationMs / 1000).toFixed(1)}s
               </span>
             </div>
             <div className="flex gap-2 text-xs text-muted-foreground">
@@ -61,7 +61,7 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
         ))}
         {errors.map((err, i) => (
           <div key={`err-${i}`} className="rounded bg-destructive/10 p-2 text-sm text-destructive">
-            <span className="font-semibold">{err.agent_name || "System"}:</span> {err.message}
+            <span className="font-semibold">{err.agentName || "System"}:</span> {err.message}
           </div>
         ))}
       </div>
@@ -105,16 +105,16 @@ export default function ProjectDetailPage() {
   }
 
   // Merge local progress state with project state
-  const completedAgents = progressData?.completed_agents || project.completedAgents || [];
+  const completedAgents = progressData?.completedAgents || project.completedAgents || [];
   const completedSet = new Set(completedAgents);
-  const currentAgent = progressData?.current_agent || project.currentAgent || null;
-  const agentLogs = progressData?.agent_logs || project.agentLogs || [];
-  const errorLog = progressData?.error_log || project.errorLog || [];
-  const state = (project as any).state || null;
+  const currentAgent = progressData?.currentAgent || project.currentAgent || null;
+  const agentLogs = progressData?.agentLogs || project.agentLogs || [];
+  const errorLog = progressData?.errorLog || project.errorLog || [];
+  const state = project.state || null;
   const arch = state?.architecture || null;
-  const techStack = state?.tech_stack || null;
+  const techStack = state?.techStack || null;
   const prompts = state?.prompts || null;
-  const ideas = state?.generated_ideas || [];
+  const ideas = state?.generatedIdeas || [];
 
   // Only count pipeline steps (deduplicates loops, excludes "export"/"human_approval")
   const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));

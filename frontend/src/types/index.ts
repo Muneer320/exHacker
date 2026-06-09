@@ -23,20 +23,20 @@ export interface ResourceCollection {
 
 export interface AgentLogEntry {
   agent: string;
-  started_at: string;
-  finished_at: string;
-  duration_ms: number;
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
   success: boolean;
   provider?: string;
   model?: string;
-  input_tokens?: number;
-  output_tokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
   cost?: number;
   error?: string;
 }
 
 export interface AgentError {
-  agent_name: string;
+  agentName: string;
   timestamp: string;
   message: string;
   severity: "warning" | "critical";
@@ -45,13 +45,14 @@ export interface AgentError {
 export interface HackathonProject {
   id: string;
   name: string;
-  challengeStatements: string[];
+  challengeStatements?: string[];
   durationHours: number;
   createdAt: string;
   updatedAt: string;
   status: ProjectStatus;
-  team: TeamProfile;
-  resources: ResourceCollection;
+  teamData?: Record<string, unknown>;
+  challengeData?: Record<string, unknown>;
+  resourceData?: Record<string, unknown>;
   currentStage: string;
   currentAgent: string | null;
   completedAgents: string[];
@@ -61,14 +62,14 @@ export interface HackathonProject {
 }
 
 export interface WorkflowProgress {
-  project_id: string;
+  projectId: string;
   status: ProjectStatus;
-  current_stage: string;
-  current_agent: string | null;
-  completed_agents: string[];
-  agent_logs: AgentLogEntry[];
-  error_log: AgentError[];
-  updated_at: string | null;
+  currentStage: string;
+  currentAgent: string | null;
+  completedAgents: string[];
+  agentLogs: AgentLogEntry[];
+  errorLog: AgentError[];
+  updatedAt: string | null;
 }
 
 export interface ChallengeIntelligence {

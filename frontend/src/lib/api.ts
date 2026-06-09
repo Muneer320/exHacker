@@ -10,6 +10,22 @@ export class ApiError extends Error {
   }
 }
 
+function toCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function transformKeys(obj: unknown): unknown {
+  if (Array.isArray(obj)) {
+    return obj.map(transformKeys);
+  }
+  if (obj !== null && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [toCamel(k), transformKeys(v)]),
+    );
+  }
+  return obj;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -32,7 +48,8 @@ async function request<T>(
     return undefined as T;
   }
 
-  return response.json();
+  const data = await response.json();
+  return transformKeys(data) as T;
 }
 
 export const api = {
