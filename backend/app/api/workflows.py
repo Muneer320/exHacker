@@ -173,7 +173,7 @@ async def start_workflow(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project {project_id} not found",
         )
-    if project.status != "draft":
+    if project.status not in ("draft", "idea_selection", "failed"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Project is already in status '{project.status}'. Cannot restart.",

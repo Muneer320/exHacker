@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectsService, type CreateProjectPayload } from "@/services/projects";
 import type { HackathonProject, WorkflowProgress } from "@/types";
 
-const ACTIVE_STATUSES = new Set(["researching", "idea_generation", "architecture"]);
+const ACTIVE_STATUSES = new Set(["researching", "idea_generation", "architecture", "idea_selection", "failed"]);
 
 export function useProjects() {
   return useQuery<HackathonProject[]>({

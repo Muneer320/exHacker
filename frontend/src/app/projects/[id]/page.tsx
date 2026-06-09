@@ -12,6 +12,9 @@ import { useProject, useStartWorkflow, useWorkflowProgress } from "@/hooks/use-p
 import { projectsService } from "@/services/projects";
 import type { AgentLogEntry, AgentError } from "@/types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Dict = Record<string, any>;
+
 const workflowSteps = [
   { key: "user_profiler", label: "User Profile" },
   { key: "challenge_intelligence", label: "Challenge Intelligence" },
@@ -112,8 +115,7 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: any[]; projectId: string; onSelect: () => void; onRegenerate: () => void }) {
+function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: Dict[]; projectId: string; onSelect: () => void; onRegenerate: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
 
@@ -198,8 +200,7 @@ function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: any[]
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: any[]; arch: any; techStack: any; prompts: any }) {
+function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch: Dict | null; techStack: Dict | null; prompts: Dict | null }) {
   return (
     <div className="space-y-3">
       {ideas.length > 0 && (
@@ -318,10 +319,11 @@ export default function ProjectDetailPage() {
   const agentLogs = progressData?.agentLogs || project?.agentLogs || [];
   const errorLog = progressData?.errorLog || project?.errorLog || [];
   const state = project?.state ?? null;
-  const arch = (state as any)?.architecture ?? null;
-  const techStack = (state as any)?.techStack ?? null;
-  const prompts = (state as any)?.prompts ?? null;
-  const ideas = (state as any)?.generatedIdeas ?? [];
+  const s = state as Dict | null;
+  const arch = s?.architecture ?? null;
+  const techStack = s?.techStack ?? null;
+  const prompts = s?.prompts ?? null;
+  const ideas = s?.generatedIdeas ?? [];
 
   const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));
   const progressCount = completedInPipeline.length;
