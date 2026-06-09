@@ -42,12 +42,20 @@ def register_agents() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
+
+    # Log where settings found the .env file and which providers are available
+    env_path = settings.model_config.get("env_file", "unknown")
     logger.info(
         "application_starting",
         name=settings.app_name,
         version=settings.app_version,
         environment=settings.environment,
+        env_file=str(env_path),
+        groq_key_present=bool(settings.groq_api_key),
+        gemini_key_present=bool(settings.gemini_api_key),
+        openai_key_present=bool(settings.openai_api_key),
     )
+
     register_agents()
     yield
     logger.info("application_shutting_down")

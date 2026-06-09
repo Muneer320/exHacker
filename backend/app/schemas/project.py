@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProjectStatus(StrEnum):
@@ -39,14 +40,21 @@ class ProjectResponse(BaseModel):
     name: str
     status: ProjectStatus
     current_stage: str
+    current_agent: str | None = None
     duration_hours: int
     team_data: dict[str, object] | None = None
     challenge_data: dict[str, object] | None = None
     resource_data: dict[str, object] | None = None
     state: dict[str, object] | None = None
     completed_agents: list[str] = Field(default_factory=list)
+    agent_logs: list[dict[str, object]] = Field(default_factory=list)
     error_log: list[dict[str, str]] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("completed_agents", "agent_logs", "error_log", mode="before")
+    @classmethod
+    def none_to_empty_list(cls, v: list[Any] | None) -> list[Any]:
+        return v if v is not None else []
 
     model_config = {"from_attributes": True}

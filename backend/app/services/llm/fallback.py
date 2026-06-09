@@ -37,9 +37,27 @@ class FallbackChain:
         user_prompt: str,
         agent_name: str = "",
     ) -> dict[str, Any]:
+        if not providers:
+            logger.error(
+                "No LLM providers available for %s. Check API keys.",
+                agent_name,
+            )
+            raise RuntimeError(
+                f"No LLM providers available for {agent_name}. "
+                "Check API keys are configured correctly in .env file."
+            )
+
         last_error: Exception | None = None
-        for provider in providers:
+        logger.info(
+            "Fallback: trying %d provider(s) for %s: %s",
+            len(providers), agent_name, [p.name for p in providers],
+        )
+        for idx, provider in enumerate(providers, 1):
             try:
+                logger.info(
+                    "Fallback attempt %d/%d: %s for %s",
+                    idx, len(providers), provider.name, agent_name,
+                )
                 response = await provider.generate(system_prompt, user_prompt)
                 self._cost_tracker.record(
                     provider=response.provider,
@@ -49,6 +67,10 @@ class FallbackChain:
                     total_tokens=response.total_tokens,
                     estimated_cost=response.cost,
                     duration_ms=response.duration_ms,
+                )
+                logger.info(
+                    "Provider %s succeeded for %s (tokens=%d, cost=%.4f)",
+                    provider.name, agent_name, response.total_tokens, response.cost,
                 )
                 return {
                     "content": response.content,
@@ -63,11 +85,15 @@ class FallbackChain:
             except Exception as e:
                 last_error = e
                 logger.warning(
-                    "Provider %s failed for %s: %s",
-                    provider.name, agent_name, e,
+                    "Provider %s failed for %s (attempt %d/%d): %s",
+                    provider.name, agent_name, idx, len(providers), e,
                 )
                 continue
 
+        logger.error(
+            "All %d provider(s) failed for %s. Last error: %s",
+            len(providers), agent_name, last_error,
+        )
         raise RuntimeError(
             f"All providers failed for {agent_name}. Last error: {last_error}"
         )

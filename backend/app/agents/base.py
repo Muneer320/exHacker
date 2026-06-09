@@ -34,15 +34,33 @@ class BaseAgent(ABC):
         return []
 
     async def run(self, state: dict[str, Any]) -> AgentResult:
-        self.logger.info("agent_execution_started")
+        self.logger.info(
+            "agent_execution_started",
+            input_keys=list(state.keys()),
+        )
         input_errors = self.validate_inputs(state)
         if input_errors:
             return AgentResult(
                 success=False,
                 error=f"Input validation failed: {', '.join(input_errors)}",
             )
-        result = await self.execute(state)
+        try:
+            result = await self.execute(state)
+        except Exception as exc:
+            self.logger.exception(
+                "agent_execution_exception",
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
+            return AgentResult(
+                success=False,
+                error=f"{type(exc).__name__}: {exc}",
+            )
         if result.success and result.output:
+            self.logger.info(
+                "agent_output_generated",
+                output_keys=list(result.output.keys()),
+            )
             output_errors = self.validate_output(result.output)
             if output_errors:
                 return AgentResult(

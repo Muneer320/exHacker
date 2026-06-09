@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import DateTime, Enum, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -43,6 +44,12 @@ class Project(Base):
         JSONB, nullable=True, default=None
     )
     completed_agents: Mapped[list[str] | None] = mapped_column(
+        JSONB, nullable=True, default=list
+    )
+    current_agent: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, default=None
+    )
+    agent_logs: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB, nullable=True, default=list
     )
     error_log: Mapped[list[dict[str, str]] | None] = mapped_column(

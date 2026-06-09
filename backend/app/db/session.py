@@ -22,6 +22,9 @@ async_session_factory = async_sessionmaker(
     expire_on_commit=False,
 )
 
+# Alias used by background tasks that can't use FastAPI DI
+AsyncSessionLocal = async_session_factory
+
 
 class Base(DeclarativeBase):
     pass

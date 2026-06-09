@@ -28,6 +28,8 @@ services:
       DATABASE_SYNC_URL: postgresql+psycopg2://exhacker:exhacker@postgres:5432/exhacker
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       XAI_API_KEY: ${XAI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       LLM_PROVIDER: ${LLM_PROVIDER:-auto}
@@ -38,6 +40,8 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - ./backend:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -45,6 +49,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: base
     container_name: exhacker-frontend
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
@@ -53,6 +58,11 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
 
   # Optional: uncomment for local Ollama LLM inference
   # ollama:

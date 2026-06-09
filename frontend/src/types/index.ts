@@ -3,7 +3,8 @@ export type ProjectStatus =
   | "researching"
   | "idea_generation"
   | "architecture"
-  | "completed";
+  | "completed"
+  | "failed";
 
 export interface TeamProfile {
   teamSize: number;
@@ -20,6 +21,27 @@ export interface ResourceCollection {
   documentationLinks: string[];
 }
 
+export interface AgentLogEntry {
+  agent: string;
+  started_at: string;
+  finished_at: string;
+  duration_ms: number;
+  success: boolean;
+  provider?: string;
+  model?: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  cost?: number;
+  error?: string;
+}
+
+export interface AgentError {
+  agent_name: string;
+  timestamp: string;
+  message: string;
+  severity: "warning" | "critical";
+}
+
 export interface HackathonProject {
   id: string;
   name: string;
@@ -31,7 +53,21 @@ export interface HackathonProject {
   team: TeamProfile;
   resources: ResourceCollection;
   currentStage: string;
+  currentAgent: string | null;
   completedAgents: string[];
+  agentLogs: AgentLogEntry[];
+  errorLog: AgentError[];
+}
+
+export interface WorkflowProgress {
+  project_id: string;
+  status: ProjectStatus;
+  current_stage: string;
+  current_agent: string | null;
+  completed_agents: string[];
+  agent_logs: AgentLogEntry[];
+  error_log: AgentError[];
+  updated_at: string | null;
 }
 
 export interface ChallengeIntelligence {
@@ -62,10 +98,5 @@ export interface ExHackerState {
   generatedIdeas?: Idea[];
   currentStage: string;
   completedAgents: string[];
-  errors: Array<{
-    agentName: string;
-    timestamp: string;
-    message: string;
-    severity: "warning" | "critical";
-  }>;
+  errors: AgentError[];
 }

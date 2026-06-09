@@ -1,5 +1,7 @@
 import time
-from typing import Any
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
+from typing import Any, cast
 from uuid import uuid4
 
 import structlog
@@ -25,6 +27,8 @@ from app.schemas.team import TeamProfile
 from app.schemas.tech_stack import TechStack
 
 logger = structlog.get_logger()
+
+ProgressCallback = Callable[[str, str, list[str], list[dict[str, Any]], list[dict[str, Any]]], Awaitable[None]]
 
 AGENT_TO_STATE_KEY: dict[str, str] = {
     "user_profiler": "team_profile",
@@ -54,6 +58,21 @@ AGENT_TO_STAGE: dict[str, WorkflowStage] = {
     "pitch_coach": WorkflowStage.PITCH,
 }
 
+# Ordered sequence used for progress display
+AGENT_SEQUENCE = [
+    "user_profiler",
+    "challenge_intelligence",
+    "problem_analyst",
+    "opportunity_planner",
+    "idea_generator",
+    "idea_validator",
+    "solution_architect",
+    "tech_stack_advisor",
+    "build_accelerator",
+    "presentation_agent",
+    "pitch_coach",
+]
+
 WORKFLOW_EDGES: list[tuple[str, str]] = [
     ("user_profiler", "challenge_intelligence"),
     ("challenge_intelligence", "problem_analyst"),
@@ -62,33 +81,36 @@ WORKFLOW_EDGES: list[tuple[str, str]] = [
     ("idea_generator", "idea_validator"),
 ]
 
-HUMAN_APPROVAL_AGENTS = {"idea_validator"}
-
 
 class WorkflowOrchestrator:
     def __init__(self) -> None:
         self._checkpointer = MemorySaver()
+        self._progress_callback: ProgressCallback | None = None
         self.graph = self._build_graph()
+
+    def set_progress_callback(self, callback: ProgressCallback) -> None:
+        """Register a callback invoked after every agent completes to update DB."""
+        self._progress_callback = callback
 
     def _build_graph(self) -> Any:
         workflow = StateGraph(ExHackerState)
 
+        # ── Register every agent node ONCE ───────────────────────────────────
         for agent_name in AGENT_TO_STAGE:
             workflow.add_node(agent_name, self._make_agent_node(agent_name))
 
+        # ── Special nodes ────────────────────────────────────────────────────
         workflow.add_node("human_approval", self._human_approval_node)
-        workflow.add_node("solution_architect", self._make_agent_node("solution_architect"))
-        workflow.add_node("tech_stack_advisor", self._make_agent_node("tech_stack_advisor"))
-        workflow.add_node("build_accelerator", self._make_agent_node("build_accelerator"))
-        workflow.add_node("presentation_agent", self._make_agent_node("presentation_agent"))
-        workflow.add_node("pitch_coach", self._make_agent_node("pitch_coach"))
         workflow.add_node("export", self._export_node)
 
+        # ── Entry point ──────────────────────────────────────────────────────
         workflow.set_entry_point("user_profiler")
 
+        # ── Linear edges (up to idea_generator → idea_validator) ────────────
         for src, dst in WORKFLOW_EDGES:
             workflow.add_edge(src, dst)
 
+        # ── Conditional routing after validation ─────────────────────────────
         workflow.add_conditional_edges(
             "idea_validator",
             self._route_after_validation,
@@ -107,6 +129,7 @@ class WorkflowOrchestrator:
             },
         )
 
+        # ── Post-approval linear chain ────────────────────────────────────────
         workflow.add_edge("solution_architect", "tech_stack_advisor")
         workflow.add_edge("tech_stack_advisor", "build_accelerator")
         workflow.add_edge("build_accelerator", "presentation_agent")
@@ -117,28 +140,112 @@ class WorkflowOrchestrator:
 
         return workflow.compile(checkpointer=self._checkpointer)
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Node factories
+    # ─────────────────────────────────────────────────────────────────────────
+
     def _make_agent_node(self, agent_name: str) -> Any:
         async def _run(state: ExHackerState) -> dict[str, Any]:
             agent = AgentRegistry.get(agent_name)
             if not agent:
+                err_msg = f"Agent '{agent_name}' not found in registry"
+                logger.error("agent_not_found", agent=agent_name)
                 return {"errors": [AgentError(
                     agent_name=agent_name,
-                    timestamp="",
-                    message=f"Agent {agent_name} not found",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    message=err_msg,
                     severity=AgentErrorSeverity.CRITICAL,
                 )]}
 
+            ts_start = datetime.now(UTC).isoformat()
             start = time.monotonic()
-            logger.info("agent_started", agent=agent_name)
-            state_dict = state.model_dump()
-            result = await agent.run(state_dict)
-            elapsed = int((time.monotonic() - start) * 1000)
-            logger.info("agent_completed", agent=agent_name, duration_ms=elapsed, success=result.success)
+            logger.info(
+                "agent_started",
+                agent=agent_name,
+                project_id=state.project.id,
+                stage=AGENT_TO_STAGE.get(agent_name, "unknown"),
+            )
 
+            # Notify DB: this agent is now running
+            if self._progress_callback:
+                await self._progress_callback(
+                    state.project.id,
+                    agent_name,
+                    state.completed_agents,
+                    cast(list[dict[str, Any]], state.agent_metadata.get("logs", [])),
+                    [e.model_dump() for e in state.errors],
+                )
+
+            state_dict = state.model_dump()
+            try:
+                result = await agent.run(state_dict)
+            except Exception as exc:
+                logger.exception(
+                    "agent_node_crash",
+                    agent=agent_name,
+                    project_id=state.project.id,
+                    error=str(exc),
+                )
+                elapsed = int((time.monotonic() - start) * 1000)
+                return {
+                    "completed_agents": [*state.completed_agents, agent_name],
+                    "current_stage": AGENT_TO_STAGE.get(agent_name, state.current_stage),
+                    "errors": [*state.errors, AgentError(
+                        agent_name=agent_name,
+                        timestamp=ts_start,
+                        message=f"{type(exc).__name__}: {exc}",
+                        severity=AgentErrorSeverity.CRITICAL,
+                    )],
+                }
+            elapsed = int((time.monotonic() - start) * 1000)
+
+            # Build structured log entry
+            log_entry: dict[str, Any] = {
+                "agent": agent_name,
+                "started_at": ts_start,
+                "finished_at": datetime.now(UTC).isoformat(),
+                "duration_ms": elapsed,
+                "success": result.success,
+            }
+            if result.metadata:
+                log_entry["provider"] = result.metadata.get("provider", "")
+                log_entry["model"] = result.metadata.get("model", "")
+                log_entry["input_tokens"] = result.metadata.get("input_tokens", 0)
+                log_entry["output_tokens"] = result.metadata.get("output_tokens", 0)
+                log_entry["cost"] = result.metadata.get("cost", 0.0)
+
+            if result.success:
+                logger.info(
+                    "agent_completed",
+                    agent=agent_name,
+                    project_id=state.project.id,
+                    duration_ms=elapsed,
+                    provider=log_entry.get("provider", ""),
+                    model=log_entry.get("model", ""),
+                    tokens=log_entry.get("input_tokens", 0) + log_entry.get("output_tokens", 0),
+                    cost=log_entry.get("cost", 0.0),
+                    state_key=AGENT_TO_STATE_KEY.get(agent_name),
+                )
+            else:
+                log_entry["error"] = result.error
+                logger.error(
+                    "agent_failed",
+                    agent=agent_name,
+                    project_id=state.project.id,
+                    duration_ms=elapsed,
+                    error=result.error,
+                )
+
+            # Build state update
             update: dict[str, Any] = {
                 "completed_agents": [*state.completed_agents, agent_name],
                 "current_stage": AGENT_TO_STAGE.get(agent_name, state.current_stage),
             }
+
+            existing_logs: list[dict[str, Any]] = cast(
+                list[dict[str, Any]], state.agent_metadata.get("logs", []),
+            )
+            existing_logs.append(log_entry)
 
             if result.success and result.output:
                 state_key = AGENT_TO_STATE_KEY.get(agent_name)
@@ -153,19 +260,39 @@ class WorkflowOrchestrator:
             else:
                 error = AgentError(
                     agent_name=agent_name,
-                    timestamp="",
+                    timestamp=ts_start,
                     message=result.error or "Unknown error",
                     severity=AgentErrorSeverity.CRITICAL if agent.critical else AgentErrorSeverity.WARNING,
                 )
                 update["errors"] = [*state.errors, error]
                 if agent.critical:
+                    update["agent_metadata"] = {**state.agent_metadata, "logs": existing_logs}
+                    # Notify DB of failure
+                    if self._progress_callback:
+                        await self._progress_callback(
+                            state.project.id,
+                            "",  # no current agent (stopped)
+                            update["completed_agents"],
+                            existing_logs,
+                            [e.model_dump() for e in update["errors"]],
+                        )
                     return update
 
-            if result.metadata:
-                update["agent_metadata"] = {
-                    **state.agent_metadata,
-                    agent_name: {"duration_ms": elapsed, **result.metadata},
-                }
+            update["agent_metadata"] = {
+                **state.agent_metadata,
+                "logs": existing_logs,
+                agent_name: {"duration_ms": elapsed, **(result.metadata or {})},
+            }
+
+            # Notify DB: agent finished, clear current_agent
+            if self._progress_callback:
+                await self._progress_callback(
+                    state.project.id,
+                    "",  # cleared — next agent will set it when it starts
+                    update["completed_agents"],
+                    existing_logs,
+                    [e.model_dump() for e in state.errors],
+                )
 
             return update
 
@@ -188,13 +315,19 @@ class WorkflowOrchestrator:
 
     def _route_after_validation(self, state: ExHackerState) -> str:
         if not state.validation_reports:
+            logger.warning("no_validation_reports_regenerating", project_id=state.project.id)
             return "idea_generator"
         return "human_approval"
 
     def _route_after_approval(self, state: ExHackerState) -> str:
         if state.selected_idea is None:
+            logger.warning("no_idea_selected_regenerating", project_id=state.project.id)
             return "idea_generator"
         return "solution_architect"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Export helper
+    # ─────────────────────────────────────────────────────────────────────────
 
     def _generate_export_package(self, state: ExHackerState) -> dict[str, Any]:
         export: dict[str, Any] = {"status": "ready"}
@@ -224,16 +357,54 @@ class WorkflowOrchestrator:
             export["pitch"] = state.pitch.model_dump()
         return export
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Public API
+    # ─────────────────────────────────────────────────────────────────────────
+
     async def run_workflow(self, initial_state: ExHackerState) -> ExHackerState:
         thread_id = str(uuid4())
         config = {"configurable": {"thread_id": thread_id}}
-        logger.info("workflow_started", project_id=initial_state.project.id, thread_id=thread_id)
-        events: list[dict[str, Any]] = []
-        async for event in self.graph.astream(initial_state, config=config):
-            events.append(event)
+        project_id = initial_state.project.id
+
+        logger.info(
+            "workflow_run_started",
+            project_id=project_id,
+            thread_id=thread_id,
+            agents=AGENT_SEQUENCE,
+        )
+
+        try:
+            async for event in self.graph.astream(initial_state, config=config):
+                # Log each graph event for visibility
+                for node_name, node_output in event.items():
+                    if isinstance(node_output, dict):
+                        completed = node_output.get("completed_agents", [])
+                        stage = node_output.get("current_stage", "")
+                        logger.info(
+                            "graph_event",
+                            project_id=project_id,
+                            node=node_name,
+                            stage=stage,
+                            completed_count=len(completed),
+                        )
+        except Exception as exc:
+            logger.exception(
+                "workflow_run_error",
+                project_id=project_id,
+                thread_id=thread_id,
+                error=str(exc),
+            )
+            raise
+
         snapshot = await self.graph.aget_state(config)
         final_state = ExHackerState.model_validate(snapshot.values)
-        logger.info("workflow_completed", project_id=initial_state.project.id, thread_id=thread_id)
+        logger.info(
+            "workflow_run_finished",
+            project_id=project_id,
+            thread_id=thread_id,
+            completed_agents=final_state.completed_agents,
+            errors=[e.agent_name for e in final_state.errors],
+        )
         return final_state
 
     async def resume_workflow(
@@ -241,9 +412,8 @@ class WorkflowOrchestrator:
     ) -> ExHackerState:
         config = {"configurable": {"thread_id": thread_id}}
         logger.info("workflow_resumed", project_id=state.project.id, thread_id=thread_id)
-        events: list[dict[str, Any]] = []
-        async for event in self.graph.astream(state, config=config):
-            events.append(event)
+        async for _ in self.graph.astream(state, config=config):
+            pass
         snapshot = await self.graph.aget_state(config)
         return ExHackerState.model_validate(snapshot.values)
 
@@ -252,10 +422,13 @@ class WorkflowOrchestrator:
     ) -> ExHackerState:
         agent = AgentRegistry.get(agent_name)
         if not agent:
-            raise ValueError(f"Agent {agent_name} not found")
+            raise ValueError(f"Agent '{agent_name}' not found in registry")
 
+        logger.info("single_agent_run_started", agent=agent_name, project_id=state.project.id)
+        start = time.monotonic()
         state_dict = state.model_dump()
         result = await agent.run(state_dict)
+        elapsed = int((time.monotonic() - start) * 1000)
 
         if result.success and result.output:
             state_key = AGENT_TO_STATE_KEY.get(agent_name)
@@ -263,7 +436,9 @@ class WorkflowOrchestrator:
                 if state_key == "generated_ideas":
                     state.generated_ideas = [Idea(**i) for i in result.output.get("ideas", [])]
                 elif state_key == "validation_reports":
-                    state.validation_reports = [ValidationReport(**r) for r in result.output.get("validation_reports", [])]
+                    state.validation_reports = [
+                        ValidationReport(**r) for r in result.output.get("validation_reports", [])
+                    ]
                     state.generated_ideas = [Idea(**i) for i in result.output.get("ideas", [])]
                 else:
                     schema = self._state_key_to_schema(state_key)
@@ -271,16 +446,31 @@ class WorkflowOrchestrator:
                         setattr(state, state_key, schema(**result.output))
                     else:
                         setattr(state, state_key, result.output)
+            logger.info(
+                "single_agent_run_completed",
+                agent=agent_name,
+                project_id=state.project.id,
+                duration_ms=elapsed,
+                success=True,
+            )
         else:
             error = AgentError(
                 agent_name=agent_name,
-                timestamp="",
+                timestamp=datetime.now(UTC).isoformat(),
                 message=result.error or "Unknown error",
                 severity=AgentErrorSeverity.CRITICAL if agent.critical else AgentErrorSeverity.WARNING,
             )
             state.errors = [*state.errors, error]
+            logger.error(
+                "single_agent_run_failed",
+                agent=agent_name,
+                project_id=state.project.id,
+                duration_ms=elapsed,
+                error=result.error,
+            )
 
         state.completed_agents = [*state.completed_agents, agent_name]
+        state.current_stage = AGENT_TO_STAGE.get(agent_name, state.current_stage)
         return state
 
     def _state_key_to_schema(self, key: str) -> type | None:
@@ -297,6 +487,10 @@ class WorkflowOrchestrator:
         }
         return mapping.get(key)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Singleton
+# ─────────────────────────────────────────────────────────────────────────────
 
 _orchestrator: WorkflowOrchestrator | None = None
 

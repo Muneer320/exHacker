@@ -2,41 +2,83 @@
 
 import { useParams, useRouter } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useProject, useStartWorkflow } from "@/hooks/use-projects";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useProject, useStartWorkflow, useWorkflowProgress } from "@/hooks/use-projects";
 import { projectsService } from "@/services/projects";
+import { AgentLogEntry, AgentError } from "@/types";
 
 const workflowSteps = [
-  { key: "user_profiler", label: "User Profile", stage: "challenge_intelligence" },
-  { key: "challenge_intelligence", label: "Challenge Intelligence", stage: "challenge_intelligence" },
-  { key: "problem_analyst", label: "Problem Analysis", stage: "problem_analysis" },
-  { key: "opportunity_planner", label: "Opportunity Discovery", stage: "opportunity_analysis" },
-  { key: "idea_generator", label: "Idea Generation", stage: "idea_generation" },
-  { key: "idea_validator", label: "Idea Validation", stage: "idea_validation" },
-  { key: "solution_architect", label: "Solution Architecture", stage: "architecture" },
-  { key: "tech_stack_advisor", label: "Tech Stack", stage: "tech_stack" },
-  { key: "build_accelerator", label: "Build Accelerator", stage: "build_acceleration" },
-  { key: "presentation_agent", label: "Presentation", stage: "presentation" },
-  { key: "pitch_coach", label: "Pitch Coach", stage: "pitch" },
+  { key: "user_profiler", label: "User Profile" },
+  { key: "challenge_intelligence", label: "Challenge Intelligence" },
+  { key: "problem_analyst", label: "Problem Analysis" },
+  { key: "opportunity_planner", label: "Opportunity Discovery" },
+  { key: "idea_generator", label: "Idea Generation" },
+  { key: "idea_validator", label: "Idea Validation" },
+  { key: "solution_architect", label: "Solution Architecture" },
+  { key: "tech_stack_advisor", label: "Tech Stack" },
+  { key: "build_accelerator", label: "Build Accelerator" },
+  { key: "presentation_agent", label: "Presentation" },
+  { key: "pitch_coach", label: "Pitch Coach" },
 ];
 
-function getStageIndex(stage: string): number {
-  const stages = [
-    "input", "challenge_intelligence", "problem_analysis",
-    "opportunity_analysis", "idea_generation", "idea_validation",
-    "idea_selection", "architecture", "tech_stack",
-    "build_acceleration", "presentation", "pitch", "completed",
-  ];
-  return stages.indexOf(stage);
+function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[] }) {
+  if (logs.length === 0 && errors.length === 0) {
+    return (
+      <div className="flex h-32 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+        No logs yet. Start the workflow to see agent activity.
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="h-64 rounded-md border bg-black/5 p-4 dark:bg-white/5">
+      <div className="space-y-3">
+        {logs.map((log, i) => (
+          <div key={i} className="flex flex-col gap-1 rounded bg-background p-2 text-sm shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-primary">{log.agent}</span>
+              <span className="text-xs text-muted-foreground">
+                {(log.duration_ms / 1000).toFixed(1)}s
+              </span>
+            </div>
+            <div className="flex gap-2 text-xs text-muted-foreground">
+              {log.provider && (
+                <Badge variant="outline" className="text-[10px]">
+                  {log.provider}
+                </Badge>
+              )}
+              {log.model && <span>{log.model}</span>}
+              {log.cost !== undefined && <span>${log.cost.toFixed(4)}</span>}
+            </div>
+            {!log.success && log.error && (
+              <div className="mt-1 text-destructive">{log.error}</div>
+            )}
+          </div>
+        ))}
+        {errors.map((err, i) => (
+          <div key={`err-${i}`} className="rounded bg-destructive/10 p-2 text-sm text-destructive">
+            <span className="font-semibold">{err.agent_name || "System"}:</span> {err.message}
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+  );
 }
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  
   const { data: project, isLoading, refetch } = useProject(params.id);
   const startWorkflow = useStartWorkflow();
+
+  const isWorkflowActive = project?.status === "researching" || project?.status === "idea_generation" || project?.status === "architecture";
+  const isFailed = project?.status === "failed";
+  const { data: progressData } = useWorkflowProgress(params.id, isWorkflowActive || isFailed);
 
   const handleRunAgent = async (agentName: string) => {
     await projectsService.runAgent(params.id, agentName);
@@ -46,7 +88,10 @@ export default function ProjectDetailPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading project...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-muted-foreground">Loading project...</p>
+        </div>
       </div>
     );
   }
@@ -59,9 +104,14 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const stageIndex = getStageIndex(project.currentStage || "input");
-  const progress = Math.round((stageIndex / 12) * 100);
-  const completedSet = new Set(project.completedAgents || []);
+  // Merge local progress state with project state
+  const completedAgents = progressData?.completed_agents || project.completedAgents || [];
+  const completedSet = new Set(completedAgents);
+  const currentAgent = progressData?.current_agent || project.currentAgent || null;
+  const agentLogs = progressData?.agent_logs || project.agentLogs || [];
+  const errorLog = progressData?.error_log || project.errorLog || [];
+
+  const progressPct = Math.round((completedSet.size / workflowSteps.length) * 100);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -69,17 +119,41 @@ export default function ProjectDetailPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">{project.name}</h1>
-            <p className="text-muted-foreground">
-              Status: {project.status} &middot; Stage: {project.currentStage || "input"}
-            </p>
+            <div className="text-muted-foreground mt-1 flex items-center gap-2">
+              <span>Status:</span>
+              <Badge
+                variant={
+                  project.status === "completed"
+                    ? "default"
+                    : project.status === "failed"
+                      ? "destructive"
+                      : "secondary"
+                }
+                className={
+                  project.status === "researching" ? "animate-pulse" : ""
+                }
+              >
+                {project.status}
+              </Badge>
+            </div>
           </div>
           <div className="flex gap-2">
             {project.status === "draft" && (
               <Button
                 onClick={() => startWorkflow.mutate(params.id)}
                 disabled={startWorkflow.isPending}
+                className="relative overflow-hidden"
               >
-                {startWorkflow.isPending ? "Starting..." : "Start Analysis"}
+                {startWorkflow.isPending ? (
+                  <>
+                    <span className="opacity-0">Start Analysis</span>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    </div>
+                  </>
+                ) : (
+                  "Start Analysis"
+                )}
               </Button>
             )}
             <Button variant="outline" onClick={() => router.push("/projects")}>
@@ -88,59 +162,130 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <Progress value={progress} className="h-2" />
-          <p className="mt-1 text-sm text-muted-foreground">
-            {progress}% complete
-          </p>
+        <div className="mt-8">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">Overall Progress</span>
+            <span className="font-bold">{progressPct}%</span>
+          </div>
+          <Progress value={progressPct} className="h-3" />
         </div>
       </div>
 
-      <div className="grid gap-3">
-        {workflowSteps.map((step) => {
-          const isCompleted = completedSet.has(step.key);
-          const isActive = step.stage === project.currentStage;
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Agent Pipeline</h2>
+          <div className="space-y-3 relative before:absolute before:inset-y-0 before:left-4 before:w-0.5 before:bg-muted">
+            {workflowSteps.map((step, idx) => {
+              const isCompleted = completedSet.has(step.key);
+              const isRunning = currentAgent === step.key;
+              const hasError = errorLog.some(e => e.agent_name === step.key);
+              
+              let statusColor = "bg-muted text-muted-foreground";
+              let statusRing = "border-transparent";
+              let statusIcon: string | number = idx + 1;
+              
+              if (isCompleted) {
+                statusColor = "bg-green-500 text-white";
+                statusIcon = "✓";
+              } else if (isRunning) {
+                statusColor = "bg-primary text-primary-foreground";
+                statusRing = "ring-4 ring-primary/20 animate-pulse";
+              } else if (hasError) {
+                statusColor = "bg-destructive text-white";
+                statusIcon = "!";
+              }
 
-          return (
-            <Card
-              key={step.key}
-              className={`transition-colors ${
-                isCompleted
-                  ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20"
-                  : isActive
-                    ? "border-primary"
-                    : ""
-              }`}
-            >
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {isCompleted ? "\u2713" : workflowSteps.indexOf(step) + 1}
-                    </div>
-                    <CardTitle className="text-base">{step.label}</CardTitle>
+              return (
+                <div key={step.key} className="relative flex items-center gap-4 pl-12 group transition-all">
+                  <div
+                    className={`absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-300 ${statusColor} ${statusRing}`}
+                  >
+                    {isRunning ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      statusIcon
+                    )}
                   </div>
-                  {isActive && project.status !== "completed" && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleRunAgent(step.key)}
-                    >
-                      Run
-                    </Button>
-                  )}
+                  
+                  <Card className={`w-full transition-all duration-300 ${
+                    isRunning
+                      ? "border-primary shadow-lg scale-[1.02] animate-pulse"
+                      : hasError
+                        ? "border-destructive/50"
+                        : "hover:border-primary/50"
+                  }`}>
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+                      <div className="flex flex-col">
+                        <CardTitle className="text-sm">{step.label}</CardTitle>
+                        {isRunning && (
+                          <span className="text-xs text-primary animate-pulse mt-0.5 font-medium">Processing...</span>
+                        )}
+                        {hasError && (
+                          <span className="text-xs text-destructive mt-0.5">Failed</span>
+                        )}
+                      </div>
+                      
+                      {(!isWorkflowActive && project.status !== "completed" && project.status !== "draft") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRunAgent(step.key)}
+                        >
+                          Run
+                        </Button>
+                      )}
+                    </CardHeader>
+                  </Card>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Live Logs</h2>
+          <Card>
+            <CardContent className="p-0">
+              <LogPanel logs={agentLogs} errors={errorLog} />
+            </CardContent>
+          </Card>
+          
+          {project.status === "completed" && (
+            <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
+              <CardHeader>
+                <CardTitle className="text-green-700 dark:text-green-400">Analysis Complete!</CardTitle>
               </CardHeader>
+              <CardContent className="text-sm text-green-600 dark:text-green-300">
+                All agents have successfully processed the project parameters.
+                You can now export the results or view the generated architecture.
+              </CardContent>
             </Card>
-          );
-        })}
+          )}
+
+          {isFailed && (
+            <Card className="border-destructive/50 bg-destructive/10">
+              <CardHeader>
+                <CardTitle className="text-destructive">Workflow Failed</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-destructive/80 space-y-2">
+                <p>The workflow encountered an error and could not complete.</p>
+                {errorLog.length > 0 && (
+                  <div className="rounded bg-destructive/20 p-2 font-mono text-xs">
+                    {errorLog.map((err, i) => (
+                      <div key={i} className="mb-1 last:mb-0">
+                        <span className="font-semibold">{err.agent_name}:</span> {err.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-muted-foreground text-xs">
+                  Check your API keys in the .env file and try creating a new project.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </main>
   );

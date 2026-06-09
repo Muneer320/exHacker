@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { HackathonProject } from "@/types";
+import type { HackathonProject, WorkflowProgress } from "@/types";
 
 export interface CreateProjectPayload {
   name: string;
@@ -28,6 +28,9 @@ export const projectsService = {
 
   startWorkflow: (id: string) =>
     api.post<{ status: string; project_id: string }>(`/workflows/${id}/start`, {}),
+
+  getProgress: (id: string) =>
+    api.get<WorkflowProgress>(`/workflows/${id}/progress`),
 
   runAgent: (projectId: string, agentName: string) =>
     api.post<{ status: string; agent: string }>(

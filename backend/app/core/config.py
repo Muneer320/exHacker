@@ -4,6 +4,20 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _find_env_file() -> str:
+    """Search for .env in CWD, the dir of this file's grandparent*4, or the
+    project root so that pydantic-settings always finds it regardless of CWD."""
+    candidates = [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parent.parent.parent.parent / ".env",  # <project>/.env
+        Path(__file__).resolve().parent.parent.parent / ".env",         # backend/.env
+    ]
+    for p in candidates:
+        if p.is_file():
+            return str(p)
+    return ".env"
+
+
 class LogLevel(StrEnum):
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -20,7 +34,7 @@ class Environment(StrEnum):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_find_env_file(),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
