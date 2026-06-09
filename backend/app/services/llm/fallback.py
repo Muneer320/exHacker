@@ -120,14 +120,18 @@ class FallbackChain:
         )
 
     def _extract_json(self, text: str) -> dict[str, Any]:
-        """Extract JSON from LLM response, stripping markdown fences."""
+        """Extract JSON from LLM response, finding it anywhere in the text."""
         import json
         import re
 
         text = text.strip()
-        # Remove markdown JSON code fences
-        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*```$", "", text)
+        # Remove markdown code fences and any leading/trailing text
+        text = re.sub(r"^[\s\S]*?```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```[\s\S]*$", "", text)
+        # Try to find a JSON object anywhere
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            text = match.group(0)
         try:
             return json.loads(text)
         except json.JSONDecodeError:

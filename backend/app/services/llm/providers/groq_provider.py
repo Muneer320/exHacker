@@ -51,6 +51,7 @@ class GroqProvider(LLMProvider):
             ],
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
+            response_format={"type": "json_object"},
         )
 
         duration = int((time.monotonic() - start) * 1000)
