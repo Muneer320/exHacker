@@ -29,68 +29,142 @@ const workflowSteps = [
   { key: "pitch_coach", label: "Pitch Coach" },
 ];
 
-function LogEntry({ log }: { log: AgentLogEntry }) {
-  const [expanded, setExpanded] = useState(false);
+const STATE_KEYS: Record<string, string> = {
+  user_profiler: "teamProfile",
+  challenge_intelligence: "challengeIntelligence",
+  problem_analyst: "problemAnalysis",
+  opportunity_planner: "opportunityAnalysis",
+  idea_generator: "generatedIdeas",
+  idea_validator: "validationReports",
+  solution_architect: "architecture",
+  tech_stack_advisor: "techStack",
+  build_accelerator: "prompts",
+  presentation_agent: "presentation",
+  pitch_coach: "pitch",
+};
+
+function AgentDetail({
+  agentName,
+  log,
+  stateValue,
+}: {
+  agentName: string;
+  log?: AgentLogEntry;
+  stateValue: unknown;
+}) {
+  const step = workflowSteps.find(s => s.key === agentName);
+
+  if (!log) {
+    return (
+      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+        No data available for this agent.
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded bg-background p-2 text-sm shadow-sm">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-2"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <span className="font-semibold text-primary">{log.agent}</span>
-        <div className="flex items-center gap-2">
-          {!log.success && log.error && (
-            <span className="text-xs text-destructive">Failed</span>
-          )}
-          <span className="text-xs text-muted-foreground">
-            {(log.durationMs / 1000).toFixed(1)}s
-          </span>
-          <span className="text-xs text-muted-foreground">{expanded ? "▲" : "▼"}</span>
-        </div>
-      </button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{step?.label || agentName}</h3>
+        <Badge variant={log.success ? "default" : "destructive"}>
+          {log.success ? "Success" : "Failed"}
+        </Badge>
+      </div>
 
-      {expanded && (
-        <div className="mt-2 space-y-1.5 border-t pt-2 text-xs text-muted-foreground">
-          {log.provider && (
-            <div>
-              <span className="font-medium">Provider:</span> {log.provider}
-              {log.model && <> / {log.model}</>}
-            </div>
-          )}
-          {log.cost !== undefined && (
-            <div>
-              <span className="font-medium">Cost:</span> ${log.cost.toFixed(4)}
-            </div>
-          )}
-          {log.inputTokens !== undefined && (
-            <div>
-              <span className="font-medium">Tokens:</span> {log.inputTokens} in / {log.outputTokens} out
-            </div>
-          )}
-          {log.startedAt && (
-            <div>
-              <span className="font-medium">Started:</span> {new Date(log.startedAt).toLocaleTimeString()}
-            </div>
-          )}
-          {log.finishedAt && (
-            <div>
-              <span className="font-medium">Finished:</span> {new Date(log.finishedAt).toLocaleTimeString()}
-            </div>
-          )}
-          {!log.success && log.error && (
-            <div className="rounded bg-destructive/10 p-1 text-destructive">
-              <span className="font-medium">Error:</span> {log.error}
-            </div>
-          )}
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded bg-muted p-2">
+          <div className="text-xs text-muted-foreground">Duration</div>
+          <div className="font-medium">{(log.durationMs / 1000).toFixed(1)}s</div>
+        </div>
+        {log.provider && (
+          <div className="rounded bg-muted p-2">
+            <div className="text-xs text-muted-foreground">Provider</div>
+            <div className="font-medium">{log.provider}</div>
+          </div>
+        )}
+        {log.model && (
+          <div className="rounded bg-muted p-2">
+            <div className="text-xs text-muted-foreground">Model</div>
+            <div className="font-medium text-xs">{log.model}</div>
+          </div>
+        )}
+        {log.cost !== undefined && (
+          <div className="rounded bg-muted p-2">
+            <div className="text-xs text-muted-foreground">Cost</div>
+            <div className="font-medium">${log.cost.toFixed(4)}</div>
+          </div>
+        )}
+        {log.inputTokens !== undefined && (
+          <div className="rounded bg-muted p-2">
+            <div className="text-xs text-muted-foreground">Tokens</div>
+            <div className="font-medium">{log.inputTokens} → {log.outputTokens}</div>
+          </div>
+        )}
+        {log.startedAt && (
+          <div className="rounded bg-muted p-2">
+            <div className="text-xs text-muted-foreground">Started</div>
+            <div className="font-medium text-xs">{new Date(log.startedAt).toLocaleString()}</div>
+          </div>
+        )}
+      </div>
+
+      {!log.success && log.error && (
+        <div className="rounded bg-destructive/10 p-3 text-sm">
+          <div className="mb-1 font-medium text-destructive">Error</div>
+          <div className="whitespace-pre-wrap font-mono text-xs text-destructive/80">
+            {log.error.includes("rate_limit") || log.error.includes("429") || log.error.includes("Rate limit")
+              ? "Rate limit reached. Please wait a few minutes or add a Gemini API key as fallback in your .env file."
+              : log.error}
+          </div>
+        </div>
+      )}
+
+      {stateValue && (
+        <div>
+          <div className="mb-1 text-sm font-medium">Output</div>
+          <ScrollArea className="max-h-64">
+            <pre className="rounded bg-muted p-3 font-mono text-xs leading-relaxed">
+              {formatOutput(stateValue)}
+            </pre>
+          </ScrollArea>
         </div>
       )}
     </div>
   );
 }
 
-function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[] }) {
+function formatOutput(val: unknown): string {
+  if (Array.isArray(val)) {
+    return val.map(item => {
+      if (typeof item === "object" && item !== null) {
+        return Object.entries(item)
+          .filter(([k]) => !["id"].includes(k))
+          .map(([k, v]) => {
+            const label = k.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+            if (Array.isArray(v)) return `${label}: ${v.join(", ")}`;
+            if (typeof v === "object" && v !== null) return `${label}: ${JSON.stringify(v)}`;
+            return `${label}: ${v}`;
+          })
+          .join("\n");
+      }
+      return String(item);
+    }).join("\n---\n");
+  }
+  if (typeof val === "object" && val !== null) {
+    return Object.entries(val)
+      .filter(([k]) => !["id"].includes(k))
+      .map(([k, v]) => {
+        const label = k.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+        if (Array.isArray(v)) return `${label}: ${v.join(", ")}`;
+        if (typeof v === "object" && v !== null) return `${label}: ${JSON.stringify(v, null, 2)}`;
+        return `${label}: ${v}`;
+      })
+      .join("\n");
+  }
+  return String(val);
+}
+
+function LogPanel({ logs, errors, onSelect }: { logs: AgentLogEntry[]; errors: AgentError[]; onSelect: (agent: string) => void }) {
   if (logs.length === 0 && errors.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
@@ -100,13 +174,31 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
   }
 
   return (
-    <ScrollArea className="h-80 rounded-md border bg-black/5 p-4 dark:bg-white/5">
-      <div className="space-y-2">
+    <ScrollArea className="h-80 rounded-md border bg-black/5 dark:bg-white/5">
+      <div className="space-y-1 p-2">
         {logs.map((log, i) => (
-          <LogEntry key={i} log={log} />
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSelect(log.agent)}
+            className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
+              !log.success ? "bg-destructive/5" : ""
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${log.success ? "bg-green-500" : "bg-destructive"}`} />
+              <span className="font-medium truncate">{log.agent}</span>
+              {!log.success && log.error && (
+                <span className="text-xs text-destructive shrink-0">Failed</span>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0 ml-2">
+              {(log.durationMs / 1000).toFixed(1)}s
+            </span>
+          </button>
         ))}
         {errors.map((err, i) => (
-          <div key={`err-${i}`} className="rounded bg-destructive/10 p-2 text-sm text-destructive">
+          <div key={`err-${i}`} className="rounded bg-destructive/10 px-3 py-2 text-xs text-destructive">
             <span className="font-semibold">{err.agentName || "System"}:</span> {err.message}
           </div>
         ))}
@@ -118,69 +210,79 @@ function LogPanel({ logs, errors }: { logs: AgentLogEntry[]; errors: AgentError[
 function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: Dict[]; projectId: string; onSelect: () => void; onRegenerate: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   return (
-    <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
-      <CardHeader>
-        <CardTitle className="text-amber-700 dark:text-amber-400">
-          Select an Idea ({ideas.length} generated)
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-amber-600 dark:text-amber-300">
-          Review the generated ideas and pick one to continue, or regenerate.
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Select an Idea</CardTitle>
+          <Badge variant="outline">{ideas.length} generated</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose an idea to build, or regenerate for new options.
         </p>
-        <ScrollArea className="max-h-64">
-          <div className="space-y-2">
+      </CardHeader>
+      <CardContent className="p-0">
+        <ScrollArea className="max-h-[400px]">
+          <div className="space-y-2 p-4">
             {ideas.map((idea) => {
-              const id = (idea as Record<string, string>).id || "";
-              const title = (idea as Record<string, string>).title || "Untitled";
-              const desc = (idea as Record<string, string>).description || "";
-              const score = (idea as Record<string, number>).innovationScore ?? (idea as Record<string, number>).innovation_score ?? 0;
-              const features = (idea as Record<string, string[]>).keyFeatures || (idea as Record<string, string[]>).key_features || [];
+              const id = idea.id || "";
+              const title = idea.title || "Untitled";
+              const desc = idea.description || "";
+              const score = idea.finalScore ?? idea.final_score ?? idea.innovationScore ?? idea.innovation_score ?? 0;
+              const features = idea.keyFeatures || idea.key_features || [];
+              const isSelected = selected === id;
 
               return (
                 <button
                   key={id}
                   type="button"
-                  className={`w-full rounded border p-3 text-left text-sm transition-all ${
-                    selected === id
-                      ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30"
-                      : "border-transparent bg-background hover:border-amber-500/50"
+                  className={`w-full rounded-lg border p-4 text-left transition-all ${
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border hover:border-primary/50 hover:bg-accent/50"
                   }`}
                   onClick={() => setSelected(id)}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{title}</span>
-                    <Badge variant="outline" className="text-xs">
-                      Score: {typeof score === "number" ? score.toFixed(1) : score}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{desc}</div>
-                  {features.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {features.slice(0, 4).map((f: string, fi: number) => (
-                        <span key={fi} className="rounded bg-muted px-1.5 py-0.5 text-[10px]">{f}</span>
-                      ))}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{title}</div>
+                      <div className="mt-1 text-sm text-muted-foreground line-clamp-2">{desc}</div>
+                      {features.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {features.slice(0, 5).map((f: string, fi: number) => (
+                            <span key={fi} className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div className="shrink-0 text-right">
+                      <div className="text-2xl font-bold tabular-nums">{typeof score === "number" ? Math.round(score) : score}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
+                    </div>
+                  </div>
                 </button>
               );
             })}
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3 border-t p-4">
           <Button
+            className="flex-1"
             onClick={async () => {
               if (!selected) return;
+              setSubmitting(true);
               await projectsService.selectIdea(projectId, selected);
+              setSubmitting(false);
               onSelect();
             }}
-            disabled={!selected}
-            className="flex-1"
+            disabled={!selected || submitting}
           >
-            Build This Idea
+            {submitting ? "Building..." : "Build This Idea"}
           </Button>
           <Button
             variant="outline"
@@ -192,7 +294,183 @@ function IdeaPicker({ ideas, projectId, onSelect, onRegenerate }: { ideas: Dict[
             }}
             disabled={regenerating}
           >
-            {regenerating ? "Generating..." : "Regenerate Ideas"}
+            {regenerating ? "Generating..." : "Regenerate"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ArchitectureReviewPanel({ arch, projectId, onApprove }: { arch: Dict | null; projectId: string; onApprove: () => void }) {
+  const [approving, setApproving] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle className="text-base">Architecture Review</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Review the proposed architecture before continuing.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        {arch && (
+          <>
+            {arch.vision && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Vision</div>
+                <p className="text-sm">{arch.vision}</p>
+              </div>
+            )}
+            {arch.features?.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Features</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {arch.features.map((f: string, i: number) => (
+                    <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {arch.userStories?.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">User Stories</div>
+                <ul className="list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
+                  {arch.userStories.map((s: string, i: number) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+        <div className="flex gap-3 pt-2 border-t">
+          <Button
+            className="flex-1"
+            onClick={async () => {
+              setApproving(true);
+              await projectsService.approveCheckpoint(projectId);
+              setApproving(false);
+              onApprove();
+            }}
+            disabled={approving}
+          >
+            {approving ? "Continuing..." : "Approve Architecture"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TechStackReviewPanel({ techStack, projectId, onApprove }: { techStack: Dict | null; projectId: string; onApprove: () => void }) {
+  const [approving, setApproving] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle className="text-base">Tech Stack Review</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Review the proposed technology stack before continuing.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        {techStack && (
+          <>
+            {[
+              { label: "Frontend", data: techStack.frontend },
+              { label: "Backend", data: techStack.backend },
+            ].map(({ label, data }) =>
+              data ? (
+                <div key={label}>
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{label}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[...(data.frameworks || []), ...(data.languages || [])].map((item: string, i: number) => (
+                      <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              ) : null
+            )}
+            {techStack.databases?.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Databases</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {techStack.databases.map((db: string, i: number) => (
+                    <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{db}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {techStack.devops?.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">DevOps</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {techStack.devops.map((item: string, i: number) => (
+                    <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{item}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        <div className="flex gap-3 pt-2 border-t">
+          <Button
+            className="flex-1"
+            onClick={async () => {
+              setApproving(true);
+              await projectsService.approveCheckpoint(projectId);
+              setApproving(false);
+              onApprove();
+            }}
+            disabled={approving}
+          >
+            {approving ? "Continuing..." : "Approve Tech Stack"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PromptsReviewPanel({ prompts, projectId, onApprove }: { prompts: Dict | null; projectId: string; onApprove: () => void }) {
+  const [approving, setApproving] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle className="text-base">Build Prompts Review</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Review the generated build prompts before continuing.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        {prompts?.prompts?.length > 0 && (
+          <div className="space-y-2">
+            {prompts.prompts.map((p: { title: string; prompt: string }, i: number) => (
+              <details key={i} className="group rounded-lg border p-3">
+                <summary className="cursor-pointer text-sm font-medium hover:text-foreground">
+                  {p.title}
+                </summary>
+                <div className="mt-2 whitespace-pre-wrap rounded bg-muted p-3 font-mono text-xs leading-relaxed text-muted-foreground">
+                  {p.prompt}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-3 pt-2 border-t">
+          <Button
+            className="flex-1"
+            onClick={async () => {
+              setApproving(true);
+              await projectsService.approveCheckpoint(projectId);
+              setApproving(false);
+              onApprove();
+            }}
+            disabled={approving}
+          >
+            {approving ? "Continuing..." : "Approve Prompts"}
           </Button>
         </div>
       </CardContent>
@@ -205,22 +483,36 @@ function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch:
     <div className="space-y-3">
       {ideas.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Generated Ideas ({ideas.length})</CardTitle>
+          <CardHeader className="pb-3 border-b">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Generated Ideas</CardTitle>
+              <Badge variant="outline">{ideas.length}</Badge>
+            </div>
           </CardHeader>
-          <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
-            {ideas.map((idea, i) => {
-              const title = (idea as Record<string, string>).title || "Untitled";
-              const desc = (idea as Record<string, string>).description || "";
-              const score = (idea as Record<string, number>).innovationScore ?? (idea as Record<string, number>).innovation_score ?? 0;
-              return (
-                <div key={i} className="rounded border p-2">
-                  <div className="font-medium">{title}</div>
-                  <div className="text-xs text-muted-foreground">{desc}</div>
-                  <div className="mt-1 text-xs">Score: {typeof score === "number" ? score.toFixed(1) : score}</div>
-                </div>
-              );
-            })}
+          <CardContent className="p-0">
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2 p-4">
+                {ideas.map((idea, i) => {
+                  const title = idea.title || "Untitled";
+                  const desc = idea.description || "";
+                  const score = idea.finalScore ?? idea.final_score ?? idea.innovationScore ?? idea.innovation_score ?? 0;
+                  return (
+                    <div key={i} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium">{title}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{desc}</div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <div className="text-lg font-bold tabular-nums">{typeof score === "number" ? Math.round(score) : score}</div>
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       )}
@@ -228,18 +520,22 @@ function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch:
       {arch && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Architecture</CardTitle>
+            <CardTitle className="text-base">Architecture</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {arch.vision && <p className="text-muted-foreground">{arch.vision as string}</p>}
-            {arch.features && (arch.features as string[]).length > 0 && (
-              <div><span className="font-medium">Features: </span><span className="text-muted-foreground">{(arch.features as string[]).join(", ")}</span></div>
+            {arch.vision && <p className="text-muted-foreground">{arch.vision}</p>}
+            {arch.features?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {arch.features.map((f: string, i: number) => (
+                  <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{f}</span>
+                ))}
+              </div>
             )}
-            {arch.userStories && (arch.userStories as string[]).length > 0 && (
+            {arch.userStories?.length > 0 && (
               <div>
-                <span className="font-medium">User Stories: </span>
-                <ul className="mt-1 list-inside list-disc text-muted-foreground">
-                  {(arch.userStories as string[]).map((s: string, i: number) => (
+                <div className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">User Stories</div>
+                <ul className="list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
+                  {arch.userStories.map((s: string, i: number) => (
                     <li key={i}>{s}</li>
                   ))}
                 </ul>
@@ -247,10 +543,14 @@ function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch:
             )}
             {arch.architecture && (
               <div>
-                <span className="font-medium">Architecture: </span>
-                <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs">
-                  {JSON.stringify(arch.architecture, null, 2)}
-                </pre>
+                <details className="group">
+                  <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
+                    Architecture Details
+                  </summary>
+                  <pre className="mt-2 overflow-x-auto rounded bg-muted p-3 font-mono text-xs">
+                    {JSON.stringify(arch.architecture, null, 2)}
+                  </pre>
+                </details>
               </div>
             )}
           </CardContent>
@@ -260,37 +560,68 @@ function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch:
       {techStack && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Tech Stack</CardTitle>
+            <CardTitle className="text-base">Tech Stack</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {(techStack.frontend as Record<string, string[]> | undefined) && (
-              <div><span className="font-medium">Frontend: </span><span className="text-muted-foreground">{((techStack.frontend as Record<string, string[]>).frameworks || (techStack.frontend as Record<string, string[]>).languages || []).join(", ")}</span></div>
+            {[
+              { label: "Frontend", data: techStack.frontend },
+              { label: "Backend", data: techStack.backend },
+            ].map(({ label, data }) =>
+              data ? (
+                <div key={label}>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+                  <div className="mt-0.5 flex flex-wrap gap-1.5">
+                    {[...(data.frameworks || []), ...(data.languages || [])].map((item: string, i: number) => (
+                      <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              ) : null
             )}
-            {(techStack.backend as Record<string, string[]> | undefined) && (
-              <div><span className="font-medium">Backend: </span><span className="text-muted-foreground">{((techStack.backend as Record<string, string[]>).frameworks || (techStack.backend as Record<string, string[]>).languages || []).join(", ")}</span></div>
+            {techStack.databases?.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Databases</span>
+                <div className="mt-0.5 flex flex-wrap gap-1.5">
+                  {techStack.databases.map((db: string, i: number) => (
+                    <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{db}</span>
+                  ))}
+                </div>
+              </div>
             )}
-            {techStack.databases && (techStack.databases as string[]).length > 0 && (
-              <div><span className="font-medium">Databases: </span><span className="text-muted-foreground">{(techStack.databases as string[]).join(", ")}</span></div>
-            )}
-            {techStack.devops && (techStack.devops as string[]).length > 0 && (
-              <div><span className="font-medium">DevOps: </span><span className="text-muted-foreground">{(techStack.devops as string[]).join(", ")}</span></div>
+            {techStack.devops?.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">DevOps</span>
+                <div className="mt-0.5 flex flex-wrap gap-1.5">
+                  {techStack.devops.map((item: string, i: number) => (
+                    <span key={i} className="rounded-md bg-muted px-2 py-0.5 text-xs">{item}</span>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {prompts && (prompts.prompts as Array<{ title: string; prompt: string }>)?.length > 0 && (
+      {prompts?.prompts?.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Build Prompts</CardTitle>
+            <CardTitle className="text-base">Build Prompts</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-48 overflow-y-auto space-y-2 text-sm">
-            {(prompts.prompts as Array<{ title: string; prompt: string }>).map((p, i) => (
-              <div key={i} className="rounded bg-muted p-2">
-                <div className="font-medium">{p.title}</div>
-                <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.prompt}</div>
+          <CardContent className="p-0">
+            <ScrollArea className="max-h-[300px]">
+              <div className="space-y-2 p-4">
+                {prompts.prompts.map((p: { title: string; prompt: string }, i: number) => (
+                  <details key={i} className="group rounded-lg border p-3">
+                    <summary className="cursor-pointer text-sm font-medium hover:text-foreground">
+                      {p.title}
+                    </summary>
+                    <div className="mt-2 whitespace-pre-wrap rounded bg-muted p-3 font-mono text-xs leading-relaxed text-muted-foreground">
+                      {p.prompt}
+                    </div>
+                  </details>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
           </CardContent>
         </Card>
       )}
@@ -301,6 +632,7 @@ function ResultPanel({ ideas, arch, techStack, prompts }: { ideas: Dict[]; arch:
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const { data: project, isLoading, refetch } = useProject(params.id);
   const startWorkflow = useStartWorkflow();
@@ -318,16 +650,33 @@ export default function ProjectDetailPage() {
   const currentAgent = progressData?.currentAgent || project?.currentAgent || null;
   const agentLogs = progressData?.agentLogs || project?.agentLogs || [];
   const errorLog = progressData?.errorLog || project?.errorLog || [];
-  const state = project?.state ?? null;
-  const s = state as Dict | null;
+  const s = (project?.state ?? null) as Dict | null;
   const arch = s?.architecture ?? null;
   const techStack = s?.techStack ?? null;
   const prompts = s?.prompts ?? null;
   const ideas = s?.generatedIdeas ?? [];
 
-  const completedInPipeline = workflowSteps.filter(s => completedSet.has(s.key));
+  const completedInPipeline = workflowSteps.filter(step => completedSet.has(step.key));
   const progressCount = completedInPipeline.length;
-  const progressTotal = workflowSteps.length;
+
+  const selectedLog = agentLogs.find((l: AgentLogEntry) => l.agent === selectedAgent);
+  const selectedStateKey = selectedAgent ? STATE_KEYS[selectedAgent] : null;
+  const selectedStateValue = selectedStateKey ? s?.[selectedStateKey] : null;
+
+  const statusBadgeVariant =
+    project?.status === "completed" ? "default" as const
+      : project?.status === "failed" ? "destructive" as const
+        : project?.status === "idea_selection" ? "outline" as const
+          : "secondary" as const;
+
+  const stage = project?.currentStage || "";
+  const statusLabel =
+    project?.status === "idea_selection" && stage === "architecture_review" ? "reviewing architecture"
+      : project?.status === "idea_selection" && stage === "tech_stack_review" ? "reviewing tech stack"
+        : project?.status === "idea_selection" && stage === "prompts_review" ? "reviewing prompts"
+          : project?.status === "idea_selection" ? "awaiting selection"
+            : project?.status === "researching" ? "running"
+              : project?.status || "";
 
   if (isLoading) {
     return (
@@ -348,123 +697,151 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const statusBadgeVariant =
-    project.status === "completed" ? "default" as const
-      : project.status === "failed" ? "destructive" as const
-        : project.status === "idea_selection" ? "outline" as const
-          : "secondary" as const;
-
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+    <main className="mx-auto max-w-6xl px-4 py-8">
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push("/projects")} className="shrink-0">
+            ←
+          </Button>
           <div>
-            <h1 className="text-3xl font-bold">{project.name}</h1>
-            <div className="text-muted-foreground mt-1 flex items-center gap-2">
-              <span>Status:</span>
+            <h1 className="text-2xl font-bold">{project.name}</h1>
+            <div className="mt-0.5 flex items-center gap-2">
               <Badge
                 variant={statusBadgeVariant}
-                className={
-                  (project.status === "researching" || project.status === "idea_selection")
-                    ? "animate-pulse" : ""
-                }
+                className={(project.status === "researching" || project.status === "idea_selection") ? "animate-pulse" : ""}
               >
-                {project.status === "idea_selection" ? "awaiting selection" : project.status}
+                {statusLabel}
               </Badge>
+              <span className="text-sm text-muted-foreground">{progressCount}/{workflowSteps.length}</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            {project.status === "draft" && (
-              <Button
-                onClick={() => startWorkflow.mutate(params.id)}
-                disabled={startWorkflow.isPending}
-              >
-                {startWorkflow.isPending ? "Starting..." : "Start Analysis"}
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => router.push("/projects")}>
-              Back
-            </Button>
-          </div>
         </div>
-
-        <div className="mt-8">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-muted-foreground">Overall Progress</span>
-            <span className="font-bold">{progressCount}/{progressTotal}</span>
-          </div>
-          <Progress value={(progressCount / progressTotal) * 100} className="h-3" />
+        <div className="flex gap-2">
+          {(project.status === "draft" || project.status === "idea_selection" || project.status === "failed") && (
+            <Button
+              onClick={() => startWorkflow.mutate(params.id)}
+              disabled={startWorkflow.isPending}
+            >
+              {startWorkflow.isPending ? "Starting..." : project.status === "draft" ? "Start Analysis" : "Restart"}
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Agent Pipeline</h2>
-          <div className="space-y-3 relative before:absolute before:inset-y-0 before:left-4 before:w-0.5 before:bg-muted">
-            {workflowSteps.map((step, idx) => {
+      {/* ── Progress Bar ───────────────────────────────────────────── */}
+      <div className="mb-6">
+        <Progress value={(progressCount / workflowSteps.length) * 100} className="h-2" />
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+          <span>Pipeline progress</span>
+          <span>{progressCount}/{workflowSteps.length} steps</span>
+        </div>
+      </div>
+
+      {/* ── Main Grid ──────────────────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {/* Left: Agent Pipeline */}
+        <div className="xl:col-span-1">
+          <h2 className="mb-3 text-lg font-semibold">Pipeline</h2>
+          <div className="space-y-1.5">
+            {workflowSteps.map((step) => {
               const isCompleted = completedSet.has(step.key);
               const isRunning = currentAgent === step.key;
-              const hasError = errorLog.some(e => e.agentName === step.key);
+              const isSelected = selectedAgent === step.key;
+              const log = agentLogs.find((l: AgentLogEntry) => l.agent === step.key);
+              const hasError = log && !log.success;
 
-              let statusColor = "bg-muted text-muted-foreground";
-              let statusRing = "border-transparent";
-              let statusIcon: string | number = idx + 1;
-
-              if (isCompleted) {
-                statusColor = "bg-green-500 text-white";
-                statusIcon = "✓";
-              } else if (isRunning) {
-                statusColor = "bg-primary text-primary-foreground";
-                statusRing = "ring-4 ring-primary/20 animate-pulse";
-              } else if (hasError) {
-                statusColor = "bg-destructive text-white";
-                statusIcon = "!";
-              }
+              let statusDot = "bg-muted";
+              if (isCompleted && !hasError) statusDot = "bg-green-500";
+              else if (hasError) statusDot = "bg-destructive";
+              else if (isRunning) statusDot = "bg-primary";
 
               return (
-                <div key={step.key} className="relative flex items-center gap-4 pl-12 group transition-all">
-                  <div
-                    className={`absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-300 ${statusColor} ${statusRing}`}
-                  >
-                    {isRunning ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      statusIcon
-                    )}
+                <button
+                  key={step.key}
+                  type="button"
+                  onClick={() => {
+                    if (log) setSelectedAgent(step.key);
+                  }}
+                  disabled={!log}
+                  className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : isRunning
+                        ? "border-primary/50 bg-primary/5 animate-pulse"
+                        : "border-border hover:border-primary/30 hover:bg-accent/50"
+                  } ${!log ? "opacity-50 cursor-default" : "cursor-pointer"}`}
+                >
+                  <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDot} ${isRunning ? "animate-pulse" : ""}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{step.label}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {isRunning ? "Running..." : isCompleted ? `${((log?.durationMs || 0) / 1000).toFixed(1)}s` : "Pending"}
+                    </div>
                   </div>
-
-                  <Card className={`w-full transition-all duration-300 ${
-                    isRunning
-                      ? "border-primary shadow-lg scale-[1.02] animate-pulse"
-                      : hasError
-                        ? "border-destructive/50"
-                        : "hover:border-primary/50"
-                  }`}>
-                    <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm">{step.label}</CardTitle>
-                      {isRunning && (
-                        <span className="text-xs text-primary animate-pulse mt-0.5 font-medium">Processing...</span>
-                      )}
-                      {hasError && (
-                        <span className="text-xs text-destructive mt-0.5">Failed</span>
-                      )}
-                    </CardHeader>
-                  </Card>
-                </div>
+                  {isCompleted && (
+                    <svg className="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {hasError && (
+                    <svg className="h-4 w-4 shrink-0 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </button>
               );
             })}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Live Logs</h2>
-          <Card>
-            <CardContent className="p-0">
-              <LogPanel logs={agentLogs} errors={errorLog} />
-            </CardContent>
-          </Card>
+        {/* Right: Context Panel */}
+        <div className="xl:col-span-2 space-y-4">
+          {/* Agent Detail */}
+          {selectedAgent && selectedLog ? (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between border-b py-3">
+                <CardTitle className="text-base">Agent Details</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedAgent(null)}>Close</Button>
+              </CardHeader>
+              <CardContent className="p-4">
+                <AgentDetail
+                  agentName={selectedAgent}
+                  log={selectedLog}
+                  stateValue={selectedStateValue}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
-          {project.status === "idea_selection" && ideas.length > 0 && (
+          {/* Checkpoints: route by current_stage */}
+          {project.status === "idea_selection" && !selectedAgent && project.currentStage === "architecture_review" && (
+            <ArchitectureReviewPanel
+              arch={arch}
+              projectId={project.id}
+              onApprove={() => refetch()}
+            />
+          )}
+          {project.status === "idea_selection" && !selectedAgent && project.currentStage === "tech_stack_review" && (
+            <TechStackReviewPanel
+              techStack={techStack}
+              projectId={project.id}
+              onApprove={() => refetch()}
+            />
+          )}
+          {project.status === "idea_selection" && !selectedAgent && project.currentStage === "prompts_review" && (
+            <PromptsReviewPanel
+              prompts={prompts}
+              projectId={project.id}
+              onApprove={() => refetch()}
+            />
+          )}
+
+          {/* Idea Selection */}
+          {project.status === "idea_selection" && ideas.length > 0 && !selectedAgent && (
+            project.currentStage === "idea_selection" || project.currentStage === "" || !project.currentStage
+          ) && (
             <IdeaPicker
               ideas={ideas}
               projectId={project.id}
@@ -473,28 +850,56 @@ export default function ProjectDetailPage() {
             />
           )}
 
-          {project.status === "completed" && (
+          {/* Completed Results */}
+          {project.status === "completed" && !selectedAgent && (
             <ResultPanel ideas={ideas} arch={arch} techStack={techStack} prompts={prompts} />
           )}
 
-          {project.status === "failed" && (
-            <Card className="border-destructive/50 bg-destructive/10">
+          {/* Failed */}
+          {project.status === "failed" && !selectedAgent && (
+            <Card className="border-destructive/50 bg-destructive/5">
               <CardHeader>
                 <CardTitle className="text-destructive">Workflow Failed</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-destructive/80 space-y-2">
-                <p>The workflow encountered an error and could not complete.</p>
+              <CardContent className="space-y-3 text-sm">
+                <p className="text-destructive/80">
+                  The workflow could not complete. Select an agent above to see error details.
+                </p>
                 {errorLog.length > 0 && (
-                  <div className="rounded bg-destructive/20 p-2 font-mono text-xs">
+                  <div className="space-y-1.5">
                     {errorLog.map((err, i) => (
-                      <div key={i} className="mb-1 last:mb-0">
-                        <span className="font-semibold">{err.agentName}:</span> {err.message}
+                      <div key={i} className="rounded bg-destructive/10 p-3 font-mono text-xs">
+                        <div className="font-semibold text-destructive">{err.agentName || "System"}</div>
+                        <div className="mt-0.5 text-destructive/80">
+                          {err.message.includes("rate_limit") || err.message.includes("429")
+                            ? "Rate limit reached. Please wait a few minutes or add a Gemini API key as fallback in your .env file."
+                            : err.message}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Live Logs (default when no agent selected) */}
+          {!selectedAgent && project.status !== "completed" && project.status !== "failed" && !(project.status === "idea_selection" && project.currentStage) && (
+            <Card>
+              <CardHeader className="border-b py-3">
+                <CardTitle className="text-base">Live Logs</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <LogPanel logs={agentLogs} errors={errorLog} onSelect={setSelectedAgent} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Prompt to select an agent */}
+          {!selectedAgent && agentLogs.length > 0 && (project.status === "completed" || project.status === "idea_selection") && (
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Click an agent in the pipeline to inspect its output.
+            </div>
           )}
         </div>
       </div>

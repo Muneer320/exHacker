@@ -32,23 +32,26 @@ class LLMService:
         # Always recompute providers to reflect latest environment variables
         self._providers = None
 
-        # Gather API keys — prefer pydantic-settings (reads .env), fall back to
-        # os.getenv for cases where the variable is only in the OS environment.
-        def _key(name: str) -> str:
+        # Gather API keys — supports comma-separated values for multiple keys per provider.
+        # Prefer pydantic-settings (reads .env), fall back to os.getenv.
+        def _keys(name: str) -> list[str]:
             val = getattr(settings, f"{name}_api_key", None) or os.getenv(
                 f"{name.upper()}_API_KEY", ""
             )
-            return (val or "").strip()
+            val = (val or "").strip()
+            if not val:
+                return []
+            return [k.strip() for k in val.split(",") if k.strip()]
 
         api_keys = {
-            "groq": _key("groq"),
-            "gemini": _key("gemini"),
-            "openai": _key("openai"),
-            "ollama": None,
+            "groq": _keys("groq"),
+            "gemini": _keys("gemini"),
+            "openai": _keys("openai"),
+            "ollama": [],
         }
         logger.info(
-            "LLM Provider keys present: %s",
-            {k: bool(v) for k, v in api_keys.items()},
+            "LLM Provider key counts: %s",
+            {k: len(v) for k, v in api_keys.items()},
         )
 
         # Determine priority order; Ollama will be included only after health‑check
@@ -62,15 +65,16 @@ class LLMService:
         # Initialize cloud providers if their keys are set
         for provider_cls in priority:
             name = provider_cls.name
-            key = api_keys.get(name)
-            if key:
-                providers.append(self._create_provider(provider_cls, key))
+            keys = api_keys.get(name, [])
+            for idx, key in enumerate(keys):
+                provider = self._create_provider(provider_cls, key)
+                providers.append(provider)
                 logger.info(
-                    "Initialized LLM provider %s (model=%s)",
-                    name,
+                    "Initialized LLM provider %s #%d (model=%s)",
+                    name, idx + 1,
                     getattr(settings, f"{name}_model", "default"),
                 )
-            else:
+            if not keys:
                 logger.debug("No API key configured for %s — skipping", name)
 
         # Optionally include Ollama after a lightweight health‑check

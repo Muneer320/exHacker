@@ -135,13 +135,23 @@ async def _run_workflow_background(project_id: str) -> None:
         proj.error_log = [e.model_dump() for e in final_state.errors]
 
         if is_interrupted:
+            # Determine which checkpoint from the interrupt value
+            checkpoint_stage = "idea_selection"
+            try:
+                if snapshot.tasks and snapshot.tasks[0].interrupts:
+                    interrupt_val = snapshot.tasks[0].interrupts[0].value
+                    if isinstance(interrupt_val, dict):
+                        checkpoint_stage = interrupt_val.get("stage", "idea_selection")
+            except Exception:
+                pass
             proj.status = "idea_selection"
-            proj.current_stage = "idea_selection"
+            proj.current_stage = checkpoint_stage
             await session.commit()
             logger.info(
                 "background_workflow_interrupted",
                 project_id=project_id,
                 thread_id=thread_id,
+                checkpoint=checkpoint_stage,
                 completed_agents=final_state.completed_agents,
             )
         else:
@@ -230,6 +240,78 @@ async def get_workflow_progress(
 
 class SelectIdeaRequest(BaseModel):
     selected_idea_id: str
+
+
+class ApproveCheckpointRequest(BaseModel):
+    approved: bool = True
+
+
+@router.post("/{project_id}/approve")
+async def approve_checkpoint(
+    project_id: str,
+    body: ApproveCheckpointRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, str]:
+    """Approve any checkpoint (architecture, tech stack, prompts) and resume workflow."""
+    result = await session.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.status != "idea_selection":
+        raise HTTPException(status_code=409, detail=f"Project is in status '{project.status}', not 'idea_selection'")
+
+    thread_id = project.thread_id
+    if not thread_id:
+        raise HTTPException(status_code=409, detail="No thread_id found — workflow may not have been started")
+
+    raw_state = (project.state or {})
+    raw_state["project"] = ProjectResponse.model_validate(project).model_dump(mode="json")
+    state = ExHackerState.model_validate(raw_state)
+
+    orchestrator = get_orchestrator()
+    try:
+        config = {"configurable": {"thread_id": thread_id}}
+        async for _ in orchestrator.graph.astream(
+            Command(resume={"approved": body.approved}),
+            config=config,
+        ):
+            pass
+
+        snapshot = await orchestrator.graph.aget_state(config)
+        final_state = ExHackerState.model_validate(snapshot.values)
+
+        project.thread_id = None
+        project.current_agent = None
+        project.completed_agents = final_state.completed_agents
+        project.state = final_state.model_dump(mode="json")
+
+        logs = cast(list[dict[str, Any]], final_state.agent_metadata.get("logs", []))
+        project.agent_logs = logs
+        project.error_log = [e.model_dump() for e in final_state.errors]
+
+        if snapshot.tasks:
+            checkpoint_stage = "idea_selection"
+            try:
+                if snapshot.tasks[0].interrupts:
+                    iv = snapshot.tasks[0].interrupts[0].value
+                    if isinstance(iv, dict):
+                        checkpoint_stage = iv.get("stage", "idea_selection")
+            except Exception:
+                pass
+            project.status = "idea_selection"
+            project.current_stage = checkpoint_stage
+            project.thread_id = thread_id
+        else:
+            project.status = "completed"
+            project.current_stage = str(final_state.current_stage)
+
+        await session.flush()
+        logger.info("checkpoint_approved", project_id=project_id, current_stage=project.current_stage)
+    except Exception as exc:
+        logger.exception("checkpoint_approve_failed", project_id=project_id, error=str(exc))
+        raise HTTPException(status_code=500, detail=f"Failed to approve checkpoint: {exc}")
+
+    return {"status": "resumed", "project_id": project_id}
 
 
 @router.post("/{project_id}/select-idea")

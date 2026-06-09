@@ -130,10 +130,18 @@ class WorkflowOrchestrator:
             },
         )
 
-        # ── Post-approval linear chain ────────────────────────────────────────
-        workflow.add_edge("solution_architect", "tech_stack_advisor")
-        workflow.add_edge("tech_stack_advisor", "build_accelerator")
-        workflow.add_edge("build_accelerator", "presentation_agent")
+        # ── Special nodes ────────────────────────────────────────────────────
+        workflow.add_node("architecture_approval", self._architecture_approval_node)
+        workflow.add_node("tech_stack_approval", self._tech_stack_approval_node)
+        workflow.add_node("prompts_approval", self._prompts_approval_node)
+
+        # ── Post-approval chain with checkpoints ──────────────────────────────
+        workflow.add_edge("solution_architect", "architecture_approval")
+        workflow.add_edge("architecture_approval", "tech_stack_advisor")
+        workflow.add_edge("tech_stack_advisor", "tech_stack_approval")
+        workflow.add_edge("tech_stack_approval", "build_accelerator")
+        workflow.add_edge("build_accelerator", "prompts_approval")
+        workflow.add_edge("prompts_approval", "presentation_agent")
         workflow.add_edge("presentation_agent", "pitch_coach")
         workflow.add_edge("pitch_coach", "export")
 
@@ -332,6 +340,33 @@ class WorkflowOrchestrator:
             "current_stage": WorkflowStage.IDEA_SELECTION,
             "completed_agents": [*state.completed_agents, "human_approval"],
         }
+
+    async def _architecture_approval_node(self, state: ExHackerState) -> dict[str, Any]:
+        logger.info("awaiting_architecture_review", project_id=state.project.id)
+        payload = {
+            "stage": "architecture_review",
+            "architecture": state.architecture.model_dump() if state.architecture else None,
+        }
+        interrupt(payload)
+        return {"current_stage": WorkflowStage.ARCHITECTURE_REVIEW}
+
+    async def _tech_stack_approval_node(self, state: ExHackerState) -> dict[str, Any]:
+        logger.info("awaiting_tech_stack_review", project_id=state.project.id)
+        payload = {
+            "stage": "tech_stack_review",
+            "tech_stack": state.tech_stack.model_dump() if state.tech_stack else None,
+        }
+        interrupt(payload)
+        return {"current_stage": WorkflowStage.TECH_STACK_REVIEW}
+
+    async def _prompts_approval_node(self, state: ExHackerState) -> dict[str, Any]:
+        logger.info("awaiting_prompts_review", project_id=state.project.id)
+        payload = {
+            "stage": "prompts_review",
+            "prompts": state.prompts.model_dump() if state.prompts else None,
+        }
+        interrupt(payload)
+        return {"current_stage": WorkflowStage.PROMPTS_REVIEW}
 
     async def _export_node(self, state: ExHackerState) -> dict[str, Any]:
         logger.info("workflow_completed", project_id=state.project.id)

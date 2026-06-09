@@ -49,4 +49,10 @@ export const projectsService = {
       `/workflows/${projectId}/regenerate-ideas`,
       {},
     ),
+
+  approveCheckpoint: (projectId: string) =>
+    api.post<{ status: string; project_id: string }>(
+      `/workflows/${projectId}/approve`,
+      { approved: true },
+    ),
 };

@@ -7,6 +7,12 @@ export type ProjectStatus =
   | "completed"
   | "failed";
 
+export type CheckpointStage =
+  | "idea_selection"
+  | "architecture_review"
+  | "tech_stack_review"
+  | "prompts_review";
+
 export interface TeamProfile {
   teamSize: number;
   experienceLevel: "beginner" | "intermediate" | "advanced";
