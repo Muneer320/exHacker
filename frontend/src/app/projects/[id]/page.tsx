@@ -700,10 +700,12 @@ export default function ProjectDetailPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between rounded-xl border bg-gradient-card p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push("/projects")} className="shrink-0">
-            ←
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{project.name}</h1>
@@ -714,7 +716,7 @@ export default function ProjectDetailPage() {
               >
                 {statusLabel}
               </Badge>
-              <span className="text-sm text-muted-foreground">{progressCount}/{workflowSteps.length}</span>
+              <span className="text-sm text-muted-foreground">{progressCount}/{workflowSteps.length} steps</span>
             </div>
           </div>
         </div>
@@ -723,6 +725,7 @@ export default function ProjectDetailPage() {
             <Button
               onClick={() => startWorkflow.mutate(params.id)}
               disabled={startWorkflow.isPending}
+              className="rounded-full shadow-lg shadow-primary/20"
             >
               {startWorkflow.isPending ? "Starting..." : project.status === "draft" ? "Start Analysis" : "Restart"}
             </Button>
@@ -732,10 +735,13 @@ export default function ProjectDetailPage() {
 
       {/* ── Progress Bar ───────────────────────────────────────────── */}
       <div className="mb-6">
-        <Progress value={(progressCount / workflowSteps.length) * 100} className="h-2" />
-        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+        <div className="relative">
+          <Progress value={(progressCount / workflowSteps.length) * 100} className="h-2.5" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 via-primary/5 to-transparent opacity-50" />
+        </div>
+        <div className="mt-1.5 flex justify-between text-xs text-muted-foreground">
           <span>Pipeline progress</span>
-          <span>{progressCount}/{workflowSteps.length} steps</span>
+          <span className="font-medium text-foreground/80">{progressCount}/{workflowSteps.length} steps</span>
         </div>
       </div>
 
@@ -745,15 +751,16 @@ export default function ProjectDetailPage() {
         <div className="xl:col-span-1">
           <h2 className="mb-3 text-lg font-semibold">Pipeline</h2>
           <div className="space-y-1.5">
-            {workflowSteps.map((step) => {
+            {workflowSteps.map((step, i) => {
               const isCompleted = completedSet.has(step.key);
               const isRunning = currentAgent === step.key;
               const isSelected = selectedAgent === step.key;
               const log = agentLogs.find((l: AgentLogEntry) => l.agent === step.key);
               const hasError = log && !log.success;
+              const isCached = log?.provider === "cache";
 
-              let statusDot = "bg-muted";
-              if (isCompleted && !hasError) statusDot = "bg-green-500";
+              let statusDot = "bg-muted-foreground/30";
+              if (isCompleted && !hasError) statusDot = "bg-emerald-500";
               else if (hasError) statusDot = "bg-destructive";
               else if (isRunning) statusDot = "bg-primary";
 
@@ -765,30 +772,51 @@ export default function ProjectDetailPage() {
                     if (log) setSelectedAgent(step.key);
                   }}
                   disabled={!log}
-                  className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
+                  className={`animate-fade-in flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
                     isSelected
                       ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                       : isRunning
                         ? "border-primary/50 bg-primary/5 animate-pulse"
-                        : "border-border hover:border-primary/30 hover:bg-accent/50"
-                  } ${!log ? "opacity-50 cursor-default" : "cursor-pointer"}`}
+                        : "border-border hover:border-primary/30 hover:bg-card/80 hover:shadow-sm"
+                  } ${!log ? "opacity-40 cursor-default" : "cursor-pointer"}`}
+                  style={{ animationDelay: `${i * 0.03}s` }}
                 >
-                  <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDot} ${isRunning ? "animate-pulse" : ""}`} />
+                  <div className="relative">
+                    <div className={`h-3 w-3 shrink-0 rounded-full ${statusDot} ${isRunning ? "animate-pulse" : ""} ${isCompleted && !isRunning ? "ring-2 ring-emerald-500/20" : ""}`} />
+                    {isRunning && (
+                      <div className="absolute -inset-1 animate-pulse-glow rounded-full" />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">{step.label}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{step.label}</span>
+                      {isCached && (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">cached</span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {isRunning ? "Running..." : isCompleted ? `${((log?.durationMs || 0) / 1000).toFixed(1)}s` : "Pending"}
+                      {isRunning ? (
+                        <span className="text-primary">Running...</span>
+                      ) : isCompleted ? (
+                        `${((log?.durationMs || 0) / 1000).toFixed(1)}s`
+                      ) : (
+                        <span className="text-muted-foreground/50">Pending</span>
+                      )}
                     </div>
                   </div>
-                  {isCompleted && (
-                    <svg className="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
+                  {isCompleted && !hasError && (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
+                      <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   )}
                   {hasError && (
-                    <svg className="h-4 w-4 shrink-0 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10">
+                      <svg className="h-3 w-3 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
                   )}
                 </button>
               );
