@@ -190,6 +190,43 @@ class WorkflowOrchestrator:
             if agent_name == "idea_generator":
                 update_extras["idea_generation_attempts"] = state.idea_generation_attempts + 1
 
+            # ── Agent output cache: skip if output already exists ─────────────
+            _always_run = {"idea_generator", "idea_validator"}
+            _state_key = AGENT_TO_STATE_KEY.get(agent_name)
+            if agent_name not in _always_run and _state_key:
+                _existing = getattr(state, _state_key, None)
+                if _existing is not None and _existing:
+                    logger.info(
+                        "agent_skipped_cached",
+                        agent=agent_name,
+                        state_key=_state_key,
+                        project_id=state.project.id,
+                    )
+                    cached_log: dict[str, Any] = {
+                        "agent": agent_name,
+                        "started_at": ts_start,
+                        "finished_at": datetime.now(UTC).isoformat(),
+                        "duration_ms": 0,
+                        "success": True,
+                        "provider": "cache",
+                        "model": "cached",
+                        "input_tokens": 0,
+                        "output_tokens": 0,
+                        "cost": 0.0,
+                    }
+                    existing_logs_cache: list[dict[str, Any]] = cast(
+                        list[dict[str, Any]], state.agent_metadata.get("logs", []),
+                    )
+                    existing_logs_cache.append(cached_log)
+                    return {
+                        "completed_agents": [*state.completed_agents, agent_name],
+                        "current_stage": AGENT_TO_STAGE.get(agent_name, state.current_stage),
+                        "agent_metadata": {
+                            **state.agent_metadata,
+                            "logs": existing_logs_cache,
+                        },
+                    }
+
             state_dict = state.model_dump()
             try:
                 result = await agent.run(state_dict)
