@@ -17,7 +17,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -38,6 +37,7 @@ MANIFEST
 # Python tooling
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 pip-wheel-metadata/
 __pypackages__/
 *.pyd
@@ -51,7 +51,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment Variables
+# Environment variables
 .env
 .env.*.local
 .env.local
@@ -66,3 +66,13 @@ venv.bak/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Generated outputs
+exports/
+artifacts/
+generated/
+tmp/
+
+# Alembic caches
+alembic/versions/__pycache__/
+alembic/__pycache__/
