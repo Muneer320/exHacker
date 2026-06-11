@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(timezone.utc).isoformat()  # noqa: UP017
 
 
 class WorkflowMetadata(BaseModel):

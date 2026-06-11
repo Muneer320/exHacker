@@ -47,7 +47,7 @@ def home():
 
 @app.post("/generate")
 async def generate(data: ProjectRequest):
-    initial_state = {
+    initial_state: dict[str, Any] = {
         "challenge_statement": data.challenge_statement,
         "hackathon_name": data.hackathon_name,
         "sponsors": data.sponsors,
@@ -68,7 +68,7 @@ async def generate(data: ProjectRequest):
     }
     try:
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(_executor, graph.invoke, initial_state)
+        result = await loop.run_in_executor(_executor, lambda: graph.invoke(initial_state))  # type: ignore[call-overload]
         return result
     except Exception as exc:
         traceback.print_exc()
