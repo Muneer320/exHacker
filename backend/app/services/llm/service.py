@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from contextlib import suppress
 from typing import Any
 
@@ -15,11 +14,21 @@ from app.services.llm.providers.openai_provider import OpenAIProvider
 
 
 def _enrich_prompt(prompt: str, output_schema: type[BaseModel]) -> str:
+    fields = ", ".join(output_schema.model_fields.keys())
     return (
         f"{prompt}\n\n"
-        f"You MUST respond ONLY with valid JSON matching this exact structure:\n"
-        f"{json.dumps(output_schema.model_json_schema(), indent=2)}"
+        f"You MUST respond ONLY with a JSON object containing these keys: {fields}.\n"
+        f"Do not include any other text, markdown, or code fences."
     )
+
+
+def _extract_json(text: str) -> str:
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        msg = f"No JSON object found in response:\n{text[:500]}"
+        raise ValueError(msg)
+    return text[start : end + 1]
 
 
 class LLMService:
@@ -78,7 +87,7 @@ class LLMService:
         for provider in self._chain:
             try:
                 text = provider.generate_text(enriched, **kwargs)
-                return output_schema.model_validate_json(text)
+                return output_schema.model_validate_json(_extract_json(text))
             except Exception as exc:
                 errors.append(f"{provider.name}: {exc}")
                 continue
