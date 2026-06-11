@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any
 
 from pydantic import BaseModel
@@ -25,39 +26,37 @@ class LLMService:
         return cls._instance
 
     def _build_chain(self) -> list[LLMProvider]:
-        providers: list[LLMProvider] = []
-
         provider_mode = settings.llm_provider.lower()
 
-        if provider_mode == "groq":
-            providers = [GroqProvider()]
-        elif provider_mode == "gemini":
-            providers = [GeminiProvider()]
-        elif provider_mode == "ollama":
-            providers = [OllamaProvider()]
-        elif provider_mode == "openai":
-            providers = [OpenAIProvider()]
-        else:
-            providers = [
-                GroqProvider(),
-                GeminiProvider(),
-                OllamaProvider(),
-                OpenAIProvider(),
-            ]
+        configs: list[tuple[str, type[LLMProvider], str]] = [
+            ("groq", GroqProvider, settings.groq_api_key),
+            ("gemini", GeminiProvider, settings.gemini_api_key),
+            ("openai", OpenAIProvider, settings.openai_api_key),
+        ]
 
-        return [p for p in providers if self._is_configured(p)]
+        if provider_mode == "ollama":
+            try:
+                return [OllamaProvider()]
+            except Exception:
+                return []
 
-    def _is_configured(self, provider: LLMProvider) -> bool:
-        name = provider.name
-        if name == "groq":
-            return bool(settings.groq_api_key)
-        if name == "gemini":
-            return bool(settings.gemini_api_key)
-        if name == "ollama":
-            return True
-        if name == "openai":
-            return bool(settings.openai_api_key)
-        return False
+        if provider_mode != "auto":
+            configs = [(n, c, k) for n, c, k in configs if n == provider_mode]
+
+        providers: list[LLMProvider] = []
+        for _name, provider_cls, api_key in configs:
+            if not api_key:
+                continue
+            try:
+                providers.append(provider_cls())
+            except Exception:
+                continue
+
+        if provider_mode in ("auto",):
+            with suppress(Exception):
+                providers.append(OllamaProvider())
+
+        return providers
 
     def generate_structured(
         self,

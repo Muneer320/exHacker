@@ -68,7 +68,7 @@ async def generate(data: ProjectRequest):
     }
     try:
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(_executor, lambda: graph.invoke(initial_state))  # type: ignore[call-overload]
+        result = await loop.run_in_executor(_executor, lambda: graph.invoke(initial_state))
         return result
     except Exception as exc:
         traceback.print_exc()

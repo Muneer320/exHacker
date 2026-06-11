@@ -11,9 +11,10 @@ from app.services.llm.providers.base import LLMProvider
 
 class OpenAIProvider(LLMProvider):
     def __init__(self) -> None:
+        api_key = SecretStr(settings.openai_api_key) if settings.openai_api_key else None
         self._llm = ChatOpenAI(
             model=settings.openai_model,
-            api_key=SecretStr(settings.openai_api_key) if settings.openai_api_key else None,
+            api_key=api_key,
             temperature=settings.openai_temperature,
             max_completion_tokens=settings.openai_max_tokens,
         )

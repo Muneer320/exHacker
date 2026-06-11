@@ -35,15 +35,15 @@ class WorkflowState(TypedDict):
 
 builder = StateGraph(WorkflowState)
 
-builder.add_node("problem_analyst", problem_analyst_node)  # type: ignore[type-var]
-builder.add_node("idea_generator", idea_generator_node)  # type: ignore[type-var]
-builder.add_node("idea_validator", idea_validator_node)  # type: ignore[type-var]
-builder.add_node("idea_selector", idea_selector_node)  # type: ignore[type-var]
+builder.add_node("problem_analyst", problem_analyst_node)
+builder.add_node("idea_generator", idea_generator_node)
+builder.add_node("idea_validator", idea_validator_node)
+builder.add_node("idea_selector", idea_selector_node)
 builder.add_node("solution_architect", solution_architect_node)
 builder.add_node("presentation_agent", presentation_agent_node)
 builder.add_node("pitch_agent", pitch_agent_node)
-builder.add_node("report_generator", report_generator_node)  # type: ignore[type-var]
-builder.add_node("opportunity_planner", opportunity_planner_node)  # type: ignore[type-var]
+builder.add_node("report_generator", report_generator_node)
+builder.add_node("opportunity_planner", opportunity_planner_node)
 
 builder.set_entry_point("problem_analyst")
 
