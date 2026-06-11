@@ -227,7 +227,7 @@ function LogsTab({ log }: { log?: AgentLogEntry }) {
     <div className="grid grid-cols-2 gap-2 text-sm">
       <div className="rounded bg-muted p-2">
         <div className="text-xs text-muted-foreground">Duration</div>
-        <div className="font-medium">{(log.durationMs / 1000).toFixed(1)}s</div>
+        <div className="font-medium">{((log.durationMs ?? 0) / 1000).toFixed(1)}s</div>
       </div>
       {log.provider && (
         <div className="rounded bg-muted p-2">

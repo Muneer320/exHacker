@@ -168,3 +168,19 @@ export interface WorkflowStateResponse {
   steps_meta: StepMeta[];
   done: boolean;
 }
+
+export interface AgentLogEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+  durationMs?: number;
+  provider?: string;
+  model?: string;
+  cost?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  startedAt?: string;
+  success?: boolean;
+  error?: string;
+  details?: Record<string, unknown>;
+}
