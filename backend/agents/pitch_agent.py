@@ -1,64 +1,51 @@
-import os
+from __future__ import annotations
 
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from typing import Any
 
-from schemas.pitch import PitchPackage
+from pydantic import BaseModel, Field
 
-load_dotenv()
-
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY1")
-)
+from app.services.llm.fallback import generate_with_fallback
 
 
-def pitch_agent_node(state):
+class QA(BaseModel):
+    question: str = ""
+    answer: str = ""
 
-    selected_idea = state["selected_idea"]
 
-    slides = state["slides"]
+class PitchOutput(BaseModel):
+    pitch_30s: str = ""
+    pitch_2m: str = ""
+    pitch_5m: str = ""
+    judge_questions: list[QA] = Field(default_factory=list)
+    demo_script: str = ""
 
-    prompt = f"""
-You are an elite startup founder, YC mentor,
-TED speaker, investor, and hackathon winner.
 
-Using the selected idea and presentation slides,
-create:
+def pitch_agent_node(state: Any) -> dict[str, Any]:
+    selected_idea = state.get("selected_idea", {})
+    presentation = state.get("presentation", {})
+    validation_reports = state.get("validation_reports", [])
+
+    prompt = f"""You are an elite startup founder and pitch coach.
+
+Using the selected idea, presentation, and validation results, create:
 
 1. A 30-second elevator pitch
-
 2. A 2-minute hackathon pitch
-
 3. A 5-minute investor pitch
+4. Judge Q&A preparation
+5. Demo script
 
 Requirements:
-
 - Tell a compelling story
 - Explain the problem
 - Explain the solution
 - Explain why now
-- Explain market opportunity
-- Explain impact
 - Be memorable
-- Be persuasive
-- Sound natural when spoken
 
-Selected Idea:
-
-{selected_idea}
-
-Presentation Slides:
-
-{slides}
+Selected Idea: {selected_idea}
+Presentation: {presentation}
+Validation: {validation_reports}
 """
 
-    result = llm.with_structured_output(
-        PitchPackage
-    ).invoke(prompt)
-
-    return {
-    "pitch_30s": result.pitch_30s,
-    "pitch_2min": result.pitch_2min,
-    "pitch_5min": result.pitch_5min
-}
+    result = generate_with_fallback(prompt, PitchOutput)
+    return {"pitch": result.model_dump()}

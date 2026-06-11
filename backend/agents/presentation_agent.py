@@ -1,69 +1,45 @@
-import os
+from __future__ import annotations
 
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from typing import Any
 
-from schemas.presentation import Presentation
+from pydantic import BaseModel, Field
 
-load_dotenv()
-
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY3")
-)
+from app.services.llm.fallback import generate_with_fallback
 
 
-def presentation_agent_node(state):
+class SingleSlide(BaseModel):
+    slide_number: int = 0
+    title: str = ""
+    objective: str = ""
+    content: list[str] = Field(default_factory=list)
+    speaker_notes: str = ""
+    visual_suggestion: str = ""
 
-    selected_idea = state["selected_idea"]
 
-    solution_blueprint = state["solution_blueprint"]
+class PresentationOutput(BaseModel):
+    slide_order: list[str] = Field(default_factory=list)
+    slide_content: list[SingleSlide] = Field(default_factory=list)
+    demo_story: str = ""
+    business_story: str = ""
 
-    prompt = f"""
-You are exHacker, an elite Pitch Architect and Y-Combinator alumni who has coached dozens of teams to hackathon grand prizes and seed funding. Your expertise is distilling complex technical concepts into persuasive, visually striking, and emotionally resonant pitch scripts.
 
-Your job is to generate a world-class 10-slide pitch deck script based on the provided Idea and Solution Blueprint.
+def presentation_agent_node(state: Any) -> dict[str, Any]:
+    selected_idea = state.get("selected_idea", {})
+    architecture = state.get("architecture", {})
 
-Evaluation & Pitch Rules:
+    prompt = f"""You are exHacker, an elite Pitch Architect.
 
-The 10-Second Rule: A judge must understand the slide's core message within 10 seconds. Avoid walls of text.
+Generate a world-class presentation deck for the selected idea and architecture.
 
-The Narrative Arc: Tell a compelling story: a painful problem, a magical solution, and a massive opportunity.
+Include:
+1. Slide order with titles
+2. Each slide with content, speaker notes, visual suggestions
+3. Demo story
+4. Business story
 
-Hackathon/Investor Hybrid: Emphasize the technical "wow" factor for hackathon judges, but clearly state the Go-To-Market and Business Model for investors.
-
-Speaker Notes: Write the speaker notes as an actual script—charismatic, fast-paced, and confident.
-
-Input Data:
-
-Selected Idea:
-{selected_idea}
-
-Solution Blueprint:
-{solution_blueprint}
-
-Output Format:
-
-Generate exactly 10 slides using the exact markdown structure below:
-
-Slide [1-10]: [Slide Topic]
-
-Headline: [One massive, provocative statement or statistic (Max 8 words)]
-
-On-Slide Content: [3-4 punchy bullet points. Max 6 words per bullet.]
-
-Visual/Demo Suggestion: [Explicit instructions on what is shown on screen—e.g., "A GIF showing code compiling," "The live hardware demo"]
-
-The Speaker Script: ["Write the exact words the presenter will say. Include stage cues like (Pause for effect) or (Point to screen)."]
+Selected Idea: {selected_idea}
+Architecture: {architecture}
 """
 
-    result = llm.with_structured_output(
-        Presentation
-    ).invoke(prompt)
-
-    return {
-        "slides": [
-            slide.model_dump()
-            for slide in result.slides
-        ]
-    }
+    result = generate_with_fallback(prompt, PresentationOutput)
+    return {"presentation": result.model_dump()}

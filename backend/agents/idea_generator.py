@@ -1,62 +1,47 @@
-import os
+from __future__ import annotations
 
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from typing import Any
 
-from schemas.idea import IdeaList
+from pydantic import BaseModel, Field
 
-load_dotenv()
-
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY3")
-)
+from app.services.llm.fallback import generate_with_fallback
 
 
-def idea_generator_node(state):
+class IdeaItem(BaseModel):
+    title: str = ""
+    description: str = ""
+    target_users: list[str] = Field(default_factory=list)
+    key_features: list[str] = Field(default_factory=list)
+    innovation_score: int = 5
 
-    analysis = state["problem_analysis"]
 
-    opportunities = state["opportunity_analysis"]
+class IdeaListOutput(BaseModel):
+    ideas: list[IdeaItem] = Field(default_factory=list)
 
-    prompt = f"""
-You are exHacker, an elite hackathon veteran and Idea Generator Agent who has won multiple tier-1 hackathons. Your expertise lies in finding the perfect intersection of technical "wow-factor," real-world utility, and 24-to-48-hour feasibility.
 
-Your goal is to generate exactly 10 highly competitive hackathon project ideas based on the provided problem and opportunity analyses. 
+def idea_generator_node(state: dict[str, Any]) -> dict[str, Any]:
+    analysis = state.get("problem_analysis", {})
+    opportunities = state.get("opportunity_analysis", {})
+    challenge = state.get("challenge_statement", "")
 
-### Constraints & Guidelines:
-1. Feasibility: Ideas must be buildable for an MVP within 24-48 hours. Explicitly state what should be built vs. what should be mocked/hardcoded for the demo.
-2. Demo Potential: The idea must have a highly visual or interactive component. Avoid backend-heavy ideas that are hard to show off in a 2-minute pitch.
-3. AI Integration: Use AI to solve the core logic or create a magical user experience, not just as a basic chat wrapper.
-4. "Wow" Factor: Each idea must have a specific hook that makes judges sit up and pay attention.
+    prompt = f"""You are exHacker, an elite hackathon veteran and Idea Generator Agent.
 
-### Input Data:
-Problem Analysis:
-{analysis}
+Generate exactly 5 highly competitive hackathon project ideas.
 
-Opportunity Analysis:
-{opportunities}
+Constraints:
+1. Feasibility: Buildable MVP within 24-48 hours
+2. Demo Potential: Highly visual or interactive
+3. AI Integration: AI solves core logic
+4. "Wow" Factor: Judges will be impressed
 
-### Output Format:
-Return a valid JSON list of 10 objects with the following keys:
-{{
-  "name": "Idea Title (Max 5 words)",
-  "tagline": "One-sentence hook",
-  "category": "e.g., AI, Web3, DevOps, Creator Tools",
-  "demo_hook": "The specific interactive moment or visual result that wins the demo",
-  "why_now": "Why this is relevant to the hackathon theme/current trends",
-  "feasibility_plan": "Short plan (2-3 sentences) of what to build vs. mock"
-}}
+Challenge: {challenge}
+
+Problem Analysis: {analysis}
+
+Opportunity Analysis: {opportunities}
 """
 
-    result = llm.with_structured_output(
-        IdeaList
-    ).invoke(prompt)
-
-    return {
-        "ideas": [
-            idea.model_dump()
-            for idea in result.ideas
-        ]
-    }
-    
+    result = generate_with_fallback(prompt, IdeaListOutput)
+    if not isinstance(result, IdeaListOutput):
+        return {"generated_ideas": []}
+    return {"generated_ideas": [idea.model_dump() for idea in result.ideas]}
