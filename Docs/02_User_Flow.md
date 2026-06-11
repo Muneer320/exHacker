@@ -1,474 +1,766 @@
-# User Flow Document
+# 02_User_Journey.md
+
+# User Journey & Workflow Specification
 
 Project: exHacker
 
-Version: 1.0
+Version: 2.0
+
+Status: Active
 
 ---
 
-# Overview
+# Purpose
 
-This document defines the complete user journey through exHacker.
+This document defines:
 
-The objective is to transform a challenge statement into a complete hackathon execution package with minimal friction.
+* What the user sees
+* What happens internally
+* Which agents execute
+* What data is generated
+* Human approval points
+* Failure handling
+
+This document is the bridge between:
+
+* Product
+* Frontend
+* Backend
+* Workflow Orchestration
 
 ---
 
-# User Journey
+# Core Principle
+
+The user should never interact directly with agents.
+
+The user interacts with:
+
+* Forms
+* Results
+* Recommendations
+* Approval checkpoints
+
+Agents operate behind the scenes.
+
+---
+
+# High-Level Journey
 
 Landing Page
 ↓
-Create Project
+Project Creation
 ↓
-Challenge Setup
+Challenge Analysis
 ↓
-Analysis Phase
+Opportunity Discovery
 ↓
-Idea Discovery
+Idea Exploration
+↓
+Idea Validation
 ↓
 Idea Selection
 ↓
-Architecture Generation
+Architecture Design
 ↓
-Build Preparation
+Build Planning
 ↓
-Submission Preparation
+Presentation Creation
 ↓
-Export Package
+Pitch Preparation
+↓
+Export
 
 ---
 
-# Screen 1
+# Stage 1
 
-Landing Page
-
-Purpose:
-
-Introduce exHacker.
-
-Primary CTA:
-
-"Create New Hackathon Project"
-
-Secondary CTA:
-
-"View Demo"
-
-Displayed Information:
-
-* Project description
-* Key benefits
-* Example outputs
+Project Creation
 
 ---
 
-# Screen 2
+## User Sees
 
-Project Setup
+New Project Form
 
-Purpose:
-
-Collect user inputs.
-
-User Enters:
+Fields:
 
 ### Challenge Statements
 
-```text
-Build an AI-powered solution for ...
-```
+Required
+
+Examples:
+
+* Build an AI healthcare assistant
+* Improve financial literacy
+* Create a sustainability solution
 
 ---
 
 ### Team Information
 
-```text
-Team Size
-Experience Level
-Skills
-```
+Required
+
+Fields:
+
+* Team Size
+* Experience Level
+* Technologies Known
+* Technologies Preferred
 
 ---
 
-### Duration
+### Time Available
 
-```text
-24 Hours
-36 Hours
-48 Hours
-```
+Required
 
----
+Examples:
 
-### Sponsor Tracks
-
-Optional.
+* 24 hours
+* 36 hours
+* 48 hours
 
 ---
 
 ### Resources
 
-Optional.
+Optional
 
 Examples:
 
 * APIs
 * Datasets
 * Documentation
+* Sponsor Resources
 
 ---
 
-User Action:
+## User Action
 
-Click
+Click:
 
-"Start Analysis"
-
----
-
-# Screen 3
-
-Analysis Progress
-
-Purpose:
-
-Show agent activity.
-
-Display:
-
-```text
-✓ User Profile Complete
-
-✓ Challenge Analysis Complete
-
-✓ Problem Analysis Complete
-
-✓ Opportunity Discovery Complete
-
-...
-```
-
-Live progress updates.
-
-Estimated completion time.
+Start Analysis
 
 ---
 
-# Screen 4
+## System Action
+
+Creates:
+
+Project
+
+Creates:
+
+Initial Workflow State
+
+Triggers:
+
+Challenge Intelligence Agent
+
+---
+
+## State Updates
+
+Creates:
+
+project
+
+team_profile
+
+workflow_metadata
+
+---
+
+# Stage 2
 
 Challenge Intelligence
 
-Purpose:
+---
 
-Display challenge understanding.
+## User Sees
 
-Sections:
+Analysis Progress Screen
 
-### Key Themes
+Example:
 
-### Constraints
+✓ Project Created
 
-### Opportunities
+✓ Challenge Intelligence Running
 
-### Technical Opportunities
+⏳ Problem Analysis Pending
 
-### Resource Opportunities
-
-User Action:
-
-Continue
+⏳ Opportunity Discovery Pending
 
 ---
 
-# Screen 5
+## Agent
+
+Challenge Intelligence Agent
+
+---
+
+## Agent Inputs
+
+* Challenge Statements
+* Resources
+
+---
+
+## Agent Outputs
+
+* Themes
+* Constraints
+* Opportunities
+* Evaluation Factors
+
+---
+
+## State Updates
+
+challenge_intelligence
+
+---
+
+# Stage 3
 
 Problem Analysis
 
-Display:
+---
 
-### Stakeholders
+## Agent
 
-### Pain Points
-
-### Assumptions
-
-### Success Metrics
-
-### Refined Problem Definition
-
-User Action:
-
-Continue
+Problem Analyst Agent
 
 ---
 
-# Screen 6
+## Inputs
+
+challenge_intelligence
+
+team_profile
+
+project
+
+---
+
+## Outputs
+
+* Stakeholders
+* Pain Points
+* Assumptions
+* Success Metrics
+* Refined Problem Statement
+
+---
+
+## State Updates
+
+problem_analysis
+
+---
+
+# Stage 4
 
 Opportunity Discovery
 
-Display:
+---
 
-### Market Gaps
+## Agent
 
-### Innovation Opportunities
-
-### High Impact Areas
-
-### Technical Opportunities
-
-User Action:
-
-Generate Ideas
+Opportunity Planner Agent
 
 ---
 
-# Screen 7
+## Inputs
 
-Idea Gallery
+problem_analysis
 
-Purpose:
+challenge_intelligence
 
-Display generated ideas.
+---
 
-Show:
+## Outputs
 
-Card View
+* Market Gaps
+* Innovation Areas
+* Technical Opportunities
+* High Impact Opportunities
+
+---
+
+## State Updates
+
+opportunity_analysis
+
+---
+
+# Stage 5
+
+Idea Generation
+
+---
+
+## Agent
+
+Idea Generator Agent
+
+---
+
+## Inputs
+
+challenge_intelligence
+
+problem_analysis
+
+opportunity_analysis
+
+team_profile
+
+---
+
+## Outputs
+
+Minimum:
+
+3 ideas
+
+Preferred:
+
+5 ideas
 
 For each idea:
 
 * Title
 * Description
+* Target Users
+* Key Features
 * Innovation Score
-* Feasibility Score
-* Hackathon Fit Score
-
-User Action:
-
-Select Ideas For Validation
-
-Maximum:
-
-3
 
 ---
 
-# Screen 8
+## State Updates
+
+generated_ideas
+
+---
+
+# Stage 6
 
 Idea Validation
 
-Display:
+---
 
-### Competitors
+## Agent
 
-### Existing Solutions
-
-### APIs
-
-### Open Source Projects
-
-### Risks
-
-### Strengths
-
-### Weaknesses
-
-### Final Score
-
-User Action:
-
-Choose Final Idea
-
-Mandatory.
+Idea Validator Agent
 
 ---
 
-# Screen 9
+## Inputs
 
-Architecture Dashboard
+generated_ideas
 
-Purpose:
+team_profile
 
-Display generated blueprint.
-
-Sections:
-
-### Product Vision
-
-### Features
-
-### User Stories
-
-### Architecture
-
-### APIs
-
-### Database Schema
-
-### Integrations
-
-Navigation:
-
-Sidebar Layout
+project
 
 ---
 
-# Screen 10
+## Research Sources
 
-Tech Stack Dashboard
-
-Display:
-
-### Frontend
-
-### Backend
-
-### Database
-
-### AI Stack
-
-### Hosting
-
-### Justifications
-
-User Action:
-
-Approve Stack
+* Existing Products
+* Competitors
+* Open Source Projects
+* APIs
+* Similar Solutions
 
 ---
 
-# Screen 11
+## Outputs
+
+Per Idea:
+
+* Strengths
+* Weaknesses
+* Risks
+* Feasibility Score
+* Innovation Score
+* Final Score
+
+---
+
+## State Updates
+
+validation_reports
+
+---
+
+# Stage 7
+
+Human Selection
+
+---
+
+## User Sees
+
+Idea Comparison Dashboard
+
+Displays:
+
+* All Ideas
+* Validation Results
+* Scores
+* Strengths
+* Risks
+
+---
+
+## User Action
+
+Select One Idea
+
+---
+
+## Critical Rule
+
+No agent may override the user selection.
+
+---
+
+## State Updates
+
+selected_idea
+
+---
+
+# Stage 8
+
+Tech Stack Recommendation
+
+---
+
+## Agent
+
+Tech Stack Advisor
+
+---
+
+## Inputs
+
+selected_idea
+
+team_profile
+
+time_constraints
+
+---
+
+## Outputs
+
+Frontend
+
+Backend
+
+Database
+
+AI Stack
+
+Hosting
+
+Deployment Strategy
+
+Justifications
+
+---
+
+## State Updates
+
+tech_stack
+
+---
+
+# Stage 9
+
+Solution Architecture
+
+---
+
+## Agent
+
+Solution Architect
+
+---
+
+## Inputs
+
+selected_idea
+
+tech_stack
+
+team_profile
+
+---
+
+## Outputs
+
+System Design
+
+Components
+
+Data Flow
+
+Database Design
+
+API Design
+
+Integrations
+
+MVP Scope
+
+Future Scope
+
+---
+
+## State Updates
+
+architecture
+
+---
+
+# Stage 10
 
 Build Accelerator
 
-Display:
+---
 
-### Frontend Prompts
+## Agent
 
-### Backend Prompts
+Build Accelerator
 
-### Database Prompts
+---
 
-### AI Prompts
+## Inputs
 
-### Testing Prompts
+architecture
 
-### Deployment Prompts
+tech_stack
 
-User Actions:
+selected_idea
 
-Copy
+---
+
+## Outputs
+
+Frontend Tasks
+
+Backend Tasks
+
+Database Tasks
+
+Testing Tasks
+
+Deployment Tasks
+
+Implementation Prompts
+
+---
+
+## State Updates
+
+build_package
+
+prompt_package
+
+---
+
+# Stage 11
+
+Presentation Generation
+
+---
+
+## Agent
+
+Presentation Agent
+
+---
+
+## Inputs
+
+selected_idea
+
+architecture
+
+validation_reports
+
+---
+
+## Outputs
+
+Slide Structure
+
+Slide Content
+
+Demo Flow
+
+Architecture Slides
+
+Technical Slides
+
+Business Slides
+
+---
+
+## State Updates
+
+presentation
+
+---
+
+# Stage 12
+
+Pitch Preparation
+
+---
+
+## Agent
+
+Pitch Coach
+
+---
+
+## Inputs
+
+selected_idea
+
+presentation
+
+validation_reports
+
+---
+
+## Outputs
+
+30 Second Pitch
+
+2 Minute Pitch
+
+5 Minute Pitch
+
+Judge Questions
+
+Suggested Answers
+
+Demo Narrative
+
+---
+
+## State Updates
+
+pitch
+
+---
+
+# Stage 13
+
 Export
-Download
 
 ---
 
-# Screen 12
+## User Sees
 
-Presentation Center
+Export Dashboard
 
-Display:
+Available Exports:
 
-### PPT Structure
-
-### Slide Content
-
-### Demo Story
-
-### Architecture Diagrams
-
-User Action:
-
-Export Presentation Package
+* Markdown
+* PDF
+* ZIP Package
 
 ---
 
-# Screen 13
+## Generated Files
 
-Pitch Center
+README.md
 
-Display:
+PRD.md
 
-### 30 Second Pitch
+Architecture.md
 
-### 2 Minute Pitch
+API_Spec.md
 
-### 5 Minute Pitch
+Presentation.md
 
-### Q&A Preparation
+Pitch.md
 
-### Demo Script
-
-User Action:
-
-Export Pitch Package
+Implementation_Guide.md
 
 ---
 
-# Screen 14
+## State Updates
 
-Export Center
-
-Purpose:
-
-Download complete project package.
-
-Available Formats:
-
-### PDF
-
-### Markdown
-
-### JSON
-
-### ZIP
-
-Package Contents:
-
-* Research
-* Analysis
-* Architecture
-* Prompts
-* Presentation
-* Pitch
-
-User Action:
-
-Download Package
+export_package
 
 ---
 
-# Success Flow
+# Failure Handling
 
-Challenge Statement
-↓
-Idea Discovery
-↓
-Idea Validation
-↓
-Architecture
-↓
-Build Prompts
-↓
-Presentation
-↓
-Pitch
-↓
-Export
+Every Agent:
 
-Without leaving the platform.
+Maximum Retries: 3
+
+If Failure Persists:
+
+Workflow Status:
+
+FAILED
+
+Error Logged
+
+User Notified
 
 ---
 
-# UX Principles
+# Resume Support
 
-* Minimal friction
-* Progressive disclosure
-* Human approval at critical decisions
-* Clear progress visibility
-* Export-first workflow
+Workflow State must be persisted.
+
+If server crashes:
+
+Workflow resumes from the last completed stage.
+
+Previously completed agents must not re-run unless explicitly requested.
 
 ---
 
-# Success Metric
+# Human Checkpoints
 
-A first-time user should be able to generate a complete hackathon blueprint within five minutes.
+Mandatory:
+
+Idea Selection
+
+Optional Future:
+
+Architecture Approval
+
+Presentation Approval
+
+Pitch Approval
+
+---
+
+# Success Condition
+
+A workflow is successful when:
+
+* A final idea is selected
+* Architecture is generated
+* Tech stack is generated
+* Build package exists
+* Presentation exists
+* Pitch exists
+* Export package exists
+
+Only then may workflow status become:
+
+COMPLETED

@@ -1,704 +1,508 @@
-# Product Requirements Document (PRD)
+# 01_PRD.md
+
+# Product Requirements Document
 
 Project: exHacker
 
-Version: 1.0
+Version: 2.0
 
-Status: Draft
-
-Owner: exHacker Team
+Status: Active
 
 ---
 
-# Executive Summary
+# Product Overview
 
-exHacker is a multi-agent AI platform that transforms hackathon challenge statements into execution-ready project blueprints.
+exHacker is a multi-agent AI system that helps hackathon teams transform a challenge statement into an execution-ready project plan.
 
 The platform automates:
 
-* Challenge analysis
+* Problem understanding
 * Opportunity discovery
 * Idea generation
 * Idea validation
-* Architecture design
+* Technical architecture
+* Tech stack selection
+* Build planning
+* Presentation creation
+* Pitch preparation
+
+The objective is to minimize planning time and maximize building time.
+
+---
+
+# Problem Statement
+
+Hackathons are extremely time-constrained.
+
+Most teams spend a large portion of available time on:
+
+* Understanding challenges
+* Research
+* Brainstorming
+* Validation
+* Architecture discussions
 * Technology selection
-* Documentation generation
 * Presentation preparation
-* Pitch coaching
 
-The objective is to drastically reduce planning overhead and maximize development time during hackathons.
+As a result:
 
----
+* Good ideas are discarded
+* Weak ideas are pursued
+* Teams lose valuable development time
+* Presentations are rushed
 
-# Problem
-
-Hackathon teams spend a significant portion of their limited event duration on planning-related activities rather than implementation.
-
-Common challenges include:
-
-* Understanding challenge requirements
-* Understanding evaluation criteria
-* Identifying valuable opportunities
-* Leveraging provided resources effectively
-* Researching existing solutions
-* Evaluating project feasibility
-* Choosing technologies
-* Designing architecture
-* Creating presentations
-* Preparing pitches
-
-As a result, many teams fail not because of poor ideas, but because of poor planning and inefficient decision-making.
+The planning process is often fragmented across many tools and documents.
 
 ---
 
-# Goals
+# Solution
 
-## Primary Goals
+exHacker provides a structured workflow driven by specialized AI agents.
 
-* Reduce project planning time by at least 80%
-* Generate high-quality project ideas
-* Improve challenge-specific decision making
-* Produce implementation-ready documentation
-* Improve presentation quality
-* Improve pitch quality
-* Increase time spent building
+A user provides:
 
----
+* Problem statements
+* Team information
+* Time constraints
+* Available resources
 
-## Secondary Goals
+The system produces:
 
-* Increase project feasibility
-* Increase innovation quality
-* Improve technical depth
-* Improve challenge alignment
-* Improve hackathon success rates
-
----
-
-# Non Goals
-
-Version 1 will NOT:
-
-* Generate production-ready applications
-* Replace software engineers
-* Deploy applications
-* Manage repositories
-* Create pull requests
-* Participate in voice conversations
-* Autonomously submit hackathon projects
-* Replace human decision-making
-
-Users remain responsible for selecting ideas and implementing solutions.
+* Refined problem understanding
+* Opportunity analysis
+* Multiple validated ideas
+* Architecture recommendations
+* Tech stack recommendations
+* Build instructions
+* Presentation materials
+* Pitch materials
 
 ---
 
 # Target Users
 
-## Primary Users
+Primary:
 
-Hackathon Teams
+* Hackathon participants
 
-Characteristics:
+Secondary:
 
-* 1–6 members
-* Time constrained
-* Mixed skill levels
-* Need rapid planning
-* Need execution guidance
-
----
-
-## Secondary Users
-
-* Student innovators
+* Student builders
 * Startup founders
-* Product builders
-* Innovation teams
+* Product teams
+* Innovation programs
 
 ---
 
-# Inputs
+# Primary User Goal
 
-Users provide the following information.
+The user wants to answer:
+
+> What should we build and how should we build it?
+
+within a few minutes.
 
 ---
 
-## Required Inputs
+# User Inputs
 
-### Challenge Statements
+Required:
 
-One or more challenge statements.
+### Problem Statements
 
-Example:
+One or more challenge descriptions.
 
-```text
-Build an AI-powered solution to reduce food waste.
-```
+Examples:
+
+* AI for Healthcare
+* Financial Inclusion
+* Sustainability
+* Developer Productivity
 
 ---
 
 ### Team Information
 
-```json
-{
-  "team_size": 4,
-  "experience_level": "intermediate",
-  "skills": [
-    "frontend",
-    "backend",
-    "ai"
-  ]
-}
-```
+* Team size
+* Skill level
+* Known technologies
+* Preferred technologies
 
 ---
 
-### Event Duration
+### Time Constraint
 
-```json
-{
-  "duration_hours": 24
-}
-```
+Examples:
 
----
-
-## Optional Inputs
-
-### Hackathon Information
-
-```json
-{
-  "hackathon_name": "",
-  "website": ""
-}
-```
+* 24 hours
+* 36 hours
+* 48 hours
+* 72 hours
 
 ---
 
-### Evaluation Criteria
+Optional:
 
-```json
-{
-  "criteria": [
-    "innovation",
-    "technical_complexity",
-    "impact"
-  ]
-}
-```
+### Resources
+
+* APIs
+* Datasets
+* Documentation
+* Sponsor resources
 
 ---
 
-### Sponsor Tracks
-
-```json
-{
-  "tracks": [
-    "Generative AI",
-    "Agentic AI"
-  ]
-}
-```
+# Core Features
 
 ---
 
-### Available Resources
+## Feature 1
 
-```json
-{
-  "datasets": [],
-  "apis": [],
-  "documentation_links": []
-}
-```
+Challenge Intelligence
 
----
+Purpose:
 
-### Additional Context
+Understand the challenge.
 
-```json
-{
-  "notes": ""
-}
-```
+Outputs:
 
----
-
-# Outputs
-
-The platform generates a complete hackathon execution package.
-
----
-
-## Challenge Intelligence Report
-
-Includes:
-
-* Theme analysis
-* Track analysis
-* Resource analysis
-* Dataset opportunities
-* API opportunities
-* Evaluation focus areas
-* Technical leverage points
-
----
-
-## Problem Analysis Report
-
-Includes:
-
-* Pain points
-* Stakeholders
+* Themes
 * Constraints
-* Assumptions
-* Success metrics
-* Challenge interpretation
+* Opportunities
+* Evaluation factors
+* Technical opportunities
 
 ---
 
-## Opportunity Analysis Report
+## Feature 2
 
-Includes:
+Problem Analysis
+
+Purpose:
+
+Convert challenge into a structured problem definition.
+
+Outputs:
+
+* Stakeholders
+* Pain points
+* Success metrics
+* Assumptions
+* Refined problem statement
+
+---
+
+## Feature 3
+
+Opportunity Discovery
+
+Purpose:
+
+Identify promising solution areas.
+
+Outputs:
 
 * Market gaps
-* Underserved users
-* High-impact opportunities
-* Technical opportunities
 * Innovation opportunities
+* High impact areas
+* Technical opportunities
 
 ---
 
-## Project Ideas
+## Feature 4
 
-Ranked ideas including:
+Idea Generation
 
-* Title
-* Description
-* Innovation score
-* Feasibility score
-* Hackathon fit score
-* Technical wow factor
-* Final weighted score
+Purpose:
 
----
+Generate multiple project ideas.
 
-## Idea Validation Reports
+Outputs:
 
-For each selected idea:
-
-* Competitor analysis
-* Similar products
-* Open-source alternatives
-* API availability
-* Technical risks
-* Feasibility assessment
+* Idea descriptions
+* Feature lists
+* User targets
+* Innovation scores
 
 ---
 
-## Architecture Package
+## Feature 5
 
-Includes:
+Idea Validation
 
-* Product vision
-* Core features
-* Priorities
-* User stories
-* Architecture diagrams
-* API definitions
-* Database schema
-* Integration plans
-* Security considerations
-* Deployment recommendations
+Purpose:
+
+Validate generated ideas.
+
+Research:
+
+* Existing products
+* Competitors
+* APIs
+* Open source projects
+
+Outputs:
+
+* Strengths
+* Weaknesses
+* Risks
+* Final score
 
 ---
 
-## Build Accelerator Package
+## Feature 6
 
-Includes:
+Human Idea Selection
+
+Purpose:
+
+Keep human decision making in the loop.
+
+User selects:
+
+* One idea
+
+No agent may override this selection.
+
+---
+
+## Feature 7
+
+Tech Stack Recommendation
+
+Purpose:
+
+Recommend technologies.
+
+Factors:
+
+* Team skills
+* Available time
+* Complexity
+* Deployment requirements
+
+Outputs:
+
+* Frontend stack
+* Backend stack
+* Database
+* AI stack
+* Hosting
+
+---
+
+## Feature 8
+
+Solution Architecture
+
+Purpose:
+
+Design implementation.
+
+Outputs:
+
+* System architecture
+* Components
+* Data flow
+* APIs
+* Database design
+* Integrations
+
+---
+
+## Feature 9
+
+Build Accelerator
+
+Purpose:
+
+Generate implementation guidance.
+
+Outputs:
 
 * Frontend prompts
 * Backend prompts
 * Database prompts
-* AI prompts
 * Testing prompts
 * Deployment prompts
-* Cursor prompts
-* Claude prompts
-* Lovable prompts
-* Bolt prompts
 
 ---
 
-## Presentation Package
+## Feature 10
 
-Includes:
+Presentation Generator
 
-* PPT outline
-* Slide content
-* Architecture visuals
-* Demo storyline
-* Impact metrics
+Purpose:
 
----
+Generate presentation materials.
 
-## Pitch Package
+Outputs:
 
-Includes:
-
-* 30-second pitch
-* 2-minute pitch
-* 5-minute pitch
-* Judge Q&A preparation
-* Objection handling
-* Demo script
+* Slide structure
+* Content
+* Demo flow
+* Architecture diagrams
 
 ---
 
-# Core Workflow
-
-Step 1
-
-User enters:
-
-* Challenge statements
-* Team details
-* Duration
-* Tracks
-* Resources
-
-↓
-
-Step 2
-
-Challenge Intelligence Agent
-
-Analyzes:
-
-* Themes
-* Tracks
-* Resources
-* Constraints
-
-↓
-
-Step 3
-
-Problem Analyst
-
-Identifies:
-
-* Stakeholders
-* Pain points
-* Success metrics
-
-↓
-
-Step 4
-
-Opportunity Planner
-
-Discovers:
-
-* High-value opportunities
-* Innovation opportunities
-* Technical leverage points
-
-↓
-
-Step 5
-
-Idea Generator
-
-Generates multiple candidate ideas.
-
-↓
-
-Step 6
-
-Idea Validator
-
-Scores and validates ideas.
-
-↓
-
-Step 7
-
-User selects preferred idea.
-
-↓
-
-Step 8
-
-Solution Architect
-
-Generates complete project blueprint.
-
-↓
-
-Step 9
-
-Tech Stack Advisor
-
-Recommends technologies.
-
-↓
-
-Step 10
-
-Build Accelerator
-
-Generates implementation prompts.
-
-↓
-
-Step 11
-
-Presentation Agent
-
-Generates presentation assets.
-
-↓
-
-Step 12
+## Feature 11
 
 Pitch Coach
 
-Generates pitch preparation materials.
+Purpose:
 
+Prepare team presentation.
+
+Outputs:
+
+* 30 second pitch
+* 2 minute pitch
+* 5 minute pitch
+* Judge Q&A preparation
+
+---
+
+# Non-Goals
+
+The following are explicitly out of scope.
+
+---
+
+## Code Generation
+
+The system does not directly generate entire applications.
+
+It generates plans and implementation guidance.
+
+---
+
+## Project Hosting
+
+The platform does not host user projects.
+
+---
+
+## Team Communication
+
+The platform is not Slack, Discord, or project management software.
+
+---
+
+## Source Control
+
+The platform is not GitHub.
+
+---
+
+# User Workflow
+
+Input
 ↓
-
-Step 13
-
-Export Package
-
-User downloads complete project package.
-
----
-
-# Functional Requirements
-
-## FR-001
-
-Users can create a new hackathon project.
-
-## FR-002
-
-Users can enter multiple challenge statements.
-
-## FR-003
-
-Users can provide team information.
-
-## FR-004
-
-Users can provide hackathon information.
-
-## FR-005
-
-Users can provide evaluation criteria.
-
-## FR-006
-
-Users can provide sponsor tracks.
-
-## FR-007
-
-Users can provide datasets.
-
-## FR-008
-
-Users can provide APIs.
-
-## FR-009
-
-System shall generate challenge intelligence reports.
-
-## FR-010
-
-System shall generate problem analysis reports.
-
-## FR-011
-
-System shall generate opportunity analysis reports.
-
-## FR-012
-
-System shall generate project ideas.
-
-## FR-013
-
-System shall score and rank ideas.
-
-## FR-014
-
-Users shall select a preferred idea.
-
-## FR-015
-
-System shall generate a complete project blueprint.
-
-## FR-016
-
-System shall generate build prompts.
-
-## FR-017
-
-System shall generate presentation materials.
-
-## FR-018
-
-System shall generate pitch materials.
-
-## FR-019
-
-System shall export all generated artifacts.
+Challenge Intelligence
+↓
+Problem Analysis
+↓
+Opportunity Discovery
+↓
+Idea Generation
+↓
+Idea Validation
+↓
+Human Selection
+↓
+Tech Stack Recommendation
+↓
+Solution Architecture
+↓
+Build Accelerator
+↓
+Presentation Generator
+↓
+Pitch Coach
+↓
+Export
 
 ---
 
-# Success Metrics
+# Success Criteria
 
-## Planning Time Reduction
+A successful run should produce:
 
-Target:
+* At least 3 viable ideas
+* At least 1 validated recommendation
+* A complete architecture package
+* A recommended stack
+* Build guidance
+* Presentation material
+* Pitch material
 
-80%+
-
----
-
-## Blueprint Generation Time
-
-Target:
-
-Under 5 minutes
+without requiring manual research.
 
 ---
 
-## Challenge Alignment Score
+# Performance Targets
 
-Target:
+Idea Generation:
 
-90%+
+< 60 seconds
 
-Generated ideas should strongly align with challenge requirements and evaluation criteria.
+Validation:
 
----
+< 120 seconds
 
-## User Satisfaction
+Architecture:
 
-Target:
+< 60 seconds
 
-4.5 / 5
+Full Workflow:
 
----
-
-## Idea Selection Accuracy
-
-Target:
-
-Users select one of the top three ranked ideas in at least 80% of sessions.
+< 5 minutes
 
 ---
 
-# Constraints
+# Engineering Requirements
 
-* Limited hackathon duration
-* Limited API budgets
-* Limited context windows
-* Variable challenge quality
-* Variable team skill levels
-* Limited user attention
+Backend:
 
----
+* Python
+* FastAPI
+* LangGraph
 
-# Assumptions
+Frontend:
 
-* Users provide accurate information.
-* Challenge statements are meaningful.
-* Internet research sources are available.
-* Users make final project decisions.
-* Teams are responsible for implementation.
+* Next.js
+* React
+* TypeScript
 
----
+Database:
 
-# Risks
+* PostgreSQL
 
-## Poor Research Quality
+LLM:
 
-Mitigation:
+* Provider abstraction
+* Groq support
+* Gemini support
+* Ollama support
+* OpenAI support
 
-Use multiple research sources.
+Deployment:
 
----
-
-## Overengineered Ideas
-
-Mitigation:
-
-Feasibility scoring.
+* Local-first
+* Docker support
+* Railway compatible
+* Vercel compatible
 
 ---
 
-## Unrealistic Architecture
+# Future Expansion
 
-Mitigation:
+Future versions may support:
 
-Time-aware architecture generation.
+* Startup planning
+* Product discovery
+* Accelerator applications
+* Grant applications
+* Business planning
 
----
-
-## Feature Creep
-
-Mitigation:
-
-Strict MVP-first planning.
-
----
-
-## Excessive Complexity
-
-Mitigation:
-
-Scope recommendations based on team size and duration.
-
----
-
-# MVP Scope
-
-Included:
-
-* Challenge Intelligence
-* Problem Analysis
-* Opportunity Discovery
-* Idea Generation
-* Idea Validation
-* Architecture Design
-* Tech Stack Recommendations
-* Build Accelerator
-* Presentation Generation
-* Pitch Preparation
-
-Excluded:
-
-* Code Generation
-* GitHub Integration
-* Jira Integration
-* Project Tracking
-* Real-Time Collaboration
-* Voice Agents
-* Autonomous Deployment
-
----
-
-# Definition of Success
-
-A team should be able to provide a challenge statement and receive a complete execution-ready hackathon package within minutes.
-
-The package should contain sufficient information for a development team to immediately begin implementation.
-
----
-
-# One-Sentence Summary
-
-exHacker is an autonomous multi-agent hackathon operating system that transforms challenge statements into execution-ready project blueprints.
+Current version remains focused on hackathons.

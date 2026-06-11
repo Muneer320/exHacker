@@ -1,678 +1,801 @@
+# 04_Agent_Specifications.md
+
 # Agent Specifications
 
 Project: exHacker
 
-Version: 1.0
+Version: 2.0
 
-Status: Draft
+Status: Active
 
 ---
 
 # Purpose
 
-This document defines the detailed behavior of every agent in the exHacker ecosystem.
+This document defines every agent in the system.
 
-For each agent we define:
+For each agent:
 
-* Objective
+* Responsibilities
 * Inputs
 * Outputs
+* State Access
 * Success Criteria
 * Failure Conditions
-* Dependencies
-* Prompting Strategy
 
-This document acts as the implementation blueprint for all agents.
+This document acts as the contract between:
 
----
-
-# Agent 0
-
-## User Profiler
-
-### Objective
-
-Understand team constraints and establish realistic project boundaries.
+* Workflow Engine
+* Agents
+* State Management
 
 ---
 
-### Inputs
+# General Agent Rules
 
-```json
-{
-  "team_size": 4,
-  "duration_hours": 24,
-  "experience_level": "intermediate",
-  "skills": [
-    "frontend",
-    "backend",
-    "ai"
-  ]
-}
-```
+All agents must follow these rules.
 
 ---
 
-### Responsibilities
+## Input Rule
 
-* Estimate project complexity budget
-* Estimate execution capacity
-* Determine recommended project scope
-* Identify risk tolerance
+Agents receive:
 
----
+* Shared State
+* Configuration
+* Context
 
-### Outputs
-
-```json
-{
-  "complexity_budget": "medium",
-  "recommended_scope": "mvp",
-  "risk_tolerance": "medium",
-  "execution_capacity_score": 78
-}
-```
+Agents must never directly call another agent.
 
 ---
 
-### Success Criteria
+## Output Rule
 
-* Scope recommendations match team capabilities
-* Complexity recommendations are realistic
+Agents must return structured outputs.
+
+No free-form responses.
+
+All outputs must match schemas.
 
 ---
 
-### Failure Conditions
+## State Rule
 
-* Missing team information
-* Invalid duration
+Agents:
+
+May:
+
+* Read state
+* Update their assigned domain
+
+May Not:
+
+* Modify unrelated domains
+* Delete user decisions
+* Override selected ideas
+
+---
+
+## Retry Rule
+
+Maximum retries:
+
+3
+
+After 3 failures:
+
+Workflow marked failed.
 
 ---
 
 # Agent 1
 
-## Challenge Intelligence Agent
-
-### Objective
-
-Extract actionable insights from the challenge environment.
+Challenge Intelligence Agent
 
 ---
 
-### Inputs
+## Purpose
 
-```json
-{
-  "challenge_statements": [],
-  "tracks": [],
-  "resources": [],
-  "criteria": []
-}
+Understand the challenge.
+
+Identify:
+
+* Themes
+* Constraints
+* Opportunities
+* Evaluation criteria
+
+---
+
+## Inputs
+
+```text
+project.challenge_statements
+
+project.resources
 ```
 
 ---
 
-### Responsibilities
+## Outputs
 
-* Analyze themes
-* Analyze sponsor tracks
-* Analyze resources
-* Analyze APIs
-* Analyze datasets
-* Identify opportunities
-* Identify constraints
+```text
+challenge_intelligence
+```
+
+Contains:
+
+* themes
+* constraints
+* opportunities
+* evaluation_factors
+* technical_opportunities
 
 ---
 
-### Outputs
+## State Access
 
-```json
-{
-  "themes": [],
-  "opportunities": [],
-  "constraints": [],
-  "resource_opportunities": [],
-  "evaluation_focus": []
-}
+Read:
+
+```text
+project
+resources
+```
+
+Write:
+
+```text
+challenge_intelligence
 ```
 
 ---
 
-### Success Criteria
+## Success Criteria
 
-* Discovers useful opportunities
-* Correctly identifies constraints
-* Produces challenge-aligned insights
+Challenge can be clearly understood by later agents.
 
 ---
 
 # Agent 2
 
-## Problem Analyst
-
-### Objective
-
-Deeply understand the actual problem.
+Problem Analyst
 
 ---
 
-### Inputs
+## Purpose
 
-* Challenge Intelligence Report
-* Challenge Statements
-
----
-
-### Responsibilities
-
-* Identify stakeholders
-* Identify pain points
-* Identify assumptions
-* Define success metrics
-* Refine challenge interpretation
+Convert challenge into a structured problem.
 
 ---
 
-### Outputs
+## Inputs
 
-```json
-{
-  "stakeholders": [],
-  "pain_points": [],
-  "assumptions": [],
-  "success_metrics": [],
-  "problem_definition": ""
-}
+```text
+challenge_intelligence
+
+team_profile
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Problem clearly defined
-* Success metrics measurable
-* Stakeholders identified
+```text
+problem_analysis
+```
+
+Contains:
+
+* stakeholders
+* pain_points
+* assumptions
+* success_metrics
+* refined_problem_statement
+
+---
+
+## State Access
+
+Read:
+
+```text
+challenge_intelligence
+team_profile
+```
+
+Write:
+
+```text
+problem_analysis
+```
+
+---
+
+## Success Criteria
+
+Problem becomes specific and measurable.
 
 ---
 
 # Agent 3
 
-## Opportunity Planner
-
-### Objective
-
-Discover high-value solution opportunities.
+Opportunity Planner
 
 ---
 
-### Inputs
+## Purpose
 
-* Problem Analysis
-* Challenge Intelligence
-
----
-
-### Responsibilities
-
-* Identify market gaps
-* Identify innovation opportunities
-* Identify high-impact areas
-* Identify technical leverage points
+Identify valuable opportunities.
 
 ---
 
-### Outputs
+## Inputs
 
-```json
-{
-  "market_gaps": [],
-  "innovation_opportunities": [],
-  "high_impact_areas": [],
-  "technical_opportunities": []
-}
+```text
+challenge_intelligence
+
+problem_analysis
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Opportunities are challenge-aligned
-* Opportunities are feasible
+```text
+opportunity_analysis
+```
+
+Contains:
+
+* market_gaps
+* innovation_opportunities
+* technical_opportunities
+* impact_opportunities
+
+---
+
+## State Access
+
+Read:
+
+```text
+challenge_intelligence
+
+problem_analysis
+```
+
+Write:
+
+```text
+opportunity_analysis
+```
+
+---
+
+## Success Criteria
+
+Produces multiple promising directions.
 
 ---
 
 # Agent 4
 
-## Idea Generator
-
-### Objective
-
-Generate multiple strong project concepts.
+Idea Generator
 
 ---
 
-### Inputs
+## Purpose
 
-* Problem Analysis
-* Opportunity Analysis
-* Team Profile
+Generate project concepts.
 
 ---
 
-### Responsibilities
+## Inputs
 
-* Generate candidate projects
-* Ensure diversity of ideas
-* Ensure feasibility
+```text
+challenge_intelligence
 
----
+problem_analysis
 
-### Output Count
+opportunity_analysis
 
-10 ideas
-
----
-
-### Outputs
-
-```json
-{
-  "ideas": [
-    {
-      "title": "",
-      "description": "",
-      "key_features": [],
-      "innovation_score": 0
-    }
-  ]
-}
+team_profile
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Diverse ideas
-* Feasible ideas
-* Strong challenge alignment
+```text
+generated_ideas
+```
+
+Minimum:
+
+3 ideas
+
+Preferred:
+
+5 ideas
+
+---
+
+## Per Idea
+
+Contains:
+
+* title
+* description
+* target_users
+* key_features
+* innovation_score
+
+---
+
+## State Access
+
+Read:
+
+```text
+challenge_intelligence
+
+problem_analysis
+
+opportunity_analysis
+
+team_profile
+```
+
+Write:
+
+```text
+generated_ideas
+```
+
+---
+
+## Success Criteria
+
+Produces multiple viable projects.
 
 ---
 
 # Agent 5
 
-## Idea Validator
-
-### Objective
-
-Research and score generated ideas.
+Idea Validator
 
 ---
 
-### Inputs
+## Purpose
 
-* Generated Ideas
+Validate generated ideas.
 
 ---
 
-### Responsibilities
+## Inputs
+
+```text
+generated_ideas
+```
 
 Research:
 
-* Competitors
-* Existing products
+* competitors
+* startups
 * APIs
-* Open-source solutions
-
-Score:
-
-* Innovation
-* Feasibility
-* Hackathon Fit
-* Technical Wow Factor
+* open source projects
+* similar products
 
 ---
 
-### Scoring Formula
+## Outputs
 
 ```text
-Innovation: 30%
+validation_reports
+```
 
-Feasibility: 30%
+Per Idea:
 
-Hackathon Fit: 20%
+* strengths
+* weaknesses
+* risks
+* feasibility_score
+* innovation_score
+* final_score
 
-Technical Wow Factor: 20%
+---
+
+## State Access
+
+Read:
+
+```text
+generated_ideas
+```
+
+Write:
+
+```text
+validation_reports
 ```
 
 ---
 
-### Outputs
+## Success Criteria
 
-```json
-{
-  "idea": "",
-  "innovation": 0,
-  "feasibility": 0,
-  "hackathon_fit": 0,
-  "technical_wow": 0,
-  "final_score": 0,
-  "strengths": [],
-  "weaknesses": []
-}
+Provides evidence-backed evaluation.
+
+---
+
+# Human Checkpoint
+
+Idea Selection
+
+---
+
+## Purpose
+
+Human chooses final direction.
+
+---
+
+## Inputs
+
+```text
+generated_ideas
+
+validation_reports
 ```
 
 ---
 
-### Success Criteria
+## Output
 
-* Accurate scoring
-* Reliable ranking
-* Meaningful feedback
+```text
+selected_idea
+```
 
 ---
 
-# Human Approval Stage
+## Critical Rule
 
-User reviews:
+User decision is final.
 
-* Top ideas
-* Scores
-* Validation reports
-
-User selects one idea.
-
-This checkpoint is mandatory.
+No agent may override it.
 
 ---
 
 # Agent 6
 
-## Solution Architect
-
-### Objective
-
-Create a complete implementation blueprint.
+Tech Stack Advisor
 
 ---
 
-### Inputs
-
-* Selected Idea
-* Validation Reports
-* Team Profile
-
----
-
-### Responsibilities
-
-Generate:
-
-* Product Vision
-* Problem Statement
-* User Personas
-* User Stories
-* Feature List
-* Feature Priorities
-* MVP Scope
-* Future Scope
-* Architecture
-* API Design
-* Database Schema
-* Integrations
-* Security Notes
-* Deployment Plan
-* README
-
----
-
-### Outputs
-
-```json
-{
-  "vision": {},
-  "features": [],
-  "architecture": {},
-  "database": {},
-  "apis": [],
-  "deployment": {}
-}
-```
-
----
-
-### Success Criteria
-
-* Buildable architecture
-* Realistic scope
-* Complete documentation
-
----
-
-# Agent 7
-
-## Tech Stack Advisor
-
-### Objective
+## Purpose
 
 Recommend technologies.
 
 ---
 
-### Inputs
+## Inputs
 
-* Architecture
-* Team Profile
-* Constraints
+```text
+selected_idea
 
----
+team_profile
 
-### Responsibilities
-
-Recommend:
-
-* Frontend
-* Backend
-* Database
-* Hosting
-* AI Models
-* Vector DB
-* Authentication
-
----
-
-### Outputs
-
-```json
-{
-  "frontend": "",
-  "backend": "",
-  "database": "",
-  "hosting": "",
-  "ai_models": []
-}
+project.duration
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Technologies match constraints
-* Technologies match team skills
+```text
+tech_stack
+```
+
+Contains:
+
+* frontend
+* backend
+* database
+* ai_stack
+* deployment
+* reasoning
+
+---
+
+## Success Criteria
+
+Stack is realistic for available time.
+
+---
+
+# Agent 7
+
+Solution Architect
+
+---
+
+## Purpose
+
+Design implementation architecture.
+
+---
+
+## Inputs
+
+```text
+selected_idea
+
+tech_stack
+
+team_profile
+```
+
+---
+
+## Outputs
+
+```text
+architecture
+```
+
+Contains:
+
+* system_design
+* components
+* modules
+* data_flow
+* api_design
+* database_design
+* integrations
+* mvp_scope
+* future_scope
+
+---
+
+## Success Criteria
+
+Team can begin implementation.
 
 ---
 
 # Agent 8
 
-## Build Accelerator
-
-### Objective
-
-Convert documentation into implementation prompts.
+Build Accelerator
 
 ---
 
-### Inputs
+## Purpose
 
-* Architecture Package
-* Tech Stack Recommendations
-
----
-
-### Responsibilities
-
-Generate prompts for:
-
-* Cursor
-* Claude
-* Lovable
-* Bolt
-* Windsurf
-
-Generate:
-
-* Frontend Prompts
-* Backend Prompts
-* Database Prompts
-* AI Prompts
-* Testing Prompts
-* Deployment Prompts
+Convert architecture into execution tasks.
 
 ---
 
-### Outputs
+## Inputs
 
-```json
-{
-  "frontend_prompts": [],
-  "backend_prompts": [],
-  "database_prompts": [],
-  "testing_prompts": []
-}
+```text
+architecture
+
+tech_stack
+
+selected_idea
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Prompts are implementation-ready
-* Prompts are structured
-* Prompts are stack-aware
+```text
+build_package
+```
+
+Contains:
+
+* frontend_tasks
+* backend_tasks
+* database_tasks
+* testing_tasks
+* deployment_tasks
+
+---
+
+## Additional Output
+
+```text
+prompt_package
+```
+
+Contains:
+
+* frontend_prompts
+* backend_prompts
+* database_prompts
+* testing_prompts
+* deployment_prompts
+
+---
+
+## Success Criteria
+
+Developers can immediately begin work.
 
 ---
 
 # Agent 9
 
-## Presentation Agent
-
-### Objective
-
-Prepare submission materials.
+Presentation Agent
 
 ---
 
-### Inputs
+## Purpose
 
-* Architecture Package
-* Validation Reports
-
----
-
-### Responsibilities
-
-Generate:
-
-* PPT Structure
-* Slide Content
-* Architecture Diagrams
-* Workflow Diagrams
-* Demo Storyline
-* Impact Metrics
+Create presentation materials.
 
 ---
 
-### Outputs
+## Inputs
 
-```json
-{
-  "slides": [],
-  "architecture_diagrams": [],
-  "demo_story": ""
-}
+```text
+selected_idea
+
+architecture
+
+validation_reports
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Presentation tells a coherent story
-* Presentation is hackathon-ready
+```text
+presentation
+```
+
+Contains:
+
+* slide_order
+* slide_content
+* architecture_slides
+* demo_story
+* business_story
+
+---
+
+## Success Criteria
+
+Ready-to-build presentation.
 
 ---
 
 # Agent 10
 
-## Pitch Coach
+Pitch Coach
 
-### Objective
+---
+
+## Purpose
 
 Prepare final presentation delivery.
 
 ---
 
-### Inputs
+## Inputs
 
-* PPT
-* Architecture
-* Validation Reports
+```text
+selected_idea
 
----
+presentation
 
-### Responsibilities
-
-Generate:
-
-* 30 Second Pitch
-* 2 Minute Pitch
-* 5 Minute Pitch
-* Demo Script
-* Judge Q&A
-* Objection Handling
-
----
-
-### Outputs
-
-```json
-{
-  "pitch_30": "",
-  "pitch_120": "",
-  "pitch_300": "",
-  "qa": []
-}
+validation_reports
 ```
 
 ---
 
-### Success Criteria
+## Outputs
 
-* Pitch is persuasive
-* Q&A preparation is realistic
-* Demo flow is clear
+```text
+pitch
+```
+
+Contains:
+
+* 30_second_pitch
+* 2_minute_pitch
+* 5_minute_pitch
+* judge_questions
+* suggested_answers
+* demo_script
 
 ---
 
-# Agent Communication Rules
+## Success Criteria
 
-1. Agents never directly modify another agent's output.
-2. All communication happens through shared project state.
-3. Every output must be structured.
-4. Every output must be versioned.
-5. Human approval is required before architecture generation.
+Team is prepared for judging.
 
 ---
 
-# Summary
+# Agent Execution Order
 
-The exHacker ecosystem consists of 11 specialized agents coordinated through a shared project state and orchestrated through a deterministic workflow.
+```text
+Challenge Intelligence
+↓
+Problem Analyst
+↓
+Opportunity Planner
+↓
+Idea Generator
+↓
+Idea Validator
+↓
+Human Selection
+↓
+Tech Stack Advisor
+↓
+Solution Architect
+↓
+Build Accelerator
+↓
+Presentation Agent
+↓
+Pitch Coach
+```
 
-Each agent is optimized for one responsibility and produces structured outputs that progressively transform challenge statements into implementation-ready project blueprints.
+---
+
+# Future Agents
+
+Potential future agents:
+
+* UI/UX Designer
+* Market Research Agent
+* Startup Advisor
+* Grant Writer
+* Business Model Generator
+* Financial Planner
+
+These should integrate through the workflow engine and shared state.
+
+---
+
+# Agent Design Principles
+
+1. Single Responsibility
+
+Each agent should do one thing well.
+
+---
+
+2. Structured Outputs
+
+No free-form outputs.
+
+---
+
+3. Replaceable
+
+Agents should be replaceable without changing the workflow.
+
+---
+
+4. Stateless Execution
+
+Agents should not store internal memory.
+
+Shared state is the source of truth.
+
+---
+
+5. Independent Testing
+
+Every agent must be testable in isolation.
+
+---
+
+6. Research-Backed Decisions
+
+Agents should rely on evidence whenever possible.
+
+Avoid hallucinated recommendations.
