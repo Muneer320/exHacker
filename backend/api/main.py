@@ -1,23 +1,23 @@
+from __future__ import annotations
+
 import asyncio
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import Any
 
-# Load .env FIRST — agents create LLM instances at import time,
-# so env vars must be set before any agent module is imported.
 from dotenv import find_dotenv, load_dotenv
+
 load_dotenv(find_dotenv(usecwd=False, raise_error_if_not_found=False))
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
 
-from graph.workflow import graph
-from schemas.project_request import ProjectRequest
-
-from workflow.session_store import create_session, get_session, save_session
-from workflow.executor import execute_step
-from workflow.steps import STEPS, get_step, get_next_step
+from graph.workflow import graph  # noqa: E402
+from schemas.project_request import ProjectRequest  # noqa: E402
+from workflow.executor import execute_step  # noqa: E402
+from workflow.session_store import create_session, get_session, save_session  # noqa: E402
+from workflow.steps import STEPS, get_next_step, get_step  # noqa: E402
 
 app = FastAPI(title="exHacker API", version="2.0.0")
 
@@ -37,25 +37,16 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Thread pool for legacy /generate endpoint
 _executor = ThreadPoolExecutor(max_workers=4)
 
-
-# ─── Health ────────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def home():
     return {"message": "exHacker API Running", "version": "2.0.0"}
 
 
-# ─── Legacy one-shot endpoint (kept for backwards compatibility) ───────────────
-
 @app.post("/generate")
 async def generate(data: ProjectRequest):
-    """
-    Legacy endpoint: runs all agents sequentially and returns the full result.
-    Kept so the old /results page still works.
-    """
     initial_state = {
         "challenge_statement": data.challenge_statement,
         "hackathon_name": data.hackathon_name,
@@ -80,12 +71,9 @@ async def generate(data: ProjectRequest):
         result = await loop.run_in_executor(_executor, graph.invoke, initial_state)
         return result
     except Exception as exc:
-        tb = traceback.format_exc()
-        print(f"[/generate ERROR]\n{tb}")
-        raise HTTPException(status_code=500, detail=str(exc))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-
-# ─── HITL Workflow — Request models ───────────────────────────────────────────
 
 class WorkflowStartRequest(BaseModel):
     challenge_statement: str
@@ -101,24 +89,18 @@ class WorkflowContinueRequest(BaseModel):
 class WorkflowSelectIdeaRequest(BaseModel):
     session_id: str
     idea_index: int
-    idea: Optional[dict] = None   # Optional: user-edited idea fields override the ranked idea
+    idea: dict[str, Any] | None = None
 
 
 class WorkflowUpdateOutputRequest(BaseModel):
     session_id: str
     step: str
-    updates: dict
+    updates: dict[str, Any]
 
-
-# ─── HITL Workflow — Endpoints ─────────────────────────────────────────────────
 
 @app.post("/workflow/start")
 async def workflow_start(data: WorkflowStartRequest):
-    """
-    Create a new workflow session and immediately run the first step (Problem Analyst).
-    Returns: session_id + first step output.
-    """
-    initial_state = {
+    initial_state: dict[str, Any] = {
         "challenge_statement": data.challenge_statement,
         "hackathon_name": data.hackathon_name,
         "sponsors": data.sponsors,
@@ -126,35 +108,39 @@ async def workflow_start(data: WorkflowStartRequest):
         "problem_analysis": {},
         "opportunity_analysis": {},
         "ideas": [],
+        "generated_ideas": [],
         "ranked_ideas": [],
         "selected_idea": {},
         "solution_blueprint": {},
+        "architecture": {},
         "slides": [],
         "pitch_30s": "",
         "pitch_2min": "",
         "pitch_5min": "",
+        "presentation": {},
+        "pitch": {},
+        "exports": {},
         "final_report": "",
         "prd_document": "",
         "vision_document": "",
+        "tech_stack": {},
+        "challenge_intelligence": {},
+        "validation_reports": [],
+        "build_package": {},
+        "prompt_package": {},
     }
     session_id = create_session(initial_state)
 
     try:
-        result = await execute_step(session_id, "problem_analyst")
+        result = await execute_step(session_id, "challenge_intelligence")
         return result
     except Exception as exc:
-        tb = traceback.format_exc()
-        print(f"[/workflow/start ERROR]\n{tb}")
-        raise HTTPException(status_code=500, detail=str(exc))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/workflow/continue")
 async def workflow_continue(data: WorkflowContinueRequest):
-    """
-    Run the next pending agent step for an existing session.
-    Blocks until the agent completes, then returns its output.
-    Returns 400 if the current step is 'select_idea' (user must select via /workflow/select-idea first).
-    """
     session = get_session(data.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -175,17 +161,12 @@ async def workflow_continue(data: WorkflowContinueRequest):
         result = await execute_step(data.session_id, current_step)
         return result
     except Exception as exc:
-        tb = traceback.format_exc()
-        print(f"[/workflow/continue ERROR]\n{tb}")
-        raise HTTPException(status_code=500, detail=str(exc))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/workflow/select-idea")
 async def workflow_select_idea(data: WorkflowSelectIdeaRequest):
-    """
-    User manually selects (and optionally edits) an idea from the ranked list.
-    Advances current_step → solution_architect.
-    """
     session = get_session(data.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -196,32 +177,23 @@ async def workflow_select_idea(data: WorkflowSelectIdeaRequest):
             detail=f"Expected step 'select_idea', current step is '{session.get('current_step')}'",
         )
 
-    state: dict = session["state"]
-    ranked_ideas: list = state.get("ranked_ideas", [])
-    ideas: list = state.get("ideas", [])
+    state = session["state"]
+    reports = state.get("validation_reports", []) or state.get("ranked_ideas", [])
 
-    if not ranked_ideas:
-        raise HTTPException(status_code=400, detail="No ranked ideas in session state")
+    if not reports:
+        raise HTTPException(status_code=400, detail="No validated ideas in session state")
 
-    if not (0 <= data.idea_index < len(ranked_ideas)):
+    if not (0 <= data.idea_index < len(reports)):
         raise HTTPException(
             status_code=400,
-            detail=f"idea_index {data.idea_index} is out of range (0–{len(ranked_ideas) - 1})",
+            detail=f"idea_index {data.idea_index} is out of range (0–{len(reports) - 1})",
         )
 
-    if data.idea:
-        # User provided custom / edited idea
-        selected_idea = data.idea
-    else:
-        # Merge ranked idea with original idea (by title) for richer context
-        ranked = ranked_ideas[data.idea_index]
-        title = ranked.get("title", "")
-        original = next((i for i in ideas if i.get("title") == title), {})
-        selected_idea = {**original, **ranked}
+    selected_idea = data.idea or reports[data.idea_index]
 
     state["selected_idea"] = selected_idea
 
-    next_step = get_next_step("select_idea")   # → "solution_architect"
+    next_step = get_next_step("select_idea")
     session["current_step"] = next_step
     session["completed_steps"].append("select_idea")
     session["step_outputs"]["select_idea"] = {"selected_idea": selected_idea}
@@ -244,10 +216,6 @@ async def workflow_select_idea(data: WorkflowSelectIdeaRequest):
 
 @app.post("/workflow/update-output")
 async def workflow_update_output(data: WorkflowUpdateOutputRequest):
-    """
-    Allow the user to edit a completed step's output before continuing.
-    Updates both the cached step output and the running AgentState.
-    """
     session = get_session(data.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -267,10 +235,6 @@ async def workflow_update_output(data: WorkflowUpdateOutputRequest):
 
 @app.get("/workflow/state/{session_id}")
 async def workflow_state(session_id: str):
-    """
-    Return the full session: AgentState + completed steps + step outputs + step metadata.
-    Used by the frontend to restore state after a page reload.
-    """
     session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -288,7 +252,6 @@ async def workflow_state(session_id: str):
 
 @app.get("/workflow/current-step/{session_id}")
 async def workflow_current_step(session_id: str):
-    """Return metadata for the current (next pending) step."""
     session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -305,12 +268,11 @@ async def workflow_current_step(session_id: str):
 
 @app.get("/workflow/output/{session_id}")
 async def workflow_output(session_id: str):
-    """Return the output of the most recently completed step."""
     session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    completed: list = session["completed_steps"]
+    completed: list[str] = session["completed_steps"]
     if not completed:
         return {"step": None, "output": None}
 
@@ -320,3 +282,48 @@ async def workflow_output(session_id: str):
         "step_meta": get_step(last),
         "output": session["step_outputs"].get(last),
     }
+
+
+@app.get("/workflows/{workflow_id}")
+async def get_workflow_status(workflow_id: str):
+    session = get_session(workflow_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    done = session["current_step"] is None
+    total = len(STEPS)
+    completed_count = len(session["completed_steps"])
+    progress = int((completed_count / total) * 100) if total > 0 else 0
+
+    return {
+        "workflow_id": workflow_id,
+        "status": "completed" if done else "running",
+        "current_stage": session["current_step"],
+        "progress": progress,
+    }
+
+
+@app.post("/workflows/{workflow_id}/resume")
+async def resume_workflow(workflow_id: str):
+    session = get_session(workflow_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if session["current_step"] is None:
+        return {"status": "completed", "message": "Workflow is already completed"}
+
+    return {"status": "running", "current_step": session["current_step"]}
+
+
+@app.post("/workflows/{workflow_id}/restart")
+async def restart_workflow(workflow_id: str):
+    session = get_session(workflow_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    session["current_step"] = "challenge_intelligence"
+    session["completed_steps"] = []
+    session["step_outputs"] = {}
+    save_session(workflow_id, session)
+
+    return {"status": "running"}

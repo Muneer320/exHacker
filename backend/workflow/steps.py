@@ -1,14 +1,16 @@
-"""
-Single source of truth for the ordered workflow steps.
+from __future__ import annotations
 
-`select_idea` is a synthetic step — it has no agent behind it.
-It represents the user's manual idea selection action.
-The executor skips it; the API handles it via POST /workflow/select-idea.
-"""
+from typing import Any
 
-from typing import Optional
-
-STEPS: list[dict] = [
+STEPS: list[dict[str, Any]] = [
+    {
+        "key": "challenge_intelligence",
+        "label": "Challenge Intelligence",
+        "description": "Understanding the challenge themes, constraints, and opportunities",
+        "output_key": "challenge_intelligence",
+        "is_select_step": False,
+        "symbol": "◈",
+    },
     {
         "key": "problem_analyst",
         "label": "Problem Analyst",
@@ -28,23 +30,23 @@ STEPS: list[dict] = [
     {
         "key": "idea_generator",
         "label": "Idea Generator",
-        "description": "10 highly competitive hackathon project ideas",
-        "output_key": "ideas",
+        "description": "Generate competitive hackathon project ideas",
+        "output_key": "generated_ideas",
         "is_select_step": False,
         "symbol": "◆",
     },
     {
         "key": "idea_validator",
         "label": "Idea Validator",
-        "description": "Brutal scoring and ranking across 5 dimensions",
-        "output_key": "ranked_ideas",
+        "description": "Validate and score ideas across multiple dimensions",
+        "output_key": "validation_reports",
         "is_select_step": False,
         "symbol": "⚖",
     },
     {
         "key": "select_idea",
         "label": "Idea Selection",
-        "description": "Choose your winning idea from the ranked list",
+        "description": "Choose your winning idea from the validated list",
         "output_key": "selected_idea",
         "is_select_step": True,
         "symbol": "✦",
@@ -52,32 +54,32 @@ STEPS: list[dict] = [
     {
         "key": "solution_architect",
         "label": "Solution Architect",
-        "description": "Complete technical blueprint and 24–48 h roadmap",
-        "output_key": "solution_blueprint",
+        "description": "Complete technical blueprint and implementation roadmap",
+        "output_key": "architecture",
         "is_select_step": False,
         "symbol": "◉",
     },
     {
         "key": "presentation_agent",
         "label": "Presentation Agent",
-        "description": "10-slide pitch deck with full speaker notes",
-        "output_key": "slides",
+        "description": "Generate presentation deck with speaker notes",
+        "output_key": "presentation",
         "is_select_step": False,
         "symbol": "▣",
     },
     {
         "key": "pitch_agent",
         "label": "Pitch Agent",
-        "description": "30-second, 2-minute, and 5-minute pitch scripts",
-        "output_key": "pitch_30s",
+        "description": "Generate elevator pitch, hackathon pitch, and investor pitch",
+        "output_key": "pitch",
         "is_select_step": False,
         "symbol": "◎",
     },
     {
         "key": "report_generator",
         "label": "Report Generator",
-        "description": "Complete execution report and final deliverable",
-        "output_key": "final_report",
+        "description": "Generate final execution report and documentation",
+        "output_key": "exports",
         "is_select_step": False,
         "symbol": "▤",
     },
@@ -86,7 +88,7 @@ STEPS: list[dict] = [
 STEP_KEYS: list[str] = [s["key"] for s in STEPS]
 
 
-def get_step(key: Optional[str]) -> Optional[dict]:
+def get_step(key: str | None) -> dict[str, Any] | None:
     if not key:
         return None
     for s in STEPS:
@@ -95,7 +97,7 @@ def get_step(key: Optional[str]) -> Optional[dict]:
     return None
 
 
-def get_next_step(current_key: str) -> Optional[str]:
+def get_next_step(current_key: str) -> str | None:
     try:
         idx = STEP_KEYS.index(current_key)
         return STEP_KEYS[idx + 1] if idx + 1 < len(STEP_KEYS) else None
