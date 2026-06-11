@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# exHacker Frontend
 
-## Getting Started
+Next.js 16 application for the exHacker hackathon co-pilot.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## App Architecture
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx            # Landing / hero
+│   ├── generate/page.tsx   # Legacy generation flow
+│   ├── new-project/page.tsx
+│   ├── results/page.tsx
+│   └── workflow/page.tsx   # 10-step HITL workflow
+├── components/             # React components
+│   ├── ui/                 # shadcn-style primitives
+│   │   ├── badge.tsx
+│   │   ├── card.tsx
+│   │   ├── scroll-area.tsx
+│   │   └── tabs.tsx
+│   ├── agent-tabs.tsx      # Agent log inspector
+│   ├── AnimatedBackground.tsx
+│   ├── ChallengeForm.tsx
+│   ├── Hero.tsx
+│   ├── IdeaCard.tsx
+│   ├── LoadingScreen.tsx
+│   ├── Navbar.tsx
+│   ├── PitchCard.tsx
+│   └── ReportCard.tsx
+├── lib/
+│   ├── api.ts             # Backend API client
+│   └── utils.ts           # cn() utility
+├── types/
+│   ├── index.ts           # Re-exports
+│   └── project.ts         # TypeScript interfaces
+├── stores/
+│   └── index.ts           # State store scaffold
+└── features/
+    └── index.ts           # Feature module scaffold
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Routing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Page | Purpose |
+|-------|------|---------|
+| `/` | `page.tsx` | Landing page with hero |
+| `/generate` | `generate/page.tsx` | Legacy one-shot generation |
+| `/new-project` | `new-project/page.tsx` | New project form |
+| `/results` | `results/page.tsx` | View generation results |
+| `/workflow` | `workflow/page.tsx` | 10-step HITL workflow |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## State Management
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+State is managed through the backend HITL workflow API. The frontend fetches step data via API calls rather than maintaining local state. Scaffold files under `src/stores/` and `src/features/` are ready for future client-side state management.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## API Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+All backend communication goes through `src/lib/api.ts`. The base URL is configured via `NEXT_PUBLIC_API_BASE_URL` environment variable (defaults to `http://localhost:8000`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Local Development
+
+```bash
+cd frontend
+npm install
+cp ../.env.example .env.local
+# Edit .env.local: set NEXT_PUBLIC_API_BASE_URL if needed
+npm run dev
+```
+
+---
+
+## Build
+
+```bash
+npm run build
+npm start
+```
+
+> Note: The `next build` currently requires `@tailwindcss/postcss` — ensure it's installed as a dev dependency.
