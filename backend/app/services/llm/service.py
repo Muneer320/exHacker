@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from contextlib import suppress
 from typing import Any
 
@@ -11,6 +12,14 @@ from app.services.llm.providers.gemini_provider import GeminiProvider
 from app.services.llm.providers.groq_provider import GroqProvider
 from app.services.llm.providers.ollama_provider import OllamaProvider
 from app.services.llm.providers.openai_provider import OpenAIProvider
+
+
+def _enrich_prompt(prompt: str, output_schema: type[BaseModel]) -> str:
+    return (
+        f"{prompt}\n\n"
+        f"You MUST respond ONLY with valid JSON matching this exact structure:\n"
+        f"{json.dumps(output_schema.model_json_schema(), indent=2)}"
+    )
 
 
 class LLMService:
@@ -64,10 +73,12 @@ class LLMService:
         output_schema: type[BaseModel],
         **kwargs: Any,
     ) -> BaseModel:
+        enriched = _enrich_prompt(prompt, output_schema)
         errors: list[str] = []
         for provider in self._chain:
             try:
-                return provider.generate_structured(prompt, output_schema, **kwargs)
+                text = provider.generate_text(enriched, **kwargs)
+                return output_schema.model_validate_json(text)
             except Exception as exc:
                 errors.append(f"{provider.name}: {exc}")
                 continue

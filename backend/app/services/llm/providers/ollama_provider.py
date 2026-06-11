@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel
@@ -27,14 +27,8 @@ class OllamaProvider(LLMProvider):
         output_schema: type[BaseModel],
         **kwargs: Any,  # noqa: ARG002
     ) -> BaseModel:
-        try:
-            result = self._llm.with_structured_output(output_schema, method="json_mode").invoke(prompt)
-            return cast(BaseModel, result)
-        except Exception:
-            text = self.generate_text(
-                f"{prompt}\n\nRespond ONLY with valid JSON conforming to: {output_schema.model_json_schema()}"
-            )
-            return output_schema.model_validate_json(text)
+        text = self.generate_text(prompt)
+        return output_schema.model_validate_json(text)
 
     def generate_text(self, prompt: str, **kwargs: Any) -> str:  # noqa: ARG002
         return str(self._llm.invoke(prompt).content)
