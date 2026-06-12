@@ -36,6 +36,8 @@ class SolutionArchitectAgent(BaseAgent):
             "- mvp_scope should have exactly 5-7 specific deliverables.\n"
             "- future_scope should have 3-5 post-hackathon enhancements.\n"
             "- mermaid_diagram MUST be a valid Mermaid flowchart (graph TB format).\n"
+            "- Do NOT include any emojis, markdown block markers, or HTML in the diagram.\n"
+            "- Node labels with spaces, brackets, or parentheses MUST be enclosed in double quotes. Example: A[\"My Node (API)\"].\n"
             "- Return valid JSON only. No markdown. No explanations.\n\n"
             "OUTPUT SCHEMA:\n"
             "{\n"
@@ -73,6 +75,50 @@ class SolutionArchitectAgent(BaseAgent):
 
     def apply_result(self, state: Dict[str, Any], result: ArchitecturePackage) -> Dict[str, Any]:
         arch_dict = result.model_dump()
+        # Clean up Mermaid diagram if present
+        diagram = arch_dict.get("mermaid_diagram")
+        if diagram:
+            # Strip code block wrappers if any
+            diagram = diagram.strip()
+            if diagram.startswith("```"):
+                lines = diagram.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                diagram = "\n".join(lines).strip()
+            
+            # Remove emojis & non-ASCII characters
+            import re
+            diagram = re.sub(r'[^\x00-\x7F]+', ' ', diagram)
+            
+            # Fix unquoted labels containing parentheses or spaces
+            def quote_label(match):
+                nid, label = match.group(1), match.group(2)
+                clean_lbl = label.strip()
+                if clean_lbl.startswith('"') and clean_lbl.endswith('"'):
+                    return match.group(0)
+                if any(c in label for c in " ()/\\:,-"):
+                    safe_lbl = label.replace('"', '\\"')
+                    return f'{nid}["{safe_lbl}"]'
+                return match.group(0)
+            
+            # Match node declarations like A[Text]
+            diagram = re.sub(r'(\w+)\s*\[([^"\n]+)\]', quote_label, diagram)
+            
+            # Also clean up unquoted subgraph labels
+            def quote_subgraph(match):
+                nid, label = match.group(1), match.group(2)
+                clean_lbl = label.strip()
+                if clean_lbl.startswith('"') and clean_lbl.endswith('"'):
+                    return match.group(0)
+                safe_lbl = label.replace('"', '\\"')
+                return f'subgraph {nid}["{safe_lbl}"]'
+                
+            diagram = re.sub(r'subgraph\s+(\w+)\s*\[([^"\n]+)\]', quote_subgraph, diagram)
+            
+            arch_dict["mermaid_diagram"] = diagram
+
         # If LLM didn't provide a Mermaid diagram, generate one from components
         if not arch_dict.get("mermaid_diagram"):
             arch_dict["mermaid_diagram"] = self._generate_mermaid(arch_dict)

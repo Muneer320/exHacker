@@ -46,6 +46,7 @@ class TeamProfile(BaseModel):
     experience_level: str
     known_technologies: List[str] = Field(default_factory=list)
     preferred_technologies: List[str] = Field(default_factory=list)
+    avoided_technologies: List[str] = Field(default_factory=list)
 
 
 class Project(BaseModel):
@@ -243,6 +244,12 @@ class StageMetric(BaseModel):
     cost: float
 
 
+class LogEntry(BaseModel):
+    stage: str
+    message: str
+    timestamp: str
+
+
 class ExecutionMetadata(BaseModel):
     total_duration_seconds: float = 0.0
     total_tokens: int = 0
@@ -270,3 +277,4 @@ class ExHackerStateSchema(BaseModel):
     exports: Optional[ExportPackage] = None
     execution: Optional[ExecutionMetadata] = Field(default_factory=ExecutionMetadata)
     errors: List[WorkflowError] = Field(default_factory=list)
+    logs: List[LogEntry] = Field(default_factory=list)

@@ -55,6 +55,7 @@ class TechStackAdvisorAgent(BaseAgent):
 
         known_tech = ", ".join(team.get("known_technologies", []) if team else []) or "General purpose"
         preferred_tech = ", ".join(team.get("preferred_technologies", []) if team else []) or "None"
+        avoided_tech = ", ".join(team.get("avoided_technologies", []) if team else []) or "None"
         experience = team.get("experience_level", "Mid-level") if team else "Mid-level"
 
         return (
@@ -64,9 +65,11 @@ class TechStackAdvisorAgent(BaseAgent):
             f"TEAM PROFILE:\n"
             f"  Experience: {experience}\n"
             f"  Known Tech: {known_tech}\n"
-            f"  Preferred Tech: {preferred_tech}\n\n"
+            f"  Preferred Tech: {preferred_tech}\n"
+            f"  Avoided Tech (DO NOT USE THESE): {avoided_tech}\n\n"
             f"DURATION: {project.get('duration_hours', 48)} hours\n\n"
             "Recommend a pragmatic, deployable technology stack. "
+            "Make sure to STRICTLY AVOID any technology listed in Avoided Tech. "
             "Return the JSON object following the schema exactly."
         )
 

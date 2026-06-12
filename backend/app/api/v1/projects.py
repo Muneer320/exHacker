@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -11,7 +11,7 @@ from app.models.project import ProjectModel
 from app.models.workflow import WorkflowStateModel
 from app.schemas.api import ProjectCreateRequest, IdeaSelectRequest
 from app.schemas.state import ExHackerStateSchema, WorkflowStatus, WorkflowStage
-from app.services.workflow.engine import run_workflow
+from app.services.workflow.engine import run_workflow, run_workflow_background
 
 router = APIRouter()
 
@@ -177,8 +177,13 @@ async def get_project_ideas(project_id: str, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/{project_id}/ideas/select")
-async def select_idea(project_id: str, payload: IdeaSelectRequest, db: AsyncSession = Depends(get_db)):
-    """User selects an idea. Resume the workflow engine."""
+async def select_idea(
+    project_id: str,
+    payload: IdeaSelectRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    """User selects an idea. Resume the workflow engine in the background."""
     result = await db.execute(select(WorkflowStateModel).where(WorkflowStateModel.project_id == project_id))
     wf = result.scalar_one_or_none()
     
@@ -216,6 +221,15 @@ async def select_idea(project_id: str, payload: IdeaSelectRequest, db: AsyncSess
     state["metadata"]["current_stage"] = WorkflowStage.TECH_STACK.value
     state["metadata"]["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
     
+    # Add selection confirmed log
+    if "logs" not in state or state["logs"] is None:
+        state["logs"] = []
+    state["logs"].append({
+        "stage": "human_selection",
+        "message": f"Idea confirmed: '{selected_idea.get('title')}' chosen by user.",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    
     wf.state_json = state
     wf.status = WorkflowStatus.RUNNING.value
     wf.current_stage = WorkflowStage.TECH_STACK.value
@@ -223,17 +237,8 @@ async def select_idea(project_id: str, payload: IdeaSelectRequest, db: AsyncSess
     db.add(wf)
     await db.commit()
     
-    # Run the remaining workflow nodes async/in-place
-    # In a production setup this might run as a background task, but for hackathon we execute directly
-    final_state = await run_workflow(state)
-    
-    # Persist the final state
-    wf.state_json = final_state
-    wf.status = final_state["metadata"]["status"]
-    wf.current_stage = final_state["metadata"]["current_stage"]
-    flag_modified(wf, "state_json")
-    db.add(wf)
-    await db.commit()
+    # Run the remaining workflow nodes as a background task
+    background_tasks.add_task(run_workflow_background, wf.id)
     
     return {
         "success": True,
@@ -241,7 +246,7 @@ async def select_idea(project_id: str, payload: IdeaSelectRequest, db: AsyncSess
             "selected_idea": payload.idea_id,
             "workflow_status": wf.status
         },
-        "message": "Idea selected and workflow completed."
+        "message": "Idea confirmed. AI agents started generating full architecture, tech stack, build roadmap, pitch deck, and exports in the background."
     }
 
 

@@ -47,6 +47,7 @@ class ExHackerState(TypedDict):
     exports: Optional[Dict[str, Any]]
     execution: Dict[str, Any]
     errors: List[Dict[str, Any]]
+    logs: List[Dict[str, Any]]
 
 
 def utc_now_str() -> str:
@@ -57,50 +58,74 @@ def utc_now_str() -> str:
 # Node wrappers: update metadata stage, skip if already populated, delegate
 # ---------------------------------------------------------------------------
 
+def add_state_log(state: ExHackerState, stage: str, message: str):
+    if "logs" not in state or state["logs"] is None:
+        state["logs"] = []
+    state["logs"].append({
+        "stage": stage,
+        "message": message,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+
 async def challenge_intelligence_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.CHALLENGE_INTELLIGENCE.value
     state["metadata"]["status"] = WorkflowStatus.RUNNING.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "challenge_intelligence", "Challenge Intelligence agent starting requirements analysis...")
     if state.get("challenge_intelligence"):
-        logger.info("challenge_intelligence already populated — skipping.")
+        add_state_log(state, "challenge_intelligence", "Challenge analysis cached, skipping.")
         return state
-    return await challenge_intelligence_agent.execute(state)
+    res = await challenge_intelligence_agent.execute(state)
+    add_state_log(res, "challenge_intelligence", "Challenge Intelligence analysis complete. Constraints and opportunities extracted.")
+    return res
 
 
 async def problem_analysis_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.PROBLEM_ANALYSIS.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "problem_analysis", "Problem Analyst agent mapping stakeholders and pain points...")
     if state.get("problem_analysis"):
-        logger.info("problem_analysis already populated — skipping.")
+        add_state_log(state, "problem_analysis", "Problem analysis cached, skipping.")
         return state
-    return await problem_analysis_agent.execute(state)
+    res = await problem_analysis_agent.execute(state)
+    add_state_log(res, "problem_analysis", "Problem analysis complete. Refined problem statement and success metrics defined.")
+    return res
 
 
 async def opportunity_discovery_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.OPPORTUNITY_DISCOVERY.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "opportunity_discovery", "Opportunity Planner agent scanning market gaps and existing APIs...")
     if state.get("opportunity_analysis"):
-        logger.info("opportunity_analysis already populated — skipping.")
+        add_state_log(state, "opportunity_discovery", "Research findings cached, skipping.")
         return state
-    return await opportunity_discovery_agent.execute(state)
+    res = await opportunity_discovery_agent.execute(state)
+    add_state_log(res, "opportunity_discovery", "Research complete. Identified competitors, open-source libraries, and key integrations.")
+    return res
 
 
 async def idea_generation_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.IDEA_GENERATION.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "idea_generation", "Idea Generator agent brainstorming 5 distinct project concepts...")
     if state.get("generated_ideas"):
-        logger.info("generated_ideas already populated — skipping.")
+        add_state_log(state, "idea_generation", "Ideas cached, skipping.")
         return state
-    return await idea_generation_agent.execute(state)
+    res = await idea_generation_agent.execute(state)
+    add_state_log(res, "idea_generation", "Idea generation complete. Created 5 distinct concepts tailored to constraints.")
+    return res
 
 
 async def idea_validation_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.IDEA_VALIDATION.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "idea_validation", "Idea Validator agent scoring concepts for feasibility and novelty...")
     if state.get("validation_reports"):
-        logger.info("validation_reports already populated — skipping.")
+        add_state_log(state, "idea_validation", "Validation reports cached, skipping.")
         return state
-    return await idea_validation_agent.execute(state)
+    res = await idea_validation_agent.execute(state)
+    add_state_log(res, "idea_validation", "Validation complete. Ideas scored and ready for human selection.")
+    return res
 
 
 async def pause_for_selection_node(state: ExHackerState) -> ExHackerState:
@@ -108,6 +133,7 @@ async def pause_for_selection_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.HUMAN_SELECTION.value
     state["metadata"]["status"] = WorkflowStatus.WAITING_FOR_USER.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "human_selection", "Workflow paused at Idea Selection checkpoint. Awaiting user choice...")
     logger.info("Workflow paused at HUMAN_SELECTION checkpoint.")
     return state
 
@@ -115,54 +141,70 @@ async def pause_for_selection_node(state: ExHackerState) -> ExHackerState:
 async def tech_stack_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.TECH_STACK.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "tech_stack", "Tech Stack Advisor agent designing optimal software stack...")
     if state.get("tech_stack"):
-        logger.info("tech_stack already populated — skipping.")
+        add_state_log(state, "tech_stack", "Tech stack cached, skipping.")
         return state
-    return await tech_stack_advisor_agent.execute(state)
+    res = await tech_stack_advisor_agent.execute(state)
+    add_state_log(res, "tech_stack", "Tech stack recommended. Aligned with team skills and constraints.")
+    return res
 
 
 async def architecture_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.ARCHITECTURE.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "architecture", "Solution Architect agent designing system components and database tables...")
     if state.get("architecture"):
-        logger.info("architecture already populated — skipping.")
+        add_state_log(state, "architecture", "Architecture package cached, skipping.")
         return state
-    return await solution_architect_agent.execute(state)
+    res = await solution_architect_agent.execute(state)
+    add_state_log(res, "architecture", "Architecture design complete. Generated component list, API design, and Mermaid data flows.")
+    return res
 
 
 async def build_accelerator_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.BUILD_ACCELERATOR.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "build_plan", "Build Accelerator agent compiling roadmap milestones and tasks...")
     if state.get("build_package") and state.get("prompt_package"):
-        logger.info("build_package + prompt_package already populated — skipping.")
+        add_state_log(state, "build_plan", "Build plan cached, skipping.")
         return state
-    return await build_accelerator_agent.execute(state)
+    res = await build_accelerator_agent.execute(state)
+    add_state_log(res, "build_plan", "Build plan ready. Compiled milestones, frontend/backend task lists, and developer prompts.")
+    return res
 
 
 async def presentation_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.PRESENTATION.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "presentation", "Presentation agent structuring slides and pitch narratives...")
     if state.get("presentation"):
-        logger.info("presentation already populated — skipping.")
+        add_state_log(state, "presentation", "Presentation slides cached, skipping.")
         return state
-    return await presentation_agent.execute(state)
+    res = await presentation_agent.execute(state)
+    add_state_log(res, "presentation", "Slide deck structure complete. Structured slide titles, content lists, and visual notes.")
+    return res
 
 
 async def pitch_node(state: ExHackerState) -> ExHackerState:
     state["metadata"]["current_stage"] = WorkflowStage.PITCH.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "pitch", "Pitch Coach agent writing elevator pitches and Q&A prep...")
     if state.get("pitch"):
-        logger.info("pitch already populated — skipping.")
+        add_state_log(state, "pitch", "Pitch coach plan cached, skipping.")
         return state
-    return await pitch_coach_agent.execute(state)
+    res = await pitch_coach_agent.execute(state)
+    add_state_log(res, "pitch", "Pitch prep complete. Elevator pitch scripts and simulated Q&As ready.")
+    return res
 
 
 async def export_node(state: ExHackerState) -> ExHackerState:
     """Final node: assembles export package from completed outputs."""
     state["metadata"]["current_stage"] = WorkflowStage.EXPORT.value
     state["metadata"]["updated_at"] = utc_now_str()
+    add_state_log(state, "export", "Export agent compiling downloadable markdown packages...")
     if state.get("exports"):
-        logger.info("exports already populated — skipping.")
+        add_state_log(state, "export", "Exports cached, skipping.")
         return state
 
     idea = state.get("selected_idea", {})
@@ -218,6 +260,7 @@ async def export_node(state: ExHackerState) -> ExHackerState:
     }
 
     state["metadata"]["status"] = WorkflowStatus.COMPLETED.value
+    add_state_log(state, "export", "Export packages ready. Workflow completed successfully.")
     logger.info("Workflow COMPLETED. Export package assembled.")
     return state
 
@@ -300,3 +343,63 @@ async def run_workflow(initial_state: ExHackerState) -> ExHackerState:
             logger.debug(f"Node '{node_name}' completed. Stage: {current_state['metadata'].get('current_stage')}")
 
     return current_state
+
+
+async def run_workflow_background(workflow_id: str):
+    """
+    Runs graph execution in a new DB session context, committing the state
+    and logs incrementally to the database after each agent node finishes.
+    """
+    from app.db.session import SessionLocal
+    from app.models.workflow import WorkflowStateModel
+    from sqlalchemy.future import select
+    from sqlalchemy.orm.attributes import flag_modified
+
+    logger.info(f"[Background Workflow] Starting worker for workflow {workflow_id}")
+    async with SessionLocal() as db:
+        result = await db.execute(select(WorkflowStateModel).where(WorkflowStateModel.id == workflow_id))
+        wf = result.scalar_one_or_none()
+        if not wf:
+            logger.error(f"[Background Workflow] Workflow {workflow_id} not found.")
+            return
+
+        state = wf.state_json
+        current_state = state
+
+        try:
+            async for event in workflow_graph.astream(current_state):
+                for node_name, state_update in event.items():
+                    current_state.update(state_update)
+                    stage = current_state["metadata"].get("current_stage")
+                    status = current_state["metadata"].get("status")
+                    logger.info(f"[Background Workflow] Stage {stage} completed with status {status}")
+
+                    # Incremental database update
+                    wf.state_json = current_state
+                    wf.current_stage = stage
+                    wf.status = status
+                    flag_modified(wf, "state_json")
+                    db.add(wf)
+                    await db.commit()
+                    await db.refresh(wf)
+                    
+        except Exception as e:
+            logger.error(f"[Background Workflow] Exception in background graph run: {e}", exc_info=True)
+            wf.status = WorkflowStatus.FAILED.value
+            wf.current_stage = current_state["metadata"].get("current_stage", WorkflowStage.CHALLENGE_INTELLIGENCE.value)
+            
+            if "errors" not in current_state or current_state["errors"] is None:
+                current_state["errors"] = []
+            
+            current_state["errors"].append({
+                "stage": wf.current_stage,
+                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "message": f"Background error: {str(e)}",
+                "retry_count": 0
+            })
+            current_state["metadata"]["status"] = WorkflowStatus.FAILED.value
+            
+            wf.state_json = current_state
+            flag_modified(wf, "state_json")
+            db.add(wf)
+            await db.commit()

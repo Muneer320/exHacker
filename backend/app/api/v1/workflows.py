@@ -1,5 +1,5 @@
 import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm.attributes import flag_modified
@@ -7,7 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.db.session import get_db
 from app.models.workflow import WorkflowStateModel
 from app.schemas.state import WorkflowStatus, WorkflowStage
-from app.services.workflow.engine import run_workflow
+from app.services.workflow.engine import run_workflow, run_workflow_background
 
 router = APIRouter()
 
@@ -30,8 +30,8 @@ STAGE_PROGRESS_MAP = {
 
 
 @router.post("/{workflow_id}/start")
-async def start_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
-    """Start workflow execution."""
+async def start_workflow(workflow_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """Start workflow execution in the background."""
     result = await db.execute(select(WorkflowStateModel).where(WorkflowStateModel.id == workflow_id))
     wf = result.scalar_one_or_none()
     
@@ -57,21 +57,23 @@ async def start_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
     state["metadata"]["status"] = WorkflowStatus.RUNNING.value
     state["metadata"]["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
     
+    # Add start log
+    if "logs" not in state or state["logs"] is None:
+        state["logs"] = []
+    state["logs"].append({
+        "stage": "system",
+        "message": "Workflow started by user.",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    
     wf.status = WorkflowStatus.RUNNING.value
+    wf.state_json = state
     flag_modified(wf, "state_json")
     db.add(wf)
     await db.commit()
     
-    # Run graph execution loop
-    final_state = await run_workflow(state)
-    
-    # Save results
-    wf.state_json = final_state
-    wf.status = final_state["metadata"]["status"]
-    wf.current_stage = final_state["metadata"]["current_stage"]
-    flag_modified(wf, "state_json")
-    db.add(wf)
-    await db.commit()
+    # Run graph execution loop in background
+    background_tasks.add_task(run_workflow_background, workflow_id)
     
     return {
         "success": True,
@@ -79,7 +81,7 @@ async def start_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
             "workflow_id": workflow_id,
             "status": wf.status
         },
-        "message": "Workflow started successfully."
+        "message": "Workflow started successfully in background."
     }
 
 
@@ -139,8 +141,8 @@ async def get_workflow_state(workflow_id: str, db: AsyncSession = Depends(get_db
 
 
 @router.post("/{workflow_id}/resume")
-async def resume_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
-    """Resume execution of paused workflow."""
+async def resume_workflow(workflow_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """Resume execution of paused workflow in the background."""
     result = await db.execute(select(WorkflowStateModel).where(WorkflowStateModel.id == workflow_id))
     wf = result.scalar_one_or_none()
     
@@ -168,20 +170,23 @@ async def resume_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
     state["metadata"]["status"] = WorkflowStatus.RUNNING.value
     state["metadata"]["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
     
+    # Add resume log
+    if "logs" not in state or state["logs"] is None:
+        state["logs"] = []
+    state["logs"].append({
+        "stage": "system",
+        "message": "Workflow resumed by user.",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    
     wf.status = WorkflowStatus.RUNNING.value
+    wf.state_json = state
     flag_modified(wf, "state_json")
     db.add(wf)
     await db.commit()
     
-    # Re-run graph
-    final_state = await run_workflow(state)
-    
-    wf.state_json = final_state
-    wf.status = final_state["metadata"]["status"]
-    wf.current_stage = final_state["metadata"]["current_stage"]
-    flag_modified(wf, "state_json")
-    db.add(wf)
-    await db.commit()
+    # Re-run graph in background
+    background_tasks.add_task(run_workflow_background, workflow_id)
     
     return {
         "success": True,
@@ -193,8 +198,8 @@ async def resume_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{workflow_id}/restart")
-async def restart_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
-    """Reset workflow and execute from start."""
+async def restart_workflow(workflow_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """Reset workflow and execute from start in the background."""
     result = await db.execute(select(WorkflowStateModel).where(WorkflowStateModel.id == workflow_id))
     wf = result.scalar_one_or_none()
     
@@ -224,6 +229,7 @@ async def restart_workflow(workflow_id: str, db: AsyncSession = Depends(get_db))
     state["pitch"] = None
     state["exports"] = None
     state["errors"] = []
+    state["logs"] = []
     
     # Reset execution metrics
     state["execution"] = {
@@ -238,6 +244,13 @@ async def restart_workflow(workflow_id: str, db: AsyncSession = Depends(get_db))
     state["metadata"]["current_stage"] = WorkflowStage.CHALLENGE_INTELLIGENCE.value
     state["metadata"]["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
     
+    # Add restart log
+    state["logs"].append({
+        "stage": "system",
+        "message": "Workflow restarted by user.",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    
     wf.status = WorkflowStatus.RUNNING.value
     wf.current_stage = WorkflowStage.CHALLENGE_INTELLIGENCE.value
     wf.state_json = state
@@ -245,15 +258,8 @@ async def restart_workflow(workflow_id: str, db: AsyncSession = Depends(get_db))
     db.add(wf)
     await db.commit()
     
-    # Run graph execution
-    final_state = await run_workflow(state)
-    
-    wf.state_json = final_state
-    wf.status = final_state["metadata"]["status"]
-    wf.current_stage = final_state["metadata"]["current_stage"]
-    flag_modified(wf, "state_json")
-    db.add(wf)
-    await db.commit()
+    # Run graph execution in background
+    background_tasks.add_task(run_workflow_background, workflow_id)
     
     return {
         "success": True,
