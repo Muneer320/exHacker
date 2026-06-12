@@ -1,8 +1,0 @@
-feat: backend workflow background tasks and incremental logs
-
-- Add avoided_technologies to TeamProfile schema
-- Add logs field containing LogEntry items to ExHackerStateSchema
-- Incorporate avoided_technologies negative constraint in TechStackAdvisorAgent
-- Sanitize Mermaid diagram output to prevent rendering crashes
-- Implement incremental background workflow runner run_workflow_background in engine.py
-- Use FastAPI BackgroundTasks in project and workflow routers (start, resume, restart, select_idea)

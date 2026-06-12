@@ -9,6 +9,65 @@ interface MermaidDiagramProps {
 
 let mermaidInitialized = false;
 
+export function cleanMermaid(code: string): string {
+  if (!code) return '';
+  
+  let clean = code.trim();
+  
+  // 1. Remove markdown code block wrappers
+  if (clean.includes('```')) {
+    const match = clean.match(/```mermaid\s*([\s\S]*?)\s*```/) || clean.match(/```\s*([\s\S]*?)\s*```/);
+    if (match) {
+      clean = match[1].trim();
+    } else {
+      clean = clean.replace(/```mermaid/g, '').replace(/```/g, '').trim();
+    }
+  }
+  
+  // 2. Remove emojis
+  clean = clean.replace(/[\u{1F300}-\u{1F9FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]/gu, '');
+  
+  // 3. Fix unquoted labels containing parentheses or spaces
+  // Double parenthesis: id((label)) -> id(("label"))
+  clean = clean.replace(/\b(\w+)\s*\(\(([^"]+?)\)\)/g, (m, id, label) => {
+    return `${id}(("${label.trim().replace(/"/g, "'")}"))`;
+  });
+  
+  // Bracket parenthesis: id([label]) -> id(["label"])
+  clean = clean.replace(/\b(\w+)\s*\(\[([^"]+?)\]\)/g, (m, id, label) => {
+    return `${id}(["${label.trim().replace(/"/g, "'")}"])`;
+  });
+  
+  // Parenthesis bracket: id[(label)] -> id[("label")]
+  clean = clean.replace(/\b(\w+)\s*\[\(([^"]+?)\)\]/g, (m, id, label) => {
+    return `${id}[("${label.trim().replace(/"/g, "'")}")]`;
+  });
+  
+  // Square brackets: id[label] -> id["label"]
+  clean = clean.replace(/\b(?!(?:subgraph|flowchart|graph|end|click|style|classDef|class|linkStyle)\b)(\w+)\s*\[([^"\r\n\]]+?)\]/g, (m, id, label) => {
+    return `${id}["${label.trim().replace(/"/g, "'")}"]`;
+  });
+  
+  // Parentheses: id(label) -> id("label")
+  clean = clean.replace(/\b(?!(?:subgraph|flowchart|graph|end|click|style|classDef|class|linkStyle)\b)(\w+)\s*\(([^"\r\n)]+?)\)/g, (m, id, label) => {
+    return `${id}("${label.trim().replace(/"/g, "'")}")`;
+  });
+  
+  // Curly braces: id{label} -> id{"label"}
+  clean = clean.replace(/\b(?!(?:subgraph|flowchart|graph|end|click|style|classDef|class|linkStyle)\b)(\w+)\s*\{([^"\r\n}]+?)\}/g, (m, id, label) => {
+    return `${id}{"${label.trim().replace(/"/g, "'")}"}`;
+  });
+  
+  // Ensure we start with a valid graph definition if not present
+  const lines = clean.split('\n');
+  const firstLine = lines[0] ? lines[0].trim() : '';
+  if (!firstLine.startsWith('flowchart') && !firstLine.startsWith('graph') && !firstLine.startsWith('gantt') && !firstLine.startsWith('sequenceDiagram') && !firstLine.startsWith('classDiagram') && !firstLine.startsWith('stateDiagram') && !firstLine.startsWith('erDiagram')) {
+    clean = 'flowchart TD\n' + clean;
+  }
+
+  return clean;
+}
+
 export default function MermaidDiagram({ diagram, className }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +114,11 @@ export default function MermaidDiagram({ diagram, className }: MermaidDiagramPro
 
         if (!containerRef.current || cancelled) return;
 
-        const { svg } = await mermaid.render(idRef.current, diagram.trim());
+        const cleaned = cleanMermaid(diagram);
+        const { svg } = await mermaid.render(idRef.current, cleaned);
 
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
-          // Make the SVG responsive
           const svgEl = containerRef.current.querySelector('svg');
           if (svgEl) {
             svgEl.style.width = '100%';
@@ -99,7 +158,7 @@ export default function MermaidDiagram({ diagram, className }: MermaidDiagramPro
           opacity: 0.85,
         }}
       >
-        {diagram}
+        {cleanMermaid(diagram)}
       </pre>
     );
   }

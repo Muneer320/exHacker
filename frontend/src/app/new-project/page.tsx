@@ -66,14 +66,26 @@ interface FormData {
   skills: string[];
   experience: string;
   duration: string;
+  customDuration?: string;
   availableTools: string;
   preferredTech: string[];
+  avoidedTech: string[];
+  techMode: 'preferred' | 'avoided';
 }
 
 export default function NewProjectPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  
+  const [themesList, setThemesList] = useState(THEMES);
+  const [skillsList, setSkillsList] = useState(SKILLS);
+  const [techList, setTechList] = useState(TECH_OPTIONS);
+  
+  const [customThemeInput, setCustomThemeInput] = useState('');
+  const [customSkillInput, setCustomSkillInput] = useState('');
+  const [customTechInput, setCustomTechInput] = useState('');
+
   const [form, setForm] = useState<FormData>({
     challenge: '',
     theme: '',
@@ -82,32 +94,47 @@ export default function NewProjectPage() {
     skills: [],
     experience: 'Intermediate',
     duration: '48 hours',
+    customDuration: '',
     availableTools: 'Any',
     preferredTech: [],
+    avoidedTech: [],
+    techMode: 'preferred',
   });
 
   const toggleSkill = (s: string) => setForm((f) => ({ ...f, skills: f.skills.includes(s) ? f.skills.filter((x) => x !== s) : [...f.skills, s] }));
-  const toggleTech = (t: string) => setForm((f) => ({ ...f, preferredTech: f.preferredTech.includes(t) ? f.preferredTech.filter((x) => x !== t) : [...f.preferredTech, t] }));
 
   const handleLaunch = async () => {
     setLoading(true);
     try {
+      let durationHours = 48;
+      if (form.duration === '6 hours') durationHours = 6;
+      else if (form.duration === '8 hours') durationHours = 8;
+      else if (form.duration === '24 hours') durationHours = 24;
+      else if (form.duration === '36 hours') durationHours = 36;
+      else if (form.duration === '48 hours') durationHours = 48;
+      else if (form.duration === '72 hours') durationHours = 72;
+      else if (form.duration === '1 week') durationHours = 168;
+      else if (form.duration === 'Custom' && form.customDuration) {
+        durationHours = parseInt(form.customDuration) || 48;
+      }
+
       const payload = {
         name: form.theme ? `${form.theme} Solution` : 'Hackathon Solution',
         challenge_statements: [form.challenge],
-        duration_hours: form.duration === '24 hours' ? 24 : form.duration === '36 hours' ? 36 : form.duration === '48 hours' ? 48 : form.duration === '72 hours' ? 72 : 168,
+        duration_hours: durationHours,
         team_profile: {
           team_size: form.teamSize,
           experience_level: form.experience,
           known_technologies: form.skills,
-          preferred_technologies: form.preferredTech
+          preferred_technologies: form.techMode === 'preferred' ? form.preferredTech : [],
+          avoided_technologies: form.techMode === 'avoided' ? form.avoidedTech : []
         }
       };
 
       const projectRes = await createProject(payload);
       if (projectRes.success) {
         const { project_id, workflow_id } = projectRes.data;
-        // Start workflow execution asynchronously on the backend (blocks until Selection node or end)
+        // Start workflow execution asynchronously on the backend
         startWorkflow(workflow_id).catch((err) => {
           console.error('[exHacker API] Async workflow run error:', err);
         });
@@ -120,7 +147,6 @@ export default function NewProjectPage() {
       }
     } catch (error: any) {
       console.error('[exHacker API] Error launching workflow:', error);
-      // Fallback to local demo offline redirect
       console.warn('[exHacker API] Falling back to offline simulation page.');
       router.push('/workflow/demo-finance-001');
     }
@@ -231,8 +257,8 @@ export default function NewProjectPage() {
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: '10px' }}>
                     Theme / Track
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {THEMES.map((t) => (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                    {themesList.map((t) => (
                       <button
                         key={t}
                         onClick={() => setForm((f) => ({ ...f, theme: t }))}
@@ -250,6 +276,47 @@ export default function NewProjectPage() {
                         {t}
                       </button>
                     ))}
+                  </div>
+                  {/* Custom Theme Input */}
+                  <div style={{ display: 'flex', gap: '8px', maxWidth: '320px' }}>
+                    <input
+                      type="text"
+                      placeholder="Add custom theme..."
+                      value={customThemeInput}
+                      onChange={(e) => setCustomThemeInput(e.target.value)}
+                      style={{
+                        flex: 1,
+                        background: '#111827',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const t = customThemeInput.trim();
+                        if (t && !themesList.includes(t)) {
+                          setThemesList([...themesList, t]);
+                          setForm((f) => ({ ...f, theme: t }));
+                          setCustomThemeInput('');
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(124,58,237,0.2)',
+                        border: '1px solid rgba(124,58,237,0.3)',
+                        borderRadius: '6px',
+                        color: '#A855F7',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + Add
+                    </button>
                   </div>
                 </div>
 
@@ -312,8 +379,8 @@ export default function NewProjectPage() {
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: '10px' }}>
                     Team Skills
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {SKILLS.map((s) => (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                    {skillsList.map((s) => (
                       <button
                         key={s}
                         onClick={() => toggleSkill(s)}
@@ -328,6 +395,47 @@ export default function NewProjectPage() {
                         {s}
                       </button>
                     ))}
+                  </div>
+                  {/* Custom Skill Input */}
+                  <div style={{ display: 'flex', gap: '8px', maxWidth: '320px' }}>
+                    <input
+                      type="text"
+                      placeholder="Add custom skill..."
+                      value={customSkillInput}
+                      onChange={(e) => setCustomSkillInput(e.target.value)}
+                      style={{
+                        flex: 1,
+                        background: '#111827',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const s = customSkillInput.trim();
+                        if (s && !skillsList.includes(s)) {
+                          setSkillsList([...skillsList, s]);
+                          setForm((f) => ({ ...f, skills: [...f.skills, s] }));
+                          setCustomSkillInput('');
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(139,92,246,0.2)',
+                        border: '1px solid rgba(139,92,246,0.3)',
+                        borderRadius: '6px',
+                        color: '#8B5CF6',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + Add
+                    </button>
                   </div>
                 </div>
 
@@ -373,8 +481,8 @@ export default function NewProjectPage() {
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: '10px' }}>
                     Hackathon Duration
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {DURATIONS.map((d) => (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: form.duration === 'Custom' ? '12px' : '0' }}>
+                    {['6 hours', '8 hours', '24 hours', '36 hours', '48 hours', '72 hours', '1 week', 'Custom'].map((d) => (
                       <button
                         key={d}
                         onClick={() => setForm((f) => ({ ...f, duration: d }))}
@@ -390,28 +498,159 @@ export default function NewProjectPage() {
                       </button>
                     ))}
                   </div>
+                  {/* Custom duration input */}
+                  {form.duration === 'Custom' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Enter duration:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="48"
+                        value={form.customDuration || ''}
+                        onChange={(e) => setForm((f) => ({ ...f, customDuration: e.target.value }))}
+                        style={{
+                          width: '80px',
+                          background: '#111827',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          color: '#fff',
+                          fontSize: '13px',
+                          outline: 'none',
+                        }}
+                      />
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>hours</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: '10px' }}>
-                    Preferred Technologies
-                  </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {TECH_OPTIONS.map((t) => (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)' }}>
+                      Technology Stack Filtering
+                    </label>
+                    {/* Toggle selector */}
+                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '2px' }}>
                       <button
-                        key={t}
-                        onClick={() => toggleTech(t)}
+                        onClick={() => setForm(f => ({ ...f, techMode: 'preferred' }))}
                         style={{
-                          padding: '7px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
-                          border: `1px solid ${form.preferredTech.includes(t) ? 'rgba(59,130,246,0.6)' : 'rgba(255,255,255,0.08)'}`,
-                          background: form.preferredTech.includes(t) ? 'rgba(59,130,246,0.15)' : 'transparent',
-                          color: form.preferredTech.includes(t) ? '#3B82F6' : 'rgba(255,255,255,0.5)',
+                          padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: 'none', cursor: 'pointer',
+                          background: form.techMode === 'preferred' ? '#3B82F6' : 'transparent',
+                          color: form.techMode === 'preferred' ? '#fff' : 'rgba(255,255,255,0.4)',
                           transition: 'all 150ms ease',
                         }}
                       >
-                        {t}
+                        Preferred Stack
                       </button>
-                    ))}
+                      <button
+                        onClick={() => setForm(f => ({ ...f, techMode: 'avoided' }))}
+                        style={{
+                          padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: 'none', cursor: 'pointer',
+                          background: form.techMode === 'avoided' ? '#EF4444' : 'transparent',
+                          color: form.techMode === 'avoided' ? '#fff' : 'rgba(255,255,255,0.4)',
+                          transition: 'all 150ms ease',
+                        }}
+                      >
+                        Negative Stack (Avoid)
+                      </button>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '12px', lineHeight: 1.4 }}>
+                    {form.techMode === 'preferred'
+                      ? 'Select technologies your team prefers to work with. AI agents will try to prioritize these.'
+                      : 'Select technologies you wish to avoid. AI agents will strictly avoid recommending these.'}
+                  </p>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                    {techList.map((t) => {
+                      const isSelected = form.techMode === 'preferred' 
+                        ? form.preferredTech.includes(t) 
+                        : form.avoidedTech.includes(t);
+                      const activeColor = form.techMode === 'preferred' ? '#3B82F6' : '#EF4444';
+                      const activeBorder = form.techMode === 'preferred' ? 'rgba(59,130,246,0.6)' : 'rgba(239,68,68,0.6)';
+                      const activeBg = form.techMode === 'preferred' ? 'rgba(59,130,246,0.15)' : 'rgba(239,68,68,0.15)';
+
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            if (form.techMode === 'preferred') {
+                              setForm(f => ({
+                                ...f,
+                                preferredTech: f.preferredTech.includes(t) 
+                                  ? f.preferredTech.filter(x => x !== t) 
+                                  : [...f.preferredTech, t],
+                                avoidedTech: f.avoidedTech.filter(x => x !== t) // clear from opposite stack
+                              }));
+                            } else {
+                              setForm(f => ({
+                                ...f,
+                                avoidedTech: f.avoidedTech.includes(t) 
+                                  ? f.avoidedTech.filter(x => x !== t) 
+                                  : [...f.avoidedTech, t],
+                                preferredTech: f.preferredTech.filter(x => x !== t) // clear from opposite stack
+                              }));
+                            }
+                          }}
+                          style={{
+                            padding: '7px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+                            border: `1px solid ${isSelected ? activeBorder : 'rgba(255,255,255,0.08)'}`,
+                            background: isSelected ? activeBg : 'transparent',
+                            color: isSelected ? activeColor : 'rgba(255,255,255,0.5)',
+                            transition: 'all 150ms ease',
+                          }}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom Tech Input */}
+                  <div style={{ display: 'flex', gap: '8px', maxWidth: '320px' }}>
+                    <input
+                      type="text"
+                      placeholder={`Add custom ${form.techMode === 'preferred' ? 'preferred' : 'avoided'} tech...`}
+                      value={customTechInput}
+                      onChange={(e) => setCustomTechInput(e.target.value)}
+                      style={{
+                        flex: 1,
+                        background: '#111827',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const t = customTechInput.trim();
+                        if (t && !techList.includes(t)) {
+                          setTechList([...techList, t]);
+                          if (form.techMode === 'preferred') {
+                            setForm((f) => ({ ...f, preferredTech: [...f.preferredTech, t] }));
+                          } else {
+                            setForm((f) => ({ ...f, avoidedTech: [...f.avoidedTech, t] }));
+                          }
+                          setCustomTechInput('');
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        background: form.techMode === 'preferred' ? 'rgba(59,130,246,0.2)' : 'rgba(239,68,68,0.2)',
+                        border: `1px solid ${form.techMode === 'preferred' ? 'rgba(59,130,246,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                        borderRadius: '6px',
+                        color: form.techMode === 'preferred' ? '#3B82F6' : '#EF4444',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + Add
+                    </button>
                   </div>
                 </div>
               </div>
@@ -435,9 +674,10 @@ export default function NewProjectPage() {
                   { label: 'Theme', value: form.theme || 'Not specified' },
                   { label: 'Team Size', value: `${form.teamSize} people` },
                   { label: 'Experience', value: form.experience },
-                  { label: 'Duration', value: form.duration },
+                  { label: 'Duration', value: form.duration === 'Custom' ? `${form.customDuration || '48'} hours` : form.duration },
                   { label: 'Skills', value: form.skills.length ? form.skills.join(', ') : 'Not specified' },
-                  { label: 'Tech', value: form.preferredTech.length ? form.preferredTech.join(', ') : 'Any' },
+                  { label: 'Preferred Tech', value: form.preferredTech.length ? form.preferredTech.join(', ') : 'None specified' },
+                  { label: 'Avoided Tech', value: form.avoidedTech.length ? form.avoidedTech.join(', ') : 'None' },
                 ].map((row) => (
                   <div
                     key={row.label}

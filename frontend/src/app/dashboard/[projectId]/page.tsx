@@ -536,218 +536,742 @@ function ResearchTab({ state }: { state?: any }) {
         </div>
       </div>
 
-      <div>
-        <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={14} color="#F59E0B" /> Market Insights
-        </h3>
-        {(insights || []).map((insight: string, i: number) => (
-          <div key={i} style={{ display: 'flex', gap: '12px', padding: '14px', background: '#111827', borderRadius: '10px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Star size={14} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>{insight}</span>
+      {insights && insights.length > 0 && (
+        <div>
+          <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={15} color="#7C3AED" /> Market Insights
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {(insights || []).map((insight: string, i: number) => (
+              <div key={i} style={{ background: '#111827', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', padding: '16px' }}>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>{insight}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Export Tab ───────────────────────────────────────────────────────────────
-function ExportTab({ state, projectId }: { state?: any; projectId: string }) {
-  const [exporting, setExporting] = useState<string | null>(null);
-  const [done, setDone] = useState<Set<string>>(new Set());
+// ── Detailed compilation document generators ──────────────────────────────
+function generatePRD(state: any) {
+  const p = DEMO_FINANCE_PROJECT;
+  const idea = state?.selected_idea || {};
+  const title = idea.title || p.name;
+  const desc = idea.description || idea.tagline || p.ideas[0].tagline;
+  const metrics = (state?.problem_analysis?.success_metrics || ['User retention', 'Habit formation rate']).map((m: string) => `- ${m}`).join('\n');
+  const userGroups = (idea.target_users || ['University students', 'Recent graduates', 'Young professionals']).map((u: string) => `- ${u}`).join('\n');
 
-  const exports = [
+  return `# Product Requirements Document (PRD) — ${title}
+
+## 1. Executive Summary
+The goal of **${title}** is to address the following core challenge:
+> ${state?.project?.challenge_statements?.[0] || p.challenge}
+
+This product is designed as an AI-powered solution providing high-value personalized assistance to users.
+Key tagline: *${desc}*
+
+## 2. Product Goals & Success Metrics
+Our primary objective is to build a highly engaging MVP within the hackathon timeline. Success will be measured by the following metrics:
+${metrics}
+
+## 3. Target Audience & Personas
+### Primary Audience
+The application targets:
+${userGroups}
+
+### User Persona: Alex, the High-Stress Student
+- **Demographics:** 20 years old, Sophomore in Computer Science.
+- **Pain Points:** Hard to manage part-time wages alongside academic deadlines; finds financial jargon intimidating.
+- **Goal:** Wants a simple, automated system that gives micro-actions to stay on track.
+
+## 4. Functional Specifications & Features
+### P0 Features (Core MVP)
+1. **Interactive AI Dashboard:** Real-time feedback on user inputs.
+2. **Personalized Coaching Layer:** Actionable insights tailored to user profile.
+3. **Core Workflow Automation:** Step-by-step guidance.
+
+### P1 Features (Nice to Have)
+1. **Integrations Panel:** External data connections.
+2. **Sharing/Export Capability:** Export reports for offline review.
+
+## 5. Non-Functional Requirements
+- **Performance:** App load time under 1.5 seconds. API responses under 500ms.
+- **Security:** Fully secure JWT authentication and encrypted data transit.
+- **Design:** Modern dark-mode interface with accessible contrast levels.
+`;
+}
+
+function generateREADME(state: any) {
+  const idea = state?.selected_idea || {};
+  const title = idea.title || DEMO_FINANCE_PROJECT.name;
+  const desc = idea.description || idea.tagline || DEMO_FINANCE_PROJECT.ideas[0].tagline;
+  const ts = state?.tech_stack || {};
+  
+  return `# ${title}
+
+${desc}
+
+## 🚀 Key Features
+- **AI Engine:** Customized agent intelligence powered by LLMs.
+- **Responsive Web Dashboard:** Modern dashboard styled with curated color systems.
+- **Data Flow Integration:** End-to-end telemetry and logs persistence.
+
+## 🛠️ Tech Stack
+- **Frontend:** ${ts.frontend || 'Next.js 15 (App Router)'}
+- **Backend:** ${ts.backend || 'FastAPI (Python)'}
+- **Database:** ${ts.database || 'PostgreSQL'}
+- **AI Stack:** ${(ts.ai_stack || ['Gemini Pro', 'Groq LLaMA 3']).join(', ')}
+- **Deployment:** ${(ts.deployment || ['Docker', 'Vercel']).join(', ')}
+
+## ⚙️ Getting Started
+
+### Prerequisites
+- Node.js v20+
+- Python 3.10+
+- Docker (optional)
+
+### Backend Setup
+\`\`\`bash
+cd backend
+python -m venv venv
+source venv/bin/activate # or venv\\Scripts\\activate on Windows
+pip install -r requirements.txt
+cp .env.example .env # Set your API keys
+uvicorn app.api.main:app --reload
+\`\`\`
+
+### Frontend Setup
+\`\`\`bash
+cd frontend
+npm install
+npm run dev
+\`\`\`
+
+## 📝 License
+Distributed under the MIT License. See \`LICENSE\` for more information.
+`;
+}
+
+function generateARCHITECTURE(state: any) {
+  const arch = state?.architecture || {};
+  const idea = state?.selected_idea || {};
+  const title = idea.title || 'Solution';
+  
+  const componentsList = (arch.components || DEMO_FINANCE_PROJECT.architecture.components).map((c: any) => 
+    `### ${c.name}\n- **Type:** ${c.type || 'Service'}\n- **Description:** ${c.description || c.tech || 'Core architecture module'}`
+  ).join('\n\n');
+
+  const mermaidDiag = arch.mermaid_diagram || arch.mermaidDiagram || DEMO_FINANCE_PROJECT.architecture.mermaidDiagram;
+
+  return `# System Architecture Document — ${title}
+
+## 1. System Overview
+This application uses a modern decoupled architecture consisting of a client-side single-page application and a RESTful API server integrated with an AI agent pipeline.
+
+## 2. Mermaid Dataflow Diagram
+\`\`\`mermaid
+${mermaidDiag}
+\`\`\`
+
+## 3. Core Component Catalog
+${componentsList}
+
+## 4. Core Integration & Third-Party APIs
+We leverage the following third-party systems:
+- **Large Language Models:** Fast inference engines for prompt completion.
+- **Market Search APIs:** Real-time competitor and open source library research.
+`;
+}
+
+function generateSCHEMA(state: any) {
+  const ts = state?.tech_stack || {};
+  const database = ts.database || 'PostgreSQL';
+
+  return `# Database Schema Specification
+
+This document details the database schema, tables, indexes, and relationships for the project.
+
+## Database Engine
+- Recommended: ${database}
+
+## Entity Relationship Summary
+\`\`\`mermaid
+erDiagram
+  USERS ||--o{ PROJECTS : owns
+  PROJECTS ||--o{ WORKFLOWS : runs
+  WORKFLOWS ||--o{ LOGS : emits
+\`\`\`
+
+## Table Schemas
+
+### 1. \`users\`
+Stores user credentials and authentication details.
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| \`id\` | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() | Unique identifier |
+| \`email\` | VARCHAR(255) | UNIQUE, NOT NULL | User email address |
+| \`password_hash\` | VARCHAR(255) | NOT NULL | Hashed password |
+| \`created_at\` | TIMESTAMPTZ | DEFAULT NOW() | Record creation time |
+
+### 2. \`projects\`
+Stores details about projects.
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| \`id\` | UUID | PRIMARY KEY | Unique project ID |
+| \`name\` | VARCHAR(255) | NOT NULL | Project name |
+| \`challenge\` | TEXT | NOT NULL | User input challenge |
+| \`created_at\` | TIMESTAMPTZ | DEFAULT NOW() | Record creation time |
+
+### 3. \`workflows\`
+Tracks execution states and agent progression.
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| \`id\` | UUID | PRIMARY KEY | Unique workflow ID |
+| \`project_id\` | UUID | FOREIGN KEY references \`projects(id)\` | Connected project |
+| \`stage\` | VARCHAR(64) | NOT NULL | Current pipeline stage |
+| \`progress\` | INT | DEFAULT 0 | Percentage completed |
+| \`state_data\` | JSONB | NOT NULL | Serialized agent results |
+`;
+}
+
+function generateENDPOINTS(state: any) {
+  return `# API Endpoints Specification
+
+This document details the HTTP REST endpoints exposed by the backend API.
+
+## Base URL
+- Local: \`http://localhost:8000/api/v1\`
+- Production: \`https://api.exhacker-app.com/api/v1\`
+
+## 1. Authentication Endpoints
+
+### POST \`/auth/register\`
+Creates a new user profile.
+- **Request Body:**
+  \`\`\`json
+  {
+    "email": "user@example.com",
+    "password": "strongpassword123"
+  }
+  \`\`\`
+- **Response (201 Created):**
+  \`\`\`json
+  {
+    "id": "e4444555-d111-2222-3333-a1234567890b",
+    "email": "user@example.com",
+    "created_at": "2026-06-12T10:00:00Z"
+  }
+  \`\`\`
+
+### POST \`/auth/login\`
+Exchange credentials for a JSON Web Token (JWT).
+- **Response (200 OK):**
+  \`\`\`json
+  {
+    "access_token": "access_token_token",
+    "token_type": "bearer"
+  }
+  \`\`\`
+
+## 2. Project Endpoints
+
+### GET \`/projects\`
+Retrieve all projects owned by the authenticated user.
+- **Response (200 OK):**
+  \`\`\`json
+  [
     {
-      id: 'readme',
-      label: 'README.md',
-      desc: 'Complete project documentation',
-      color: '#22C55E',
-      icon: FileText,
-      getContent: () => state?.exports?.readme || generateReadme(state),
-      filename: 'README.md',
-      mimeType: 'text/markdown',
-    },
-    {
-      id: 'prd',
-      label: 'Architecture Doc',
-      desc: 'System design & component breakdown',
-      color: '#3B82F6',
-      icon: GitBranch,
-      getContent: () => state?.exports?.architecture_doc || generateArchDoc(state),
-      filename: 'ARCHITECTURE.md',
-      mimeType: 'text/markdown',
-    },
-    {
-      id: 'pitch',
-      label: 'Pitch Guide',
-      desc: '30s, 2min, 5min pitches + Q&A',
-      color: '#EC4899',
-      icon: Mic,
-      getContent: () => state?.exports?.pitch_doc || generatePitchDoc(state),
-      filename: 'PITCH_GUIDE.md',
-      mimeType: 'text/markdown',
-    },
-    {
-      id: 'slides',
-      label: 'Presentation',
-      desc: 'Full slide deck content',
-      color: '#A855F7',
-      icon: Presentation,
-      getContent: () => state?.exports?.presentation_doc || generatePresDoc(state),
-      filename: 'PRESENTATION.md',
-      mimeType: 'text/markdown',
-    },
-    {
-      id: 'impl',
-      label: 'Build Guide',
-      desc: 'Implementation tasks & prompts',
-      color: '#F59E0B',
-      icon: Code2,
-      getContent: () => state?.exports?.implementation_guide || generateImplGuide(state),
-      filename: 'BUILD_GUIDE.md',
-      mimeType: 'text/markdown',
-    },
+      "id": "p0001",
+      "name": "Finance App",
+      "created_at": "2026-06-12T10:00:00Z"
+    }
+  ]
+  \`\`\`
+`;
+}
+
+function generateDEPLOYMENT(state: any) {
+  return `# Deployment & Operations Guide
+
+## 1. Dockerization
+To simplify environment deployments, build the project containers.
+
+### Dockerfile (Backend)
+\`\`\`dockerfile
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+\`\`\`
+
+### Docker Compose
+\`\`\`yaml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/db
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+\`\`\`
+
+## 2. Hosting Platforms
+- **Frontend:** Deploy to Vercel or Netlify via direct git hooks.
+- **Backend:** Host on Render, AWS ECS, or DigitalOcean App Platform.
+`;
+}
+
+function generateTESTING(state: any) {
+  return `# Testing Strategy & Test Suites
+
+## 1. Testing Pyramid
+- **Unit Tests (70%):** Mocking external APIs and LLMs.
+- **Integration Tests (20%):** Validating routes and DB operations.
+- **E2E Tests (10%):** Cypress or Playwright verifying frontend wizard and dashboard tabs.
+
+## 2. Example Backend Test (Pytest)
+\`\`\`python
+import pytest
+from httpx import AsyncClient
+
+@pytest.mark.asyncio
+async def test_read_projects():
+    async with AsyncClient(base_url="http://test") as ac:
+        response = await ac.get("/api/v1/projects")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+\`\`\`
+`;
+}
+
+function generateCONTRIBUTING(state: any) {
+  return `# Contributing Guidelines
+
+## Code Style
+- **Frontend:** ESLint, Prettier, TypeScript strict mode.
+- **Backend:** PEP 8, Ruff / Black for linting and formatting.
+
+## Workflow Actions
+1. Fork the repository.
+2. Create a feature branch (\`git checkout -b feature/amazing-feature\`).
+3. Commit your changes (\`git commit -m 'feat: add amazing feature'\`).
+4. Push to the branch (\`git push origin feature/amazing-feature\`).
+5. Open a Pull Request.
+`;
+}
+
+function generateBUSINESSMODEL(state: any) {
+  return `# Business Model Canvas & Value Proposition
+
+## 1. Value Proposition
+A rapid hackathon product validation tool that helps developers and startup founders turn raw ideas into structured specifications, slide structures, pitches, and architecture maps in under 5 minutes.
+
+## 2. Target Market
+- Hackathon organizers & competitors.
+- Tech Incubators & Accelerators.
+- Indie hackers and solo founders.
+
+## 3. Revenue Models
+- **Free Tier:** 1 project generation per month.
+- **Pro Tier ($15/mo):** Unlimited projects, custom skill profiles, PDF exports.
+- **Enterprise:** Customized team settings for corporate hackathons.
+`;
+}
+
+function generateSECURITY(state: any) {
+  return `# Security Compliance & Best Practices
+
+## 1. Threat Mitigation
+- **Prompt Injection:** Sanitize inputs before forwarding to LLM endpoints.
+- **Token Security:** Store JWT access tokens in HttpOnly cookies to prevent XSS.
+- **Rate Limiting:** Protect backend endpoints against denial of service using slowapi rate limiters.
+
+## 2. Data Protection
+- HTTPS encryption in transit.
+- AES-256 database encryption at rest.
+- Strict environment variable segregation.
+`;
+}
+
+// ── Export Tab Component ─────────────────────────────────────────────────────
+function ExportTab({ state, projectId }: { state?: any; projectId: string }) {
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({
+    readme: true,
+    prd: true,
+    architecture: true,
+    schema: true,
+    endpoints: true,
+    deployment: false,
+    testing: false,
+    contributing: false,
+    business_model: false,
+    security: false,
+  });
+
+  const [generating, setGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [activeStepText, setActiveStepText] = useState('');
+  const [isGenerated, setIsGenerated] = useState(false);
+  const [activePreviewDoc, setActivePreviewDoc] = useState<string>('readme');
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const documentList = [
+    { id: 'readme', label: 'README.md', group: 'core', desc: 'Main documentation landing file', icon: FileText, color: '#22C55E', generator: generateREADME, filename: 'README.md' },
+    { id: 'prd', label: 'PRD.md', group: 'core', desc: 'Product Requirements Document', icon: Target, color: '#3B82F6', generator: generatePRD, filename: 'PRD.md' },
+    { id: 'architecture', label: 'ARCHITECTURE.md', group: 'core', desc: 'System design and Mermaid dataflow', icon: GitBranch, color: '#7C3AED', generator: generateARCHITECTURE, filename: 'ARCHITECTURE.md' },
+    { id: 'schema', label: 'SCHEMA.md', group: 'core', desc: 'Database tables and entity relationships', icon: Database, color: '#EC4899', generator: generateSCHEMA, filename: 'SCHEMA.md' },
+    { id: 'endpoints', label: 'ENDPOINTS.md', group: 'core', desc: 'REST API endpoints and payload schemas', icon: Code2, color: '#F59E0B', generator: generateENDPOINTS, filename: 'ENDPOINTS.md' },
+    { id: 'deployment', label: 'DEPLOYMENT.md', group: 'recommended', desc: 'Docker, CI/CD, and hosting configuration', icon: Package, color: '#06B6D4', generator: generateDEPLOYMENT, filename: 'DEPLOYMENT.md' },
+    { id: 'testing', label: 'TESTING.md', group: 'recommended', desc: 'Testing strategy and example scripts', icon: Code2, color: '#10B981', generator: generateTESTING, filename: 'TESTING.md' },
+    { id: 'contributing', label: 'CONTRIBUTING.md', group: 'recommended', desc: 'Coding standards and PR guidelines', icon: FileText, color: '#8B5CF6', generator: generateCONTRIBUTING, filename: 'CONTRIBUTING.md' },
+    { id: 'business_model', label: 'BUSINESS_MODEL.md', group: 'recommended', desc: 'Business Model Canvas & monetization plans', icon: Trophy, color: '#EAB308', generator: generateBUSINESSMODEL, filename: 'BUSINESS_MODEL.md' },
+    { id: 'security', label: 'SECURITY.md', group: 'recommended', desc: 'Security guidelines and mitigations', icon: AlertCircle, color: '#EF4444', generator: generateSECURITY, filename: 'SECURITY.md' },
   ];
 
-  const handleExport = async (ex: typeof exports[0]) => {
-    setExporting(ex.id);
+  const handleGenerate = () => {
+    // Check if at least one file is selected
+    const selectedKeys = Object.keys(selectedFiles).filter(k => selectedFiles[k]);
+    if (selectedKeys.length === 0) {
+      alert('Please select at least one document to generate.');
+      return;
+    }
+
+    setGenerating(true);
+    setGenerationProgress(0);
+
+    const steps = [
+      'Initializing Document Assembler...',
+      'Compiling Core product definitions...',
+      'Mapping Database Relations & Schema tables...',
+      'Drafting REST Endpoints & payload schema specifications...',
+      'Integrating Deployment modules & testing configuration...',
+      'Optimizing Document layout...',
+      'Finalizing markdown package...',
+    ];
+
+    let currentStepIdx = 0;
+    const interval = setInterval(() => {
+      if (currentStepIdx < steps.length) {
+        setActiveStepText(steps[currentStepIdx]);
+        setGenerationProgress((p) => Math.min(p + 15, 95));
+        currentStepIdx++;
+      } else {
+        clearInterval(interval);
+        setGenerationProgress(100);
+        setTimeout(() => {
+          setGenerating(false);
+          setIsGenerated(true);
+          // Set first selected document as active preview
+          const firstSelected = selectedKeys[0] || 'readme';
+          setActivePreviewDoc(firstSelected);
+        }, 500);
+      }
+    }, 400);
+  };
+
+  const handleDownloadFile = async (docId: string) => {
+    const doc = documentList.find(d => d.id === docId);
+    if (!doc) return;
+    setDownloading(docId);
+    
     try {
-      const content = ex.getContent();
-      const blob = new Blob([content], { type: ex.mimeType });
+      const content = doc.generator(state);
+      const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = ex.filename;
+      a.download = doc.filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setDone(prev => new Set([...prev, ex.id]));
     } catch (err) {
-      console.error('Export error:', err);
+      console.error('[exHacker Export] Error downloading file:', err);
     } finally {
-      setTimeout(() => setExporting(null), 600);
+      setTimeout(() => setDownloading(null), 400);
     }
   };
 
-  const handleDownloadAll = async () => {
-    for (const ex of exports) {
-      await handleExport(ex);
-      await new Promise(r => setTimeout(r, 200));
+  const handleDownloadAllSelected = async () => {
+    const selectedKeys = Object.keys(selectedFiles).filter(k => selectedFiles[k]);
+    for (const key of selectedKeys) {
+      await handleDownloadFile(key);
+      await new Promise(r => setTimeout(r, 250));
     }
   };
+
+  const toggleAllGroup = (groupName: string, selectVal: boolean) => {
+    const updated = { ...selectedFiles };
+    documentList.forEach(d => {
+      if (d.group === groupName) {
+        updated[d.id] = selectVal;
+      }
+    });
+    setSelectedFiles(updated);
+  };
+
+  const selectedKeys = Object.keys(selectedFiles).filter(k => selectedFiles[k]);
+
+  if (generating) {
+    return (
+      <div style={{
+        background: '#0B1020', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px',
+        padding: '60px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', border: '1.5px dashed #7C3AED', animation: 'spin 4s linear infinite' }}>
+          <Sparkles size={36} color="#7C3AED" />
+        </div>
+        <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#F1F5F9', marginBottom: '8px' }}>Generating Package Documents</h3>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '24px', fontFamily: 'monospace' }}>{activeStepText}</p>
+        
+        <div style={{ width: '100%', maxWidth: '400px', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', marginBottom: '12px', overflow: 'hidden' }}>
+          <div style={{ width: `${generationProgress}%`, height: '100%', background: 'linear-gradient(90deg, #7C3AED, #06B6D4)', borderRadius: '3px', transition: 'width 250ms ease' }} />
+        </div>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: '#A855F7' }}>{generationProgress}% complete</span>
+      </div>
+    );
+  }
+
+  if (isGenerated) {
+    const activeDoc = documentList.find(d => d.id === activePreviewDoc)!;
+    const contentPreview = activeDoc ? activeDoc.generator(state) : '';
+
+    return (
+      <div style={{ animation: 'fade-in 300ms ease-out' }}>
+        {/* Header summary info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#F1F5F9' }}>Compilation Results</h3>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Generated {selectedKeys.length} files. Click below to preview and download.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => setIsGenerated(false)}
+              style={{
+                padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+              }}
+            >
+              Back to Checklist
+            </button>
+            <button
+              onClick={handleDownloadAllSelected}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 20px', borderRadius: '8px',
+                background: 'linear-gradient(135deg, #22C55E, #10B981)',
+                color: '#fff', fontSize: '13px', fontWeight: 600,
+                border: 'none', cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(34,197,94,0.3)',
+              }}
+            >
+              <Package size={14} /> Download Selected ({selectedKeys.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Split Panel */}
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+          {/* Left Navigation: List of generated docs */}
+          <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {documentList.map(doc => {
+              if (!selectedFiles[doc.id]) return null;
+              const isActive = activePreviewDoc === doc.id;
+              const DocIcon = doc.icon;
+              return (
+                <div
+                  key={doc.id}
+                  onClick={() => setActivePreviewDoc(doc.id)}
+                  style={{
+                    background: isActive ? 'rgba(124,58,237,0.1)' : '#111827',
+                    border: `1px solid ${isActive ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: `rgba(${hexToRgb(doc.color)}, 0.12)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: doc.color }}>
+                      <DocIcon size={14} />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.7)' }}>{doc.label}</span>
+                      <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>{doc.group === 'core' ? 'Core file' : 'Doc asset'}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={14} color={isActive ? '#A855F7' : 'rgba(255,255,255,0.2)'} />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Right Preview Box */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: '#0B1020', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+              <div>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{activeDoc.label}</span>
+                <span style={{ marginLeft: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{(contentPreview.length / 1024).toFixed(2)} KB • Markdown</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(contentPreview)}
+                  style={{
+                    padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}
+                >
+                  <Copy size={12} /> Copy
+                </button>
+                <button
+                  onClick={() => handleDownloadFile(activePreviewDoc)}
+                  disabled={downloading === activePreviewDoc}
+                  style={{
+                    padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                    background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6',
+                    cursor: downloading === activePreviewDoc ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}
+                >
+                  {downloading === activePreviewDoc ? (
+                    <div style={{ width: '12px', height: '12px', border: '1.5px solid rgba(59,130,246,0.4)', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  ) : (
+                    <><Download size={12} /> Download</>
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            {/* Terminal Prebox */}
+            <div style={{ padding: '24px', flex: 1, maxHeight: '480px', overflowY: 'auto' }}>
+              <pre style={{
+                margin: 0,
+                fontFamily: '"Fira Code", "JetBrains Mono", monospace',
+                fontSize: '13px',
+                lineHeight: 1.7,
+                color: 'rgba(255,255,255,0.7)',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>{contentPreview}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div style={{ animation: 'fade-in 200ms ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
-          Download your complete hackathon package — ready to submit.
+          Select the documents you wish to compile in detailed markdown.
         </p>
         <button
-          onClick={handleDownloadAll}
+          onClick={handleGenerate}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '10px 20px', borderRadius: '8px',
+            padding: '12px 24px', borderRadius: '8px',
             background: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
-            color: '#fff', fontSize: '13px', fontWeight: 600,
+            color: '#fff', fontSize: '14px', fontWeight: 700,
             border: 'none', cursor: 'pointer',
             boxShadow: '0 0 20px rgba(124,58,237,0.3)',
           }}
         >
-          <Package size={14} /> Download All
+          <Sparkles size={14} /> Generate Selected ({selectedKeys.length})
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
-        {exports.map((ex) => {
-          const Icon = ex.icon;
-          const isDone = done.has(ex.id);
-          return (
-            <div key={ex.id} style={{
-              background: '#111827', borderRadius: '12px',
-              border: `1px solid ${isDone ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)'}`,
-              padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px',
-              transition: 'border-color 300ms ease',
-            }}>
-              <div>
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '10px',
-                  background: `rgba(${hexToRgb(ex.color)}, 0.1)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '12px',
-                }}>
-                  <Icon size={18} color={ex.color} />
-                </div>
-                <p style={{ fontWeight: 600, marginBottom: '4px' }}>{ex.label}</p>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{ex.desc}</p>
-              </div>
-              <button
-                onClick={() => handleExport(ex)}
-                disabled={!!exporting}
-                style={{
-                  padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
-                  cursor: exporting ? 'default' : 'pointer',
-                  border: `1px solid rgba(${hexToRgb(isDone ? '#22C55E' : ex.color)}, 0.3)`,
-                  background: exporting === ex.id
-                    ? `rgba(${hexToRgb(ex.color)}, 0.05)`
-                    : isDone
-                      ? 'rgba(34,197,94,0.08)'
-                      : `rgba(${hexToRgb(ex.color)}, 0.1)`,
-                  color: isDone ? '#22C55E' : ex.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  transition: 'all 150ms ease',
-                }}
-              >
-                {exporting === ex.id ? (
-                  <><div style={{ width: '12px', height: '12px', border: `1.5px solid ${ex.color}40`, borderTopColor: ex.color, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Preparing...</>
-                ) : isDone ? (
-                  <><CheckCircle size={13} /> Downloaded</>
-                ) : (
-                  <><Download size={13} /> Download</>
-                )}
-              </button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+        {/* Core Documents checklist */}
+        <div style={{ background: '#111827', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Core Specs (P0)</h4>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => toggleAllGroup('core', true)} style={{ background: 'transparent', border: 'none', color: '#A855F7', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Select All</button>
+              <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+              <button onClick={() => toggleAllGroup('core', false)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
             </div>
-          );
-        })}
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {documentList.filter(d => d.group === 'core').map(doc => {
+              const DocIcon = doc.icon;
+              return (
+                <label key={doc.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!selectedFiles[doc.id]}
+                    onChange={(e) => setSelectedFiles(f => ({ ...f, [doc.id]: e.target.checked }))}
+                    style={{ marginTop: '4px', accentColor: '#7C3AED' }}
+                  />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: doc.color, display: 'flex' }}><DocIcon size={12} /></span>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#F1F5F9' }}>{doc.label}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{doc.desc}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recommended Documents checklist */}
+        <div style={{ background: '#111827', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Recommended (P1)</h4>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => toggleAllGroup('recommended', true)} style={{ background: 'transparent', border: 'none', color: '#A855F7', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Select All</button>
+              <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+              <button onClick={() => toggleAllGroup('recommended', false)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {documentList.filter(d => d.group === 'recommended').map(doc => {
+              const DocIcon = doc.icon;
+              return (
+                <label key={doc.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!selectedFiles[doc.id]}
+                    onChange={(e) => setSelectedFiles(f => ({ ...f, [doc.id]: e.target.checked }))}
+                    style={{ marginTop: '4px', accentColor: '#7C3AED' }}
+                  />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: doc.color, display: 'flex' }}><DocIcon size={12} /></span>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#F1F5F9' }}>{doc.label}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{doc.desc}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Content generators for offline/mock state ────────────────────────────────
-function generateReadme(state: any) {
-  const idea = state?.selected_idea || {};
-  const title = idea.title || DEMO_FINANCE_PROJECT.name;
-  const desc = idea.description || DEMO_FINANCE_PROJECT.challenge;
-  const features = (idea.key_features || []).map((f: string) => `- ${f}`).join('\n')
-    || DEMO_FINANCE_PROJECT.ideas[0].strengths.map((s: string) => `- ${s}`).join('\n');
-  const ts = state?.tech_stack || {};
-  return `# ${title}\n\n> ${desc}\n\n## Features\n${features}\n\n## Tech Stack\n\n| Layer | Technology |\n|-------|------------|\n| Frontend | ${ts.frontend || 'Next.js'} |\n| Backend | ${ts.backend || 'FastAPI'} |\n| Database | ${ts.database || 'SQLite'} |\n\n## Quick Start\n\n\`\`\`bash\n# Clone the repo\ngit clone https://github.com/your-org/${title.toLowerCase().replace(/\s+/g, '-')}\n\n# Install deps\nnpm install\n\n# Start backend\ncd backend && uvicorn app.api.main:app --reload\n\n# Start frontend\nnpm run dev\n\`\`\`\n\n## License\nMIT\n`;
-}
-
-function generateArchDoc(state: any) {
-  const arch = state?.architecture || {};
-  const idea = state?.selected_idea || {};
-  const title = idea.title || 'Solution';
-  const components = (arch.components || []).map((c: any) =>
-    `### ${c.name}\n\n${c.description || ''}\n\n**Responsibilities:**\n${(c.responsibilities || []).map((r: string) => `- ${r}`).join('\n')}`
-  ).join('\n\n');
-  return `# Architecture — ${title}\n\n## System Design\n\n${arch.system_design || 'Microservices-based architecture with AI agents.'}\n\n## Components\n\n${components || DEMO_FINANCE_PROJECT.architecture.components.map((c: any) => `### ${c.name}\n\n${c.tech}`).join('\n\n')}\n\n## MVP Scope\n\n${(arch.mvp_scope || []).map((s: string) => `- ${s}`).join('\n')}\n`;
-}
-
-function generatePitchDoc(state: any) {
-  const pitch = state?.pitch || {};
-  const idea = state?.selected_idea || {};
-  const mock = DEMO_FINANCE_PROJECT.pitch;
-  return `# Pitch Guide — ${idea.title || DEMO_FINANCE_PROJECT.name}\n\n## 30-Second Elevator Pitch\n\n${pitch.pitch_30s || mock.thirtySecond}\n\n## 2-Minute Pitch\n\n${pitch.pitch_2m || mock.twoMinute}\n\n${pitch.pitch_5m ? `## 5-Minute Deep Dive\n\n${pitch.pitch_5m}\n\n` : ''}${pitch.demo_script ? `## Demo Script\n\n${pitch.demo_script}\n\n` : ''}## Anticipated Judge Questions\n\n${(pitch.judge_questions || mock.judgeQA || []).map((qa: any) =>
-  `**Q: ${qa.question}**\n\nA: ${qa.answer}`).join('\n\n')}\n`;
-}
-
-function generatePresDoc(state: any) {
-  const pres = state?.presentation || {};
-  const idea = state?.selected_idea || {};
-  const slides = pres.slide_content || [];
-  return `# Presentation — ${idea.title || DEMO_FINANCE_PROJECT.name}\n\n${slides.map((s: any, i: number) =>
+function generateSlides(state: any) {
+  const slides = state?.presentation?.slide_content || [];
+  return `# Presentation Slides Document\n\n${slides.map((s: any, i: number) =>
   `## Slide ${i + 1}: ${s.title}\n\n${(s.content || []).map((c: string) => `- ${c}`).join('\n')}\n\n${s.visual_notes ? `> Visual: ${s.visual_notes}` : ''}`
 ).join('\n\n') || ['Title & Hook', 'Problem', 'Solution', 'Demo', 'Architecture', 'Business Model', 'Team', 'CTA'].map((t, i) => `## Slide ${i + 1}: ${t}\n\n*Content for this slide*`).join('\n\n')}\n`;
 }

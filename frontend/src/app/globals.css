@@ -355,6 +355,31 @@ body {
 .animate-float { animation: float 3s ease-in-out infinite; }
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scale-up {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-scale-up { animation: scale-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-blink { animation: blink 1.2s step-end infinite; }
+
+
+
 /* ============================================================
    Loading States — Skeleton
    ============================================================ */

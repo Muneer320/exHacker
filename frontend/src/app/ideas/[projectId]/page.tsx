@@ -23,15 +23,15 @@ function mapBackendIdeasToFrontend(ideas: any[], reports: any[]): any[] {
       title: idea.title,
       tagline: idea.description,
       scores: {
-        innovation: report ? Math.round(report.innovation_score * 10) : Math.round(idea.innovation_score * 10),
-        feasibility: report ? Math.round(report.feasibility_score * 10) : 80,
-        differentiation: report ? Math.round(report.final_score * 10) : 85,
-        complexity: 40
+        innovation: report ? Math.round(report.innovation_score * 10) : Math.round(idea.innovation_score * 10 || (idea.scores && idea.scores.innovation) || 75),
+        feasibility: report ? Math.round(report.feasibility_score * 10) : (idea.scores?.feasibility || 80),
+        differentiation: report ? Math.round(report.final_score * 10) : (idea.scores?.differentiation || 85),
+        complexity: idea.scores?.complexity || 40
       },
-      strengths: report ? report.strengths : [],
-      weaknesses: report ? report.weaknesses : [],
-      apis: report ? (report.apis || []).map((api: any) => api.name) : [],
-      competitors: report ? (report.competitors || []).map((c: any) => c.name) : []
+      strengths: report && report.strengths?.length ? report.strengths : (idea.strengths || ['High scalability potential', 'Novel application of AI model']),
+      weaknesses: report && report.weaknesses?.length ? report.weaknesses : (idea.weaknesses || ['High backend computation cost', 'Cold start problem for matching data']),
+      apis: report && report.apis?.length ? report.apis.map((api: any) => typeof api === 'string' ? api : api.name) : (idea.apis || ['OpenAI API', 'Stripe']),
+      competitors: report && report.competitors?.length ? report.competitors.map((c: any) => typeof c === 'string' ? c : c.name) : (idea.competitors || ['Existing SaaS Solutions', 'Manual workflows'])
     };
   });
 }
@@ -64,9 +64,12 @@ function IdeaCard({
         transform: selected ? 'scale(1.02)' : 'scale(1)',
         boxShadow: selected ? '0 0 30px rgba(34,197,94,0.2)' : 'none',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
       }}
     >
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div style={{ flex: 1, marginRight: '16px' }}>
@@ -95,7 +98,7 @@ function IdeaCard({
         </div>
 
         {/* Scores */}
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px', flex: 1 }}>
           <ScoreBar label="Innovation" value={idea.scores.innovation} color="#EC4899" />
           <ScoreBar label="Feasibility" value={idea.scores.feasibility} color="#22C55E" />
           <ScoreBar label="Differentiation" value={idea.scores.differentiation} color="#7C3AED" />
@@ -103,7 +106,7 @@ function IdeaCard({
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: 'auto' }}>
           <button
             onClick={onSelect}
             style={{
@@ -137,6 +140,7 @@ function IdeaCard({
             borderTop: '1px solid rgba(255,255,255,0.06)',
             padding: '20px 24px',
             animation: 'slide-up 200ms ease-out',
+            background: 'rgba(255,255,255,0.01)'
           }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
@@ -218,7 +222,7 @@ export default function IdeasPage({ params }: { params: Promise<{ projectId: str
         // Fallback simulation
         await new Promise((r) => setTimeout(r, 1200));
       }
-      router.push(`/dashboard/${projectId}?wId=${wId || ''}`);
+      router.push(`/workflow/${projectId}?wId=${wId || ''}`);
     } catch (err: any) {
       console.error('[exHacker API] Error selecting idea:', err);
       alert('Idea selection error: ' + err.message);
@@ -288,11 +292,16 @@ export default function IdeasPage({ params }: { params: Promise<{ projectId: str
 
         {/* Ideas Grid */}
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 32px 80px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
             {ideas.map((idea, i) => (
               <div
                 key={idea.id}
-                style={{ animation: `slide-up 300ms ease-out ${i * 80}ms both` }}
+                style={{ 
+                  animation: `slide-up 300ms ease-out ${i * 80}ms both`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
               >
                 <IdeaCard
                   idea={idea}
