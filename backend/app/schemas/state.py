@@ -163,6 +163,7 @@ class Integration(BaseModel):
 
 class ArchitecturePackage(BaseModel):
     system_design: str
+    mermaid_diagram: Optional[str] = None
     components: List[Component] = Field(default_factory=list)
     modules: List[Module] = Field(default_factory=list)
     api_design: List[ApiDefinition] = Field(default_factory=list)

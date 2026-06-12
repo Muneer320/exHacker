@@ -1,0 +1,15 @@
+fix: mermaid rendering, export downloads, icons, mock data and API improvements
+
+- Install mermaid npm package for client-side diagram rendering
+- Create MermaidDiagram component (dynamic import, dark theme, SVG responsive)
+- Rewrite dashboard page: Mermaid via dynamic import, real file downloads (Blob),
+  Lucide icons throughout, all tabs use live backend state with proper field mapping
+- Rewrite API service: health check caching (15s), comprehensive buildMockState()
+  that populates ALL dashboard tabs from mock data instead of just ideas
+- Fix workflow page: replace emoji strings with Lucide icons (CheckCircle, HourglassIcon, Sparkles)
+- Add TrendingUp/Globe/Layers/Calendar/Presentation to workflow ICON_MAP
+- Fix architecture agent: add mermaid_diagram field to schema and mock result,
+  auto-generate diagram from components if LLM does not provide one
+- Fix ArchitecturePackage schema: add optional mermaid_diagram field
+- Fix mock mermaid diagram: remove emoji from subgraph labels (breaks Mermaid parser)
+- Fix export tab: real Blob+createObjectURL downloads, not simulated timeouts

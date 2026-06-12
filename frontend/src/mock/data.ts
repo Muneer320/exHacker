@@ -168,26 +168,25 @@ export const DEMO_FINANCE_PROJECT = {
 
   architecture: {
     mermaidDiagram: `graph TB
-    subgraph Frontend["🖥️ Frontend (Next.js)"]
+    subgraph FE["Frontend (Next.js)"]
       UI[React UI]
-      State[Zustand Store]
+      Store[Zustand Store]
     end
-    subgraph Backend["⚙️ Backend (FastAPI)"]
+    subgraph BE["Backend (FastAPI)"]
       API[REST API]
-      Agents[AI Agents]
       WF[LangGraph Engine]
+      Agents[AI Agents]
     end
-    subgraph Data["💾 Data Layer"]
+    subgraph DL["Data Layer"]
       DB[(PostgreSQL)]
       Cache[(Redis)]
     end
-    subgraph AI["🤖 AI Layer"]
+    subgraph AIL["AI Layer"]
       LLM[Groq / Gemini]
       Research[Tavily Search]
     end
-    subgraph External["🔗 External"]
+    subgraph EXT["External APIs"]
       Plaid[Plaid API]
-      OAI[OpenAI API]
     end
     UI --> API
     API --> WF
@@ -196,8 +195,7 @@ export const DEMO_FINANCE_PROJECT = {
     Agents --> Research
     API --> DB
     API --> Cache
-    Agents --> Plaid
-    Agents --> OAI`,
+    Agents --> Plaid`,
     components: [
       { name: 'Next.js Frontend', type: 'frontend', tech: 'React 19, Tailwind CSS, Framer Motion' },
       { name: 'FastAPI Backend', type: 'backend', tech: 'Python 3.12, FastAPI, LangGraph' },
