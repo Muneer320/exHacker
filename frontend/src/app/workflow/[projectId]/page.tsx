@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Target, Brain, Search, Lightbulb, CheckCircle, GitBranch, Zap, Monitor, Mic,
-  Star, Clock, ArrowRight, ChevronRight, Activity, Database
+  Star, Clock, ArrowRight, ChevronRight, Activity, Database, Sparkles, PartyPopper, HourglassIcon,
+  TrendingUp, Globe, Layers, Calendar
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import { DEMO_FINANCE_PROJECT, WORKFLOW_STAGES } from '@/mock/data';
@@ -13,7 +14,8 @@ import { getWorkflowStatus, getWorkflowState } from '@/services/api';
 
 // Agent icon map
 const ICON_MAP: Record<string, React.ElementType> = {
-  Target, Brain, Search, Lightbulb, CheckCircle, GitBranch, Zap, Monitor, Mic, Star, Database, Activity
+  Target, Brain, Search, Lightbulb, CheckCircle, GitBranch, Zap, Monitor, Mic,
+  Star, Database, Activity, Sparkles, TrendingUp, Globe, Layers, Calendar, Presentation: Monitor
 };
 
 const AGENT_COLORS: Record<string, string> = {
@@ -467,7 +469,7 @@ export default function WorkflowPage({ params }: { params: Promise<{ projectId: 
         >
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>Workflow Command Center</h1>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Project: {DEMO_FINANCE_PROJECT.name}</p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Project: {liveState?.project?.name || DEMO_FINANCE_PROJECT.name}</p>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span
@@ -585,9 +587,10 @@ export default function WorkflowPage({ params }: { params: Promise<{ projectId: 
                         background: complete ? 'rgba(34,197,94,0.12)' : `rgba(${hexToRgb(agentColor)}, 0.12)`,
                         color: complete ? '#22C55E' : agentColor,
                         border: `1px solid ${complete ? 'rgba(34,197,94,0.3)' : `rgba(${hexToRgb(agentColor)}, 0.3)`}`,
+                        display: 'flex', alignItems: 'center', gap: '4px',
                       }}
                     >
-                      {complete ? '✓ Done' : 'Active'}
+                      {complete ? <><CheckCircle size={10} /> Done</> : 'Active'}
                     </span>
                   </div>
                   <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>
@@ -636,7 +639,9 @@ export default function WorkflowPage({ params }: { params: Promise<{ projectId: 
                     textAlign: 'center',
                   }}
                 >
-                  <p style={{ fontSize: '16px', fontWeight: 600, color: '#F59E0B', marginBottom: '8px' }}>⏳ Awaiting your selection</p>
+                   <p style={{ fontSize: '16px', fontWeight: 600, color: '#F59E0B', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <HourglassIcon size={16} /> Awaiting your selection
+                  </p>
                   <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>
                     The AI Validator has analyzed the generated ideas with live web research. Click the button below to pick the winning concept.
                   </p>
@@ -664,7 +669,9 @@ export default function WorkflowPage({ params }: { params: Promise<{ projectId: 
                     textAlign: 'center',
                   }}
                 >
-                  <p style={{ fontSize: '16px', fontWeight: 600, color: '#22C55E', marginBottom: '8px' }}>🎉 Your AI package is ready</p>
+                  <p style={{ fontSize: '16px', fontWeight: 600, color: '#22C55E', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <Sparkles size={16} /> Your AI package is ready
+                  </p>
                   <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>Architecture, pitch, presentation, and build plan generated successfully</p>
                 </div>
               )}
