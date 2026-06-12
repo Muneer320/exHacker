@@ -124,13 +124,13 @@ npm run dev
 ## 📄 Documentation Indices
 
 For detailed system specs, refer to our documents in the `Docs/` directory:
-*   [01_PRD.md](file:///c:/Users/munee/MuneerBackup/Muneer/MainFolder/CodingPractices/Hackaton/exHacker-hackArena/Docs/01_PRD.md) - Product Requirements Document
-*   [03_System_Architecture.md](file:///c:/Users/munee/MuneerBackup/Muneer/MainFolder/CodingPractices/Hackaton/exHacker-hackArena/Docs/03_System_Architecture.md) - Backend Services layout
-*   [04_Agent_Specifications.md](file:///c:/Users/munee/MuneerBackup/Muneer/MainFolder/CodingPractices/Hackaton/exHacker-hackArena/Docs/04_Agent_Specifications.md) - Rules and goals per agent
-*   [06_State_Model.md](file:///c:/Users/munee/MuneerBackup/Muneer/MainFolder/CodingPractices/Hackaton/exHacker-hackArena/Docs/06_State_Model.md) - Complete Pydantic domain models
-*   [10_Research_Architecture.md](file:///c:/Users/munee/MuneerBackup/Muneer/MainFolder/CodingPractices/Hackaton/exHacker-hackArena/Docs/10_Research_Architecture.md) - Research Pipeline & Novelty Scoring Formulas
+*   [01_PRD.md](Docs/01_PRD.md) - Product Requirements Document
+*   [03_System_Architecture.md](Docs/03_System_Architecture.md) - Backend Services layout
+*   [04_Agent_Specifications.md](Docs/04_Agent_Specifications.md) - Rules and goals per agent
+*   [06_State_Model.md](Docs/06_State_Model.md) - Complete Pydantic domain models
+*   [10_Research_Architecture.md](Docs/10_Research_Architecture.md) - Research Pipeline & Novelty Scoring Formulas
 
 ---
 
 ## 📜 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
