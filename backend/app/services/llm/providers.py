@@ -62,7 +62,7 @@ class GroqProvider(BaseLLMProvider):
                 raise ValueError("No active Groq client found")
 
             try:
-                model_name = "llama3-70b-8192"
+                model_name = "llama-3.3-70b-versatile"
                 chat_completion = await client.chat.completions.create(
                     messages=[
                         {
@@ -119,7 +119,7 @@ class GeminiProvider(BaseLLMProvider):
         )
 
         response = await self.client.aio.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=user_prompt,
             config=config,
         )

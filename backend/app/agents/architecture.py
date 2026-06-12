@@ -35,10 +35,12 @@ class SolutionArchitectAgent(BaseAgent):
             "- Components should have single, clear responsibilities.\n"
             "- mvp_scope should have exactly 5-7 specific deliverables.\n"
             "- future_scope should have 3-5 post-hackathon enhancements.\n"
+            "- mermaid_diagram MUST be a valid Mermaid flowchart (graph TB format).\n"
             "- Return valid JSON only. No markdown. No explanations.\n\n"
             "OUTPUT SCHEMA:\n"
             "{\n"
             '  "system_design": "string (2-3 sentences overview)",\n'
+            '  "mermaid_diagram": "string (valid Mermaid graph TB diagram showing data flow)",\n'
             '  "components": [{"name":"string","description":"string","responsibilities":["string"]}],\n'
             '  "modules": [{"name":"string","description":"string","dependencies":["string"]}],\n'
             '  "api_design": [{"endpoint":"string","method":"string","description":"string"}],\n'
@@ -70,20 +72,71 @@ class SolutionArchitectAgent(BaseAgent):
         )
 
     def apply_result(self, state: Dict[str, Any], result: ArchitecturePackage) -> Dict[str, Any]:
-        state["architecture"] = result.model_dump()
+        arch_dict = result.model_dump()
+        # If LLM didn't provide a Mermaid diagram, generate one from components
+        if not arch_dict.get("mermaid_diagram"):
+            arch_dict["mermaid_diagram"] = self._generate_mermaid(arch_dict)
+        state["architecture"] = arch_dict
         return state
+
+    def _generate_mermaid(self, arch: Dict[str, Any]) -> str:
+        """Generate a basic Mermaid diagram from components list."""
+        lines = ["graph TB"]
+        components = arch.get("components", [])
+        node_ids = {}
+        for i, c in enumerate(components):
+            node_id = f"N{i}"
+            node_ids[c["name"]] = node_id
+            safe_name = c["name"].replace('"', '')
+            lines.append(f'    {node_id}["{safe_name}"]')
+        # Connect nodes sequentially
+        ids = list(node_ids.values())
+        for i in range(len(ids) - 1):
+            lines.append(f"    {ids[i]} --> {ids[i+1]}")
+        return "\n".join(lines)
 
     def mock_result(self, state: Dict[str, Any]) -> ArchitecturePackage:
         idea = state.get("selected_idea") or {}
         idea_title = idea.get("title", "Selected Solution")
         ts = state.get("tech_stack") or {}
+        frontend = ts.get("frontend", "Next.js")
+        backend = ts.get("backend", "FastAPI")
+        database = ts.get("database", "SQLite")
+
+        mermaid = (
+            f'graph TB\n'
+            f'    subgraph FE["Frontend ({frontend})"]\n'
+            f'        UI[React UI]\n'
+            f'        Store[State Store]\n'
+            f'    end\n'
+            f'    subgraph BE["Backend ({backend})"]\n'
+            f'        API[REST API]\n'
+            f'        WF[LangGraph Engine]\n'
+            f'        Agents[AI Agents]\n'
+            f'    end\n'
+            f'    subgraph DB["Database ({database})"]\n'
+            f'        Data[(SQLite)]\n'
+            f'    end\n'
+            f'    subgraph AI["AI Layer"]\n'
+            f'        Groq[Groq LLM]\n'
+            f'        Gemini[Gemini LLM]\n'
+            f'    end\n'
+            f'    UI --> API\n'
+            f'    API --> WF\n'
+            f'    WF --> Agents\n'
+            f'    Agents --> Groq\n'
+            f'    Agents --> Gemini\n'
+            f'    API --> Data\n'
+            f'    Store --> UI'
+        )
 
         return ArchitecturePackage(
             system_design=(
                 f"The {idea_title} architecture follows a clean separation of concerns: "
-                f"a Next.js frontend communicates with a FastAPI backend via RESTful JSON APIs. "
-                f"Background agent workflows run as LangGraph state machines persisted to SQLite."
+                f"a {frontend} frontend communicates with a {backend} backend via RESTful JSON APIs. "
+                f"Background agent workflows run as LangGraph state machines persisted to {database}."
             ),
+            mermaid_diagram=mermaid,
             components=[
                 {
                     "name": "Workflow State Engine",
