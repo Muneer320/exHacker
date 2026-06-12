@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, ArrowLeft, Check, Zap, Users, Clock, Code, BookOpen, Trophy } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
+import { createProject, startWorkflow } from '@/services/api';
 
 const STEPS = ['Challenge', 'Team', 'Constraints', 'Review'];
 
@@ -90,8 +91,39 @@ export default function NewProjectPage() {
 
   const handleLaunch = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    router.push('/workflow/demo-finance-001');
+    try {
+      const payload = {
+        name: form.theme ? `${form.theme} Solution` : 'Hackathon Solution',
+        challenge_statements: [form.challenge],
+        duration_hours: form.duration === '24 hours' ? 24 : form.duration === '36 hours' ? 36 : form.duration === '48 hours' ? 48 : form.duration === '72 hours' ? 72 : 168,
+        team_profile: {
+          team_size: form.teamSize,
+          experience_level: form.experience,
+          known_technologies: form.skills,
+          preferred_technologies: form.preferredTech
+        }
+      };
+
+      const projectRes = await createProject(payload);
+      if (projectRes.success) {
+        const { project_id, workflow_id } = projectRes.data;
+        // Start workflow execution asynchronously on the backend (blocks until Selection node or end)
+        startWorkflow(workflow_id).catch((err) => {
+          console.error('[exHacker API] Async workflow run error:', err);
+        });
+
+        // Redirect immediately to workflow screen
+        router.push(`/workflow/${project_id}?wId=${workflow_id}`);
+      } else {
+        alert('Failed to initialize project: ' + (projectRes.message || 'Unknown error'));
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('[exHacker API] Error launching workflow:', error);
+      // Fallback to local demo offline redirect
+      console.warn('[exHacker API] Falling back to offline simulation page.');
+      router.push('/workflow/demo-finance-001');
+    }
   };
 
   const canNext = () => {

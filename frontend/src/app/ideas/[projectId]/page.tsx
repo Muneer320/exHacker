@@ -1,17 +1,39 @@
 'use client';
 
-import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, ArrowRight, Star, ChevronDown, ChevronUp, Zap, TrendingUp, Shield, Lightbulb } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import { DEMO_FINANCE_PROJECT } from '@/mock/data';
 import { ScoreBar } from '@/components/shared/ui';
+import { getProjectIdeas, selectIdea } from '@/services/api';
 
 function hexToRgb(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `${r},${g},${b}`;
+}
+
+function mapBackendIdeasToFrontend(ideas: any[], reports: any[]): any[] {
+  return ideas.map((idea) => {
+    const report = (reports || []).find((r) => r.idea_id === idea.id);
+    return {
+      id: idea.id,
+      title: idea.title,
+      tagline: idea.description,
+      scores: {
+        innovation: report ? Math.round(report.innovation_score * 10) : Math.round(idea.innovation_score * 10),
+        feasibility: report ? Math.round(report.feasibility_score * 10) : 80,
+        differentiation: report ? Math.round(report.final_score * 10) : 85,
+        complexity: 40
+      },
+      strengths: report ? report.strengths : [],
+      weaknesses: report ? report.weaknesses : [],
+      apis: report ? (report.apis || []).map((api: any) => api.name) : [],
+      competitors: report ? (report.competitors || []).map((c: any) => c.name) : []
+    };
+  });
 }
 
 type Idea = (typeof DEMO_FINANCE_PROJECT.ideas)[0];
@@ -148,14 +170,60 @@ function IdeaCard({
 export default function IdeasPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const wId = searchParams.get('wId');
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const ideas = DEMO_FINANCE_PROJECT.ideas;
+  const [ideas, setIdeas] = useState<any[]>(DEMO_FINANCE_PROJECT.ideas);
+  const [loading, setLoading] = useState(false);
+
+  // Load project ideas from backend
+  useEffect(() => {
+    if (!projectId || projectId === 'demo-finance-001') {
+      return;
+    }
+
+    const fetchIdeas = async () => {
+      setLoading(true);
+      try {
+        const res = await getProjectIdeas(projectId);
+        if (res.success && res.data.ideas) {
+          const mapped = mapBackendIdeasToFrontend(res.data.ideas, res.data.validation_reports);
+          setIdeas(mapped);
+        }
+      } catch (err) {
+        console.error('[exHacker API] Error loading project ideas:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIdeas();
+  }, [projectId]);
 
   const handleContinue = async () => {
+    if (!selectedId) return;
     setConfirming(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    router.push(`/dashboard/${projectId}`);
+
+    try {
+      if (projectId && projectId !== 'demo-finance-001') {
+        const selectRes = await selectIdea(projectId, selectedId);
+        if (!selectRes.success) {
+          alert('Failed to select idea on backend. Please retry.');
+          setConfirming(false);
+          return;
+        }
+      } else {
+        // Fallback simulation
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+      router.push(`/dashboard/${projectId}?wId=${wId || ''}`);
+    } catch (err: any) {
+      console.error('[exHacker API] Error selecting idea:', err);
+      alert('Idea selection error: ' + err.message);
+      setConfirming(false);
+    }
   };
 
   return (

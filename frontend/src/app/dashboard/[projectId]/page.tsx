@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Download, Star, Calendar, BarChart2, GitBranch, Layers, Monitor, Mic, Search,
   CheckCircle, ExternalLink, Copy, ChevronRight, Play, Zap
@@ -9,6 +10,7 @@ import {
 import Navbar from '@/components/layout/Navbar';
 import { DEMO_FINANCE_PROJECT } from '@/mock/data';
 import { ScoreBar } from '@/components/shared/ui';
+import { getWorkflowState } from '@/services/api';
 
 function hexToRgb(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -29,16 +31,28 @@ const TABS = [
 ];
 
 // ── Overview Tab ────────────────────────────────────────────────────────────
-function OverviewTab() {
+function OverviewTab({ state }: { state?: any }) {
   const p = DEMO_FINANCE_PROJECT;
-  const selectedIdea = p.ideas.find((i) => i.id === p.selectedIdea)!;
+  const selectedIdea = state?.selected_idea || p.ideas.find((i) => i.id === p.selectedIdea)!;
+
+  const problemText = state?.problem_analysis?.refined_problem_statement || 'Students lack financial literacy tools designed for their reality — dorm budgets, part-time income, career planning.';
+  const taglineText = selectedIdea?.description || selectedIdea?.tagline || 'AI-powered financial coaching personalized for students.';
+  const usersText = selectedIdea?.target_users?.join(', ') || 'University students, recent graduates, young professionals entering the workforce.';
+
+  // Map scores
+  const innovationVal = Math.round(selectedIdea?.scores?.innovation || selectedIdea?.innovation_score * 10 || p.ideas[0].scores.innovation);
+  const feasibilityVal = Math.round(selectedIdea?.scores?.feasibility || state?.validation_reports?.find((r: any) => r.idea_id === selectedIdea.id)?.feasibility_score * 10 || p.ideas[0].scores.feasibility);
+  const diffVal = Math.round(selectedIdea?.scores?.differentiation || state?.validation_reports?.find((r: any) => r.idea_id === selectedIdea.id)?.final_score * 10 || p.ideas[0].scores.differentiation);
+  
+  const strengths = state?.validation_reports?.find((r: any) => r.idea_id === selectedIdea.id)?.strengths || selectedIdea?.strengths || p.ideas[0].strengths;
+
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Problem', content: 'Students lack financial literacy tools designed for their reality — dorm budgets, part-time income, career planning.', color: '#EF4444' },
-          { label: 'Solution', content: selectedIdea?.tagline || 'AI-powered financial coaching personalized for students.', color: '#22C55E' },
-          { label: 'Target Users', content: 'University students, recent graduates, young professionals entering the workforce.', color: '#06B6D4' },
+          { label: 'Problem', content: problemText, color: '#EF4444' },
+          { label: 'Solution', content: taglineText, color: '#22C55E' },
+          { label: 'Target Users', content: usersText, color: '#06B6D4' },
         ].map((card) => (
           <div key={card.label} style={{ background: '#111827', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', padding: '20px' }}>
             <p style={{ fontSize: '11px', fontWeight: 600, color: card.color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>{card.label}</p>
@@ -49,10 +63,10 @@ function OverviewTab() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Innovation', value: selectedIdea?.scores.innovation, color: '#EC4899' },
-          { label: 'Feasibility', value: selectedIdea?.scores.feasibility, color: '#22C55E' },
-          { label: 'Differentiation', value: selectedIdea?.scores.differentiation, color: '#7C3AED' },
-          { label: 'Overall Score', value: p.overallScore, color: '#F59E0B' },
+          { label: 'Innovation', value: innovationVal, color: '#EC4899' },
+          { label: 'Feasibility', value: feasibilityVal, color: '#22C55E' },
+          { label: 'Differentiation', value: diffVal, color: '#7C3AED' },
+          { label: 'Overall Score', value: Math.round(state?.validation_reports?.find((r: any) => r.idea_id === selectedIdea.id)?.final_score * 10 || p.overallScore), color: '#F59E0B' },
         ].map((m) => (
           <div key={m.label} style={{ background: '#111827', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', padding: '20px', textAlign: 'center' }}>
             <div style={{ fontSize: '36px', fontWeight: 800, color: m.color, marginBottom: '4px' }}>{m.value}</div>
@@ -63,7 +77,7 @@ function OverviewTab() {
 
       <div style={{ background: '#111827', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', padding: '24px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Why this idea wins</h3>
-        {selectedIdea?.strengths.map((s, i) => (
+        {strengths.map((s: string, i: number) => (
           <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
             <CheckCircle size={16} color="#22C55E" style={{ flexShrink: 0, marginTop: '2px' }} />
             <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>{s}</span>
@@ -75,41 +89,28 @@ function OverviewTab() {
 }
 
 // ── Architecture Tab ─────────────────────────────────────────────────────────
-function ArchitectureTab() {
+function ArchitectureTab({ state }: { state?: any }) {
   const { architecture } = DEMO_FINANCE_PROJECT;
+  const mermaidDiagram = state?.architecture?.mermaid_diagram || state?.architecture?.mermaidDiagram || architecture.mermaidDiagram;
+  
+  const componentsList = state?.architecture?.components 
+    ? state.architecture.components.map((c: any) => ({
+        name: c.name,
+        type: c.type || 'backend',
+        tech: c.responsibilities?.join(', ') || c.tech || 'Integrated Service'
+      }))
+    : architecture.components;
+
   return (
     <div>
       <div style={{ background: '#111827', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', padding: '28px', marginBottom: '20px', fontFamily: '"Fira Code", monospace', fontSize: '13px', lineHeight: 1.7 }}>
         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginBottom: '16px', fontFamily: 'Inter, sans-serif' }}>SYSTEM ARCHITECTURE DIAGRAM</p>
         <pre style={{ color: '#22C55E', whiteSpace: 'pre-wrap', overflow: 'auto' }}>
-          {`graph TB
-  subgraph Frontend["🖥️ Frontend (Next.js)"]
-    UI[React 19 + Tailwind]
-    Store[Zustand State]
-  end
-  subgraph Backend["⚙️ Backend (FastAPI)"]
-    API[REST + WebSocket]
-    WF[LangGraph Engine]
-    Agents[10 AI Agents]
-  end
-  subgraph Data["💾 Data"]
-    DB[(PostgreSQL)]
-    Cache[(Redis)]
-  end
-  subgraph AI["🤖 AI Layer"]
-    Groq[Groq LLM] --> Gemini[Gemini Fallback]
-    Research[Tavily Search]
-  end
-  UI --> API
-  API --> WF
-  WF --> Agents
-  Agents --> Groq
-  Agents --> Research
-  API --> DB & Cache`}
+          {mermaidDiagram}
         </pre>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-        {architecture.components.map((c, i) => {
+        {componentsList.map((c: any, i: number) => {
           const colorMap: Record<string, string> = { frontend: '#3B82F6', backend: '#7C3AED', database: '#F59E0B', ai: '#22C55E', external: '#06B6D4' };
           const color = colorMap[c.type] || '#7C3AED';
           return (
@@ -126,21 +127,51 @@ function ArchitectureTab() {
 }
 
 // ── Tech Stack Tab ───────────────────────────────────────────────────────────
-function TechStackTab() {
+function TechStackTab({ state }: { state?: any }) {
   const { techStack } = DEMO_FINANCE_PROJECT;
+
+  const getTechItems = (type: string) => {
+    if (state?.tech_stack) {
+      const ts = state.tech_stack;
+      const mapping: Record<string, string[]> = {
+        Frontend: [ts.frontend],
+        Backend: [ts.backend],
+        Database: [ts.database],
+        AI: ts.ai_stack || [],
+        Infrastructure: ts.deployment || []
+      };
+      
+      const items = mapping[type] || [];
+      return items.map((name: string, i: number) => ({
+        name,
+        reason: ts.reasoning?.[i] || `Chosen for project stack performance & simplicity.`
+      }));
+    }
+    
+    const secMap: Record<string, typeof techStack.frontend> = {
+      Frontend: techStack.frontend,
+      Backend: techStack.backend,
+      Database: techStack.database,
+      AI: techStack.ai,
+      Infrastructure: techStack.infrastructure
+    };
+    return secMap[type] || [];
+  };
+
   const sections = [
-    { label: 'Frontend', items: techStack.frontend, color: '#3B82F6' },
-    { label: 'Backend', items: techStack.backend, color: '#7C3AED' },
-    { label: 'Database', items: techStack.database, color: '#F59E0B' },
-    { label: 'AI', items: techStack.ai, color: '#22C55E' },
-    { label: 'Infrastructure', items: techStack.infrastructure, color: '#06B6D4' },
+    { label: 'Frontend', color: '#3B82F6' },
+    { label: 'Backend', color: '#7C3AED' },
+    { label: 'Database', color: '#F59E0B' },
+    { label: 'AI', color: '#22C55E' },
+    { label: 'Infrastructure', color: '#06B6D4' },
   ];
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
       {sections.map((sec) => (
         <div key={sec.label} style={{ background: '#111827', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', padding: '20px' }}>
           <p style={{ fontSize: '12px', fontWeight: 600, color: sec.color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>{sec.label}</p>
-          {sec.items.map((item) => (
+          {getTechItems(sec.label).map((item) => (
             <div key={item.name} style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: sec.color, flexShrink: 0 }} />
@@ -156,11 +187,13 @@ function TechStackTab() {
 }
 
 // ── Build Plan Tab ───────────────────────────────────────────────────────────
-function BuildPlanTab() {
+function BuildPlanTab({ state }: { state?: any }) {
   const { buildPlan } = DEMO_FINANCE_PROJECT;
+  const milestones = state?.build_package?.milestones || buildPlan.milestones;
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
-      {buildPlan.milestones.map((m, i) => (
+      {milestones.map((m: any, i: number) => (
         <div
           key={i}
           style={{
@@ -173,11 +206,11 @@ function BuildPlanTab() {
               {i + 1}
             </div>
             <div>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{m.day}</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{m.day || m.timeline || `Day ${i + 1}`}</p>
               <p style={{ fontSize: '15px', fontWeight: 600 }}>{m.title}</p>
             </div>
           </div>
-          {m.tasks.map((task, j) => (
+          {(m.tasks || []).map((task: string, j: number) => (
             <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#7C3AED', flexShrink: 0 }} />
               <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>{task}</span>
@@ -190,8 +223,8 @@ function BuildPlanTab() {
 }
 
 // ── Presentation Tab ─────────────────────────────────────────────────────────
-function PresentationTab() {
-  const slides = [
+function PresentationTab({ state }: { state?: any }) {
+  const slides = state?.presentation?.slides?.map((slide: any) => slide.title) || [
     'Title & Hook', 'Problem Statement', 'Market Opportunity', 'Our Solution',
     'Live Demo', 'Technical Architecture', 'AI Intelligence', 'Business Model',
     'Team & Traction', 'Roadmap', 'Competitive Advantage', 'Call to Action',
@@ -199,7 +232,7 @@ function PresentationTab() {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-        {slides.map((slide, i) => (
+        {slides.map((slide: string, i: number) => (
           <div
             key={i}
             style={{
@@ -233,14 +266,19 @@ function PresentationTab() {
 }
 
 // ── Pitch Tab ────────────────────────────────────────────────────────────────
-function PitchTab() {
+function PitchTab({ state }: { state?: any }) {
   const { pitch } = DEMO_FINANCE_PROJECT;
   const [expanded, setExpanded] = useState<string | null>('30s');
+
+  const thirtySecond = state?.pitch?.thirty_second || pitch.thirtySecond;
+  const twoMinute = state?.pitch?.two_minute || pitch.twoMinute;
+  const judgeQA = state?.pitch?.judge_qa || pitch.judgeQA;
+
   return (
     <div>
       {[
-        { id: '30s', label: '30-Second Pitch', duration: '0:30', color: '#22C55E', content: pitch.thirtySecond },
-        { id: '2m', label: '2-Minute Pitch', duration: '2:00', color: '#7C3AED', content: pitch.twoMinute },
+        { id: '30s', label: '30-Second Pitch', duration: '0:30', color: '#22C55E', content: thirtySecond },
+        { id: '2m', label: '2-Minute Pitch', duration: '2:00', color: '#7C3AED', content: twoMinute },
       ].map((p) => (
         <div
           key={p.id}
@@ -276,8 +314,8 @@ function PitchTab() {
         <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Mic size={16} color="#F97316" /> Judge Q&A Prep
         </h3>
-        {pitch.judgeQA.map((qa, i) => (
-          <div key={i} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: i < pitch.judgeQA.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+        {judgeQA.map((qa: any, i: number) => (
+          <div key={i} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: i < judgeQA.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#F59E0B', marginBottom: '6px' }}>Q: {qa.question}</p>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{qa.answer}</p>
           </div>
@@ -288,8 +326,30 @@ function PitchTab() {
 }
 
 // ── Research Tab ─────────────────────────────────────────────────────────────
-function ResearchTab() {
+function ResearchTab({ state }: { state?: any }) {
   const { research } = DEMO_FINANCE_PROJECT;
+
+  const report = state?.validation_reports?.find((r: any) => r.idea_id === state.selected_idea?.id);
+
+  const competitors = report?.competitors || research.competitors;
+  const apis = report?.apis || research.apis;
+
+  const formattedCompetitors = competitors.map((c: any) => ({
+    name: c.name,
+    description: c.description,
+    strengths: c.strengths || ['Competitive feature set'],
+    weaknesses: c.weaknesses || ['Integration friction']
+  }));
+
+  const formattedApis = apis.map((api: any) => ({
+    name: api.name,
+    purpose: api.purpose || api.description || 'Developer API resource',
+    pricing: api.pricing || 'Free/Developer tier',
+    docsUrl: api.docsUrl || 'https://google.com'
+  }));
+
+  const insights = state?.challenge_intelligence?.opportunities || research.insights;
+
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
@@ -297,13 +357,13 @@ function ResearchTab() {
           <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#EF4444', display: 'inline-block' }} /> Competitors
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
-          {research.competitors.map((c, i) => (
+          {formattedCompetitors.map((c: any, i: number) => (
             <div key={i} style={{ background: '#111827', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', padding: '16px' }}>
               <p style={{ fontWeight: 600, marginBottom: '4px' }}>{c.name}</p>
               <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginBottom: '10px' }}>{c.description}</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {c.strengths.map((s) => <span key={s} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: 'rgba(34,197,94,0.08)', color: '#22C55E' }}>{s}</span>)}
-                {c.weaknesses.map((w) => <span key={w} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>{w}</span>)}
+                {c.strengths.map((s: string) => <span key={s} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: 'rgba(34,197,94,0.08)', color: '#22C55E' }}>{s}</span>)}
+                {c.weaknesses.map((w: string) => <span key={w} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>{w}</span>)}
               </div>
             </div>
           ))}
@@ -315,7 +375,7 @@ function ResearchTab() {
           <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#3B82F6', display: 'inline-block' }} /> APIs
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
-          {research.apis.map((api, i) => (
+          {formattedApis.map((api: any, i: number) => (
             <div key={i} style={{ background: '#111827', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', padding: '16px' }}>
               <p style={{ fontWeight: 600, marginBottom: '4px' }}>{api.name}</p>
               <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>{api.purpose}</p>
@@ -332,7 +392,7 @@ function ResearchTab() {
 
       <div>
         <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px' }}>Market Insights</h3>
-        {research.insights.map((insight, i) => (
+        {insights.map((insight: string, i: number) => (
           <div key={i} style={{ display: 'flex', gap: '12px', padding: '14px', background: '#111827', borderRadius: '10px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <Star size={14} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
             <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>{insight}</span>
@@ -407,16 +467,51 @@ function ExportTab() {
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function DashboardPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
+  const searchParams = useSearchParams();
+  const wId = searchParams.get('wId');
+
   const [activeTab, setActiveTab] = useState('overview');
+  const [projectState, setProjectState] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!wId || projectId === 'demo-finance-001') {
+      return;
+    }
+
+    const fetchState = async () => {
+      setLoading(true);
+      try {
+        const stateRes = await getWorkflowState(wId);
+        if (stateRes.success && stateRes.data.state) {
+          setProjectState(stateRes.data.state);
+        }
+      } catch (err) {
+        console.error('[exHacker API] Error loading dashboard state:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchState();
+  }, [wId, projectId]);
+
+  const selectedIdea = projectState?.selected_idea;
+  const finalReport = projectState?.validation_reports?.find((r: any) => r.idea_id === selectedIdea?.id);
+  
+  const projectName = projectState?.project?.name || DEMO_FINANCE_PROJECT.name;
+  const overallScoreVal = finalReport 
+    ? Math.round(finalReport.final_score * 10) 
+    : DEMO_FINANCE_PROJECT.overallScore;
 
   const tabContent: Record<string, React.ReactNode> = {
-    overview: <OverviewTab />,
-    architecture: <ArchitectureTab />,
-    tech: <TechStackTab />,
-    build: <BuildPlanTab />,
-    presentation: <PresentationTab />,
-    pitch: <PitchTab />,
-    research: <ResearchTab />,
+    overview: <OverviewTab state={projectState} />,
+    architecture: <ArchitectureTab state={projectState} />,
+    tech: <TechStackTab state={projectState} />,
+    build: <BuildPlanTab state={projectState} />,
+    presentation: <PresentationTab state={projectState} />,
+    pitch: <PitchTab state={projectState} />,
+    research: <ResearchTab state={projectState} />,
     export: <ExportTab />,
   };
 
@@ -436,7 +531,7 @@ export default function DashboardPage({ params }: { params: Promise<{ projectId:
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <h1 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{DEMO_FINANCE_PROJECT.name}</h1>
+                  <h1 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{projectName}</h1>
                   <div
                     style={{
                       padding: '4px 14px', borderRadius: '99px',
@@ -462,7 +557,7 @@ export default function DashboardPage({ params }: { params: Promise<{ projectId:
                 >
                   <Star size={18} color="#F59E0B" fill="#F59E0B" />
                   <div>
-                    <p style={{ fontSize: '22px', fontWeight: 800, color: '#F59E0B', lineHeight: 1 }}>{DEMO_FINANCE_PROJECT.overallScore}</p>
+                    <p style={{ fontSize: '22px', fontWeight: 800, color: '#F59E0B', lineHeight: 1 }}>{overallScoreVal}</p>
                     <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Overall Score</p>
                   </div>
                 </div>
