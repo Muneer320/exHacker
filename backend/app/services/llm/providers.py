@@ -7,7 +7,8 @@ from pydantic import BaseModel, ValidationError
 
 # Clients
 from groq import AsyncGroq
-import google.generativeai as genai
+from google import genai as google_genai
+from google.genai import types as genai_types
 from openai import AsyncOpenAI
 
 from app.core.config import settings
@@ -61,32 +62,36 @@ class GroqProvider(BaseLLMProvider):
                 raise ValueError("No active Groq client found")
 
             try:
-                # Use standard model for quick structured tasks
                 model_name = "llama3-70b-8192"
-                
-                # In Groq, JSON mode is activated by setting response_format to {"type": "json_object"}
-                # and instructions to return JSON in prompt.
                 chat_completion = await client.chat.completions.create(
                     messages=[
-                        {"role": "system", "content": f"{system_prompt}\nReturn valid JSON only. Matching the schema: {response_model.model_json_schema()}"},
+                        {
+                            "role": "system",
+                            "content": (
+                                f"{system_prompt}\n"
+                                f"Return valid JSON only matching the schema: "
+                                f"{response_model.model_json_schema()}"
+                            ),
+                        },
                         {"role": "user", "content": user_prompt},
                     ],
                     model=model_name,
                     response_format={"type": "json_object"},
                     temperature=0.2,
                 )
-                
+
                 content = chat_completion.choices[0].message.content
                 if not content:
                     raise ValueError("Groq returned an empty response")
-                
+
                 parsed_data = json.loads(content)
                 return response_model.model_validate(parsed_data)
 
             except Exception as e:
-                logger.warning(f"Groq API call failed with key index {self.current_key_index}: {str(e)}")
+                logger.warning(
+                    f"Groq API call failed with key index {self.current_key_index}: {str(e)}"
+                )
                 last_exception = e
-                # Check for rate limit or similar API errors to trigger key rotation
                 self._rotate_key()
 
         raise last_exception or RuntimeError("All Groq keys failed during generation")
@@ -95,35 +100,28 @@ class GroqProvider(BaseLLMProvider):
 class GeminiProvider(BaseLLMProvider):
     def __init__(self, api_key: str) -> None:
         self.api_key = api_key
-        if api_key:
-            genai.configure(api_key=api_key)
+        self.client = google_genai.Client(api_key=api_key) if api_key else None
 
     @property
     def name(self) -> str:
         return "gemini"
 
     async def generate(self, system_prompt: str, user_prompt: str, response_model: Type[T]) -> T:
-        if not self.api_key:
+        if not self.client:
             raise ValueError("Gemini API key not configured")
 
-        # Select model based on typical usage
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        
-        # We specify the system instruction, user prompt, and generation config for JSON Schema output
-        generation_config = {
-            "response_mime_type": "application/json",
-            "response_schema": response_model,
-            "temperature": 0.2
-        }
+        # Build config for structured JSON output via response_schema
+        config = genai_types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            response_mime_type="application/json",
+            response_schema=response_model,
+            temperature=0.2,
+        )
 
-        # google-generativeai client generation
-        response = await model.generate_content_async(
-            contents=[
-                {"role": "user", "parts": [user_prompt]}
-            ],
-            generation_config=generation_config,
-            # Pass system instruction through system_instruction param
-            system_instruction=system_prompt
+        response = await self.client.aio.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=user_prompt,
+            config=config,
         )
 
         content = response.text
