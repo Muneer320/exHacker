@@ -1,15 +1,20 @@
+"""Database session management."""
+
 from typing import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
 from app.core.config import settings
 
+# SQLite needs check_same_thread=False
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
+    connect_args["check_same_thread"] = False  # type: ignore[typeddict-item]
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.database_url_async,
     connect_args=connect_args,
-    echo=False
+    echo=settings.DEBUG,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -17,12 +22,12 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
     autocommit=False,
-    autoflush=False
+    autoflush=False,
 )
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency helper to yield async database sessions."""
+    """FastAPI dependency for database sessions."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
