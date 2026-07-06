@@ -34,9 +34,21 @@ class Settings(BaseSettings):
     AI_PROVIDER: str = "openai"
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-    AI_MODEL_TIER_1: str = "gpt-4o-mini"       # Cheap — research queries, explanations
-    AI_MODEL_TIER_2: str = "gpt-4o"            # Medium — directions, architecture reasoning
-    AI_MODEL_TIER_3: str = "o3-mini"            # Expensive — complex analysis
+
+    # SDPD model tiers (opencode-go provider — litellm-compatible API)
+    AI_DEFAULT_PROVIDER: str = "opencode-go"
+    AI_MODEL_TIER_1: str = "deepseek-v4-flash"  # Cheap — research queries, explanations
+    AI_MODEL_TIER_2: str = "glm-5.2"            # Medium — directions, architecture reasoning
+    AI_MODEL_TIER_3: str = "glm-5.2"            # Expensive — complex analysis (upgrade to opus when available)
+
+    # AI retry / timeout configuration
+    MAX_RETRIES: int = 2
+    RETRY_BASE_DELAY: float = 1.0
+    AI_TIMEOUT_SECONDS: int = 60
+
+    # Cost tracking
+    TRACK_COSTS: bool = True
+    COST_LIMIT_PER_PROJECT: float = 0.50        # $0.50 max AI spend per project
 
     # Mock modes — no API keys needed for development
     MOCK_AI: bool = False                       # Use fake AI responses (no cost)
@@ -51,7 +63,7 @@ class Settings(BaseSettings):
     FREE_TIER_PROJECTS_PER_DAY: int = 3
     PRO_TIER_PROJECTS_PER_DAY: int = 50
     MAX_PROJECTS_PER_USER: int = 50
-    MAX_COST_PER_PROJECT: float = 0.50       # $0.50 max AI spend per project
+    MAX_COST_PER_PROJECT: float = 0.50          # $0.50 max AI spend per project (legacy alias)
 
     # Caching
     CACHE_BACKEND: str = "memory"  # memory or redis

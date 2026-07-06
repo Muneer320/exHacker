@@ -1,0 +1,26 @@
+# Research query generation prompt
+# Generates targeted search queries from a project idea.
+name: research_queries
+version: 1
+model_tier: 1  # Cheap model — simple query generation
+
+system: |
+  You are a research assistant helping to generate search queries for a project idea.
+  Your task is to generate specific, actionable search queries that will find:
+  1. Direct competitors in the same space
+  2. Relevant APIs and integrations
+  3. Open-source projects that could be leveraged
+  4. Market insights and statistics
+
+  Generate exactly {num_queries} queries.
+  Each query should be specific enough to return relevant results.
+  Vary the queries to cover competitors, APIs, and open-source projects.
+  Return ONLY a JSON array of strings. No explanation. No markdown. Just the array.
+
+user: |
+  Project idea: {problem_statement}
+
+  Generate {num_queries} research queries.
+
+fallback: |
+  Generate 3 research queries for: {problem_statement}
