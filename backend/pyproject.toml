@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "exhacker-backend"
 version = "0.1.0"
 description = "exHacker — AI Product Studio backend"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.111.0",

@@ -15,7 +15,7 @@ async def create_blueprint(
     project_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Generate a complete project blueprint (tech stack, architecture, data model, plan)."""
+    """Generate a complete project blueprint from the project idea."""
     from app.services.project import get_project
 
     project = await get_project(db, project_id)
