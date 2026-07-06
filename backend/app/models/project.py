@@ -8,14 +8,14 @@ from app.models.base import Base
 
 
 class ProjectStatus(str, Enum):
+    """Approved 4-state lifecycle for V1.
+
+    DRAFT → PROCESSING → READY → ARCHIVED
+    """
     DRAFT = "draft"
-    RESEARCHING = "researching"
-    DIRECTIONS_READY = "directions_ready"
-    BLUEPRINTING = "blueprinting"
+    PROCESSING = "processing"
     READY = "ready"
-    COMPLETED = "completed"
     ARCHIVED = "archived"
-    CANCELLED = "cancelled"
 
 
 class ProjectModel(Base):
