@@ -1,136 +1,228 @@
-# 🚀 exHacker: Co-Pilot for Hackathon Teams
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI%2bPHBhdGggZD0iTTE1IDN2NEExIDEgMCAwIDAgMTYgOGg0Ii8%2bPHBhdGggZD0iTTE3IDIxaC0yYTIgMiAwIDAgMS0yLTJ2LTJhMiAyIDAgMCAxIDItMmgzYTIgMiAwIDAgMSAyIDJ2MSIvPjxwYXRoIGQ9Ik0xMSAyMUgyYTIgMiAwIDAgMS0yLTJ2LTFhMiAyIDAgMCAxIDItMmgzYTIgMiAwIDAgMSAyIDJ2MiIvPjxwYXRoIGQ9Ik0xMSA1SDJhMiAyIDAgMCAxLTItMlYyYTIgMiAwIDAgMSAyLTJoMTVhMiAyIDAgMCAxIDIgMnYxIi8%2bPC9zdmc%2b&logoColor=white" />
+    <img alt="exHacker" src="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge" />
+  </picture>
+</p>
 
-[![Status](https://img.shields.io/badge/status-active-success.svg)](#)
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Next.js Version](https://img.shields.io/badge/next.js-15.0-black.svg)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg)](https://fastapi.tiangolo.com/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Orchestrator-blueviolet.svg)](https://github.com/langchain-ai/langgraph)
-[![SQLite](https://img.shields.io/badge/SQLite-State%20Store-blue.svg)](https://sqlite.org/)
+<p align="center">
+  <b>From idea to production-ready project blueprint in under 30 seconds.</b><br />
+  AI-powered research, architecture, planning, and export — <br />before you write a single line of code.
+</p>
 
-**exHacker** is a resilient, multi-agent co-pilot that transforms a hackathon challenge statement into a complete, structured MVP project blueprint in under 5 minutes. It analyzes challenges, generates and validates ideas against live market signals, maps out technical architectures, designs databases and APIs, coordinates tasks, and drafts judge-ready slides and elevator pitch scripts.
+<p align="center">
+  <a href="https://github.com/Muneer320/exHacker/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%2B-3776AB.svg" alt="Python" /></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg" alt="FastAPI" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-000000.svg" alt="Next.js" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB.svg" alt="React" /></a>
+  <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-State%20Store-003B57.svg" alt="SQLite" /></a>
+  <a href="https://litellm.ai/"><img src="https://img.shields.io/badge/LiteLLM-Router-FF6F00.svg" alt="LiteLLM" /></a>
+  <br />
+  <a href="https://github.com/Muneer320/exHacker/actions"><img src="https://img.shields.io/github/actions/workflow/status/Muneer320/exHacker/ci.yml?branch=main&label=CI" alt="CI" /></a>
+  <a href="https://github.com/Muneer320/exHacker"><img src="https://img.shields.io/github/stars/Muneer320/exHacker?style=social" alt="Stars" /></a>
+  <a href="https://github.com/Muneer320/exHacker/commits/main"><img src="https://img.shields.io/github/last-commit/Muneer320/exHacker/main" alt="Last Commit" /></a>
+  <a href="https://github.com/Muneer320/exHacker/issues"><img src="https://img.shields.io/github/issues/Muneer320/exHacker" alt="Issues" /></a>
+</p>
 
 ---
 
-## 🗺️ System Architecture & Workflow
+## ✨ What is exHacker?
 
-exHacker operates on a state-persisted, 10-stage directed graph managed via **LangGraph**. The workflow pauses at a **Human-in-the-Loop Checkpoint** after validating generated ideas, allowing users to inspect the competitive research reports and select the winning idea before resuming the technical and presentation tracks.
+exHacker is an **AI product studio** that transforms raw ideas into validated, architecturally-sound, presentation-ready project blueprints — before you write a single line of code.
 
-```mermaid
-graph TD
-    A[Start: Challenge Statement] --> B[Challenge Intelligence]
-    B --> C[Problem Analysis]
-    C --> D[Opportunity Discovery]
-    D --> E[Idea Generation]
-    E --> F[Idea Validation]
-    F --> G{Human Checkpoint}
-    G -- Wait for Selection --x H[Selected Idea]
-    H --> I[Tech Stack Advisor]
-    I --> J[Solution Architect]
-    J --> K[Build Accelerator]
-    K --> L[Presentation Agent]
-    L --> M[Pitch Coach]
-    M --> N[Export Package]
-    N --> O[End: Completeness]
+Unlike existing tools that help you *code faster* (Cursor, Claude Code) or *generate apps from prompts* (Bolt, Lovable), exHacker handles the **planning phase** — the 4-8 hours of analysis paralysis, shallow competitor research, architecture guesswork, and panic-rushed presentations that happen *before* and *after* coding.
 
-    style G fill:#7C3AED,stroke:#fff,stroke-width:2px,color:#fff
-    style N fill:#059669,stroke:#fff,stroke-width:2px,color:#fff
+### The Pipeline
+
+```
+┌─────────┐    ┌──────────┐    ┌────────────┐    ┌──────────┐    ┌────────┐
+│  Idea   │ →  │ Research │ →  │ Directions  │ →  │Blueprint │ →  │ Export │
+│ Input   │    │ Pipeline │    │ & Selection │    │Engine    │    │ Files  │
+└─────────┘    └──────────┘    └────────────┘    └──────────┘    └────────┘
+     │              │                │                 │               │
+  30 seconds      3-5 queries    3 AI-generated      Tech stack,    README.md
+  to create       competitors,   product directions  architecture,   blueprint.json
+  a project       APIs, OSS      with scores         data model,
+                                                      API contracts,
+                                                      implementation
+                                                      plan
 ```
 
 ---
 
-## 🤖 Specialized AI Agents
+## 🚀 Quick Start
 
-Each node in our LangGraph orchestrator delegates to a specialized AI agent subclass of `BaseAgent`.
-
-| Stage | Agent | Responsibilities | Inputs | Outputs |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | **Challenge Intelligence** | Extract themes, constraints, and evaluation criteria | `project.challenge_statements` | `challenge_intelligence` |
-| 2 | **Problem Analyst** | Identify pain points, stakeholders, and success metrics | `challenge_intelligence`, `team_profile` | `problem_analysis` |
-| 3 | **Opportunity Planner** | Discover market gaps, technical and impact opportunities | `challenge_intelligence`, `problem_analysis` | `opportunity_analysis` |
-| 4 | **Idea Generator** | Generate 5 diverse product concepts with scores and features | All previous + `project` | `generated_ideas` |
-| 5 | **Idea Validator** | Validate ideas against live market web search results | `generated_ideas`, Research results | `validation_reports` |
-| 6 | **Tech Stack Advisor** | Suggest a practical, boring, deployable stack for the team | `selected_idea`, `team_profile`, `project` | `tech_stack` |
-| 7 | **Solution Architect** | Design system layout, APIs, modular divisions, database schemas | `selected_idea`, `tech_stack` | `architecture` |
-| 8 | **Build Accelerator** | Decompose MVP scope into detailed tasks with copy-paste prompts | `architecture`, `tech_stack` | `build_package`, `prompt_package` |
-| 9 | **Presentation Agent** | Prepare 6 slide structures with content and visual guidelines | `selected_idea`, `architecture`, `validation_reports` | `presentation` |
-| 10 | **Pitch Coach** | Draft 30s/2m/5m pitches, demo script, and judge simulator Q&A | `selected_idea`, `presentation`, `validation_reports` | `pitch` |
-
----
-
-## ⚡ Key Moats & Features
-
-*   **Resilient Fallback Inference**: Automatically queries **Groq (Llama 3)** → **Gemini 1.5 Flash** → **OpenAI** → **Local Ollama** to guarantee 100% API uptime during critical live judging demos.
-*   **Persistent State Management**: Entire workflow states are serialized to SQLite after each node execution, enabling instant resuming from any failure point.
-*   **Database logging context**: Uses `contextvars` to hook SQLAlchemy transactions directly into agent executions, logging performance metrics (duration, cost, tokens, and mock usage).
-*   **Web Search Grounded Validation (Milestone 4)**: Uses the Tavily API to gather competitor SaaS, GitHub open-source repositories, and public APIs to cross-reference and rank ideas.
-
----
-
-## 🛠️ Getting Started
-
-### Directory Structure
-
-```text
-exHacker/
-├── Docs/               # Master product specifications & guides
-├── backend/            # FastAPI + LangGraph workflow service
-└── frontend/           # Next.js 15 UI dashboard
-```
-
-### 1. Prerequisites
-Ensure you have the following installed:
-*   [Python 3.10+](https://python.org)
-*   [Node.js 18+](https://nodejs.org)
-*   [uv package manager](https://github.com/astral-sh/uv) (recommended) or `pip`
-
----
-
-### 2. Backend Setup
-Navigate into the `backend/` folder:
 ```bash
+# 1. Clone the repository
+git clone https://github.com/Muneer320/exHacker.git
+cd exHacker
+
+# 2. Start the backend (requires Python 3.11+)
 cd backend
-# Copy configuration file
-cp .env.example .env
-```
-Fill out the API keys in your `.env`:
-*   `GROQ_API_KEY`: Comma-separated Groq API keys for rotation.
-*   `GEMINI_API_KEY`: Google Gemini fallback API key.
-*   `SEARCH_API_KEY`: Tavily Search API key (needed for Phase 4 Research).
+uv venv && uv pip install -e ".[dev]"
+uv run uvicorn app.main:app --reload
+# → http://localhost:8000 | Swagger at /docs
 
-Install dependencies and start development server:
-```bash
-# Run FastAPI Backend with hot reload (runs on http://localhost:8000)
-uv run uvicorn app.api.main:app --reload
-```
-To run tests:
-```bash
-uv run pytest
-```
-
----
-
-### 3. Frontend Setup
-Open a new terminal window and navigate into the `frontend/` folder:
-```bash
-cd frontend
-# Install npm packages
+# 3. Start the frontend (requires Node.js 20+)
+cd ../frontend
 npm install
-# Run Next.js Development Server (runs on http://localhost:3000)
 npm run dev
+# → http://localhost:3000
+
+# 4. Open the app in your browser
+# Type your idea and see a complete project blueprint in seconds
+```
+
+> **No API keys needed for development.** Set `MOCK_AI=true` and `MOCK_RESEARCH=true` in `.env` — the system generates realistic fake data without any external API calls.
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Next.js 16 Frontend                     │
+│  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────┐   │
+│  │ Landing │ │ Projects │ │Research  │ │Blue- │ │Export│   │
+│  │ Page    │ │ List     │ │& Direc-  │ │print  │ │      │   │
+│  │         │ │ / Detail │ │tions Tab │ │Tab    │ │Modal │   │
+│  └─────────┘ └──────────┘ └──────────┘ └──────┘ └──────┘   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP/REST
+┌──────────────────────▼──────────────────────────────────────┐
+│                    FastAPI Backend                           │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌────────────────────────┐    │
+│  │ Project  │  │ Research │  │   Blueprint Engine      │    │
+│  │ Service  │  │ Service  │  │  ┌──────────────────┐  │    │
+│  │ (CRUD +  │  │ (Tavily  │  │  │ Tech Stack       │  │    │
+│  │  State   │  │  Search) │  │  │ (Decision Tree)  │  │    │
+│  │  Machine)│  │          │  │  ├──────────────────┤  │    │
+│  └──────────┘  └──────────┘  │  │ Architecture     │  │    │
+│                               │  │ (Templates + AI) │  │    │
+│  ┌──────────┐  ┌──────────┐  │  ├──────────────────┤  │    │
+│  │ Direction│  │  Export  │  │  │ Data Model       │  │    │
+│  │ Generator│  │  Service │  │  │ (Entity Templates)│  │    │
+│  │ (AI T2)  │  │(Markdown)│  │  ├──────────────────┤  │    │
+│  └──────────┘  └──────────┘  │  │ API Contracts    │  │    │
+│                               │  │ (CRUD Templates) │  │    │
+│  ┌────────────────────────┐  │  ├──────────────────┤  │    │
+│  │    AI Gateway           │  │  │ Implementation  │  │    │
+│  │  (LiteLLM + Routing)    │  │  │ Plan (Tasks)    │  │    │
+│  └────────────────────────┘  │  └──────────────────┘  │    │
+│                               │                        │    │
+│  ┌────────────────────────┐  └────────────────────────┘    │
+│  │      SQLite Database    │                                │
+│  │  (SQLAlchemy 2.0 Async) │                                │
+│  └────────────────────────┘                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### What Uses AI vs What's Deterministic
+
+| Component | Method | SDPD Tier | Why |
+|---|---|---|---|
+| Research query generation | AI (Tier 1) | `deepseek-v4-flash` | Simple pattern matching |
+| Direction generation | AI (Tier 2) | `glm-5.2` | Needs product reasoning |
+| Architecture enrichment | AI (Tier 2, optional) | `glm-5.2` | Custom component suggestions |
+| Tech stack recommendation | **Decision tree** | Tier 0 — no AI | Rules-based, deterministic |
+| Architecture templates | **Pre-designed** | Tier 0 — no AI | 80% fit for standard patterns |
+| Data model generation | **Keyword → Entity** | Tier 0 — no AI | Template matching |
+| API contract generation | **CRUD patterns** | Tier 0 — no AI | Deterministic templates |
+| Implementation plan | **Component → Tasks** | Tier 0 — no AI | Deterministic mapping |
+| Markdown/JSON export | **Templates** | Tier 0 — no AI | String formatting |
+
+---
+
+## 🧠 System Philosophy
+
+exHacker is built on the **System Design Philosophy Document (SDPD)** — 35 immutable engineering commandments. The most important:
+
+1. **Never use AI where deterministic software suffices.** Template, compute, or decision tree first.
+2. **Cheapest capable model first.** Don't use `glm-5.2` where `deepseek-v4-flash` works.
+3. **Every AI output must be editable and cacheable.**
+4. **Projects remain portable.** No lock-in. Full export at any time.
+5. **Research is cached, architecture is versioned, exports are reproducible.**
+6. **Templates over prompts for the 80% case.**
+7. **Every project has a maximum AI budget.** Cost per project is a monitored metric.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | Next.js 16, React 19, TypeScript | UI framework |
+| **Styling** | Tailwind CSS + CSS Variables | Dark theme design system |
+| **State** | TanStack Query + Zustand | Server + client state |
+| **Backend** | FastAPI (Python 3.11+) | REST API server |
+| **Database** | SQLite → PostgreSQL | Persistent storage |
+| **ORM** | SQLAlchemy 2.0 (async) | Data access layer |
+| **AI Gateway** | LiteLLM | Multi-provider model routing |
+| **AI Models** | GLM 5.2 (reasoning), DeepSeek V4 Flash (cheap) | via opencode-go provider |
+| **Search** | Tavily API (via httpx) | Web research |
+| **Auth** | NextAuth.js (v2) | OAuth authentication |
+| **Container** | Docker + Docker Compose | Development & deployment |
+
+---
+
+## 📂 Repository Structure
+
+```
+exHacker/
+├── backend/
+│   ├── app/
+│   │   ├── ai/              # AI Gateway, Prompt Manager
+│   │   ├── api/v1/          # FastAPI route handlers
+│   │   ├── core/            # Config, exceptions, logging
+│   │   ├── db/              # SQLAlchemy session + migrations
+│   │   ├── models/          # SQLAlchemy ORM models
+│   │   ├── services/        # Business logic
+│   │   │   ├── blueprint/   # Tech stack, architecture, data model, plan, export
+│   │   │   ├── project.py   # CRUD + state machine
+│   │   │   └── research.py  # Tavily search + caching
+│   │   └── main.py          # FastAPI entry point
+│   ├── prompts/             # YAML prompt templates
+│   ├── templates/           # Architecture templates
+│   └── tests/               # pytest suite
+├── frontend/
+│   ├── src/
+│   │   ├── app/             # Next.js pages
+│   │   ├── components/      # UI components
+│   │   └── services/        # API client
+│   └── package.json
+├── docs/                    # Architecture documentation
+├── docker-compose.yml
+└── Makefile
 ```
 
 ---
 
-## 📄 Documentation Indices
+## 📋 Roadmap
 
-For detailed system specs, refer to our documents in the `Docs/` directory:
-*   [01_PRD.md](Docs/01_PRD.md) - Product Requirements Document
-*   [03_System_Architecture.md](Docs/03_System_Architecture.md) - Backend Services layout
-*   [04_Agent_Specifications.md](Docs/04_Agent_Specifications.md) - Rules and goals per agent
-*   [06_State_Model.md](Docs/06_State_Model.md) - Complete Pydantic domain models
-*   [10_Research_Architecture.md](Docs/10_Research_Architecture.md) - Research Pipeline & Novelty Scoring Formulas
+| Phase | Status | Features |
+|---|---|---|
+| **M0 — Bootstrap** | ✅ Complete | Repo structure, Docker, CI, tooling |
+| **M1 — Project Foundation** | ✅ Complete | CRUD, state machine, landing page |
+| **M2 — Research Pipeline** | ✅ Complete | AI Gateway, Tavily search, caching |
+| **M3 — Direction Generation** | ✅ Complete | AI directions, selection, state transitions |
+| **M4 — Blueprint Engine** | ✅ Complete | Tech stack, architecture, data model, plan |
+| **M5 — Export** | ✅ Complete | Markdown/JSON download |
+| **Auth & Persistence** | 🔜 Planned | Google/GitHub OAuth, user accounts |
+| **Team Collaboration** | 🔜 Planned | Shared projects, team workspaces |
+| **Pitch Generation** | 🔜 Planned | AI narrative agent for presentations |
 
 ---
 
-## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/Muneer320">Muneer Alam</a></sub>
+  <br />
+  <sub>Powered by <a href="https://opencode.ai">OpenCode</a> · <a href="https://litellm.ai">LiteLLM</a> · <a href="https://nextjs.org">Next.js</a></sub>
+</p>
