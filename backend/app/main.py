@@ -1,12 +1,17 @@
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.exceptions import (
+    ExHackerError,
+    exhacker_error_handler,
+    generic_error_handler,
+)
 from app.core.logging import setup_logging
-from app.core.exceptions import exhacker_error_handler, generic_error_handler, ExHackerError
 
 
 @asynccontextmanager
@@ -60,5 +65,7 @@ async def health_check():
     }
 
 
-# API routers will be registered here as they are built
-# from app.api.v1 import projects, research, blueprint, export
+# API routers
+from app.api.v1 import projects
+
+app.include_router(projects.router, prefix=settings.API_V1_STR)

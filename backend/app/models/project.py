@@ -3,7 +3,9 @@
 import datetime
 import uuid
 from enum import Enum
-from sqlalchemy import Column, String, DateTime
+
+from sqlalchemy import Column, DateTime, String
+
 from app.models.base import Base
 
 
@@ -29,15 +31,3 @@ class ProjectModel(Base):
     status = Column(String, nullable=False, default=ProjectStatus.DRAFT.value)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "name": self.name,
-            "description": self.description,
-            "idea": self.idea,
-            "status": self.status,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-        }
