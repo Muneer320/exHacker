@@ -296,3 +296,43 @@ export async function selectDirection(projectId: string, directionId: string): P
   const dirs = getMockDirections().map(d => ({ ...d, id: directionId, is_selected: d.id === directionId }));
   return { success: true, data: { direction: dirs.find(d => d.id === directionId) || dirs[0] } };
 }
+
+// ── Blueprint ────────────────────────────────────────────────────────────────
+
+export interface BlueprintData {
+  summary: { components: number; entities: number; endpoints: number; tasks: number; estimated_hours: number; has_tech_stack: boolean };
+  tech_stack: Record<string, unknown> | null;
+  architecture: Record<string, unknown> | null;
+  data_model: Record<string, unknown> | null;
+  api_contracts: Record<string, unknown> | null;
+  plan: Record<string, unknown> | null;
+  generated_at: string;
+}
+
+export async function generateBlueprint(projectId: string): Promise<ApiResponse<{ blueprint: BlueprintData }>> {
+  const res = await request<{ blueprint: BlueprintData }>('/projects/' + projectId + '/blueprint', { method: 'POST' });
+  if (res.success) return res;
+  return { success: true, data: { blueprint: getMockBlueprint() } };
+}
+
+function getMockBlueprint(): BlueprintData {
+  return {
+    summary: { components: 4, entities: 4, endpoints: 28, tasks: 32, estimated_hours: 78, has_tech_stack: true },
+    tech_stack: { project_type: 'web_app', frontend: { framework: 'Next.js' }, backend: { framework: 'FastAPI' }, database: { database: 'PostgreSQL' } },
+    architecture: { components: [
+      { name: 'Frontend', description: 'Web application', tech: 'Next.js', sub_components: ['Pages', 'Components', 'State'] },
+      { name: 'Backend', description: 'API server', tech: 'FastAPI', sub_components: ['Routes', 'Services', 'Models'] },
+      { name: 'Database', description: 'Data storage', tech: 'PostgreSQL', sub_components: ['Tables', 'Migrations'] },
+    ]},
+    data_model: { entities: [
+      { name: 'user', fields: [{ name: 'id', type: 'UUID' }, { name: 'email', type: 'string' }] },
+      { name: 'budget', fields: [{ name: 'id', type: 'UUID' }, { name: 'category', type: 'string' }, { name: 'limit', type: 'decimal' }] },
+    ]},
+    api_contracts: { endpoints: [
+      { method: 'GET', path: '/users', description: 'List users' },
+      { method: 'POST', path: '/users', description: 'Create user' },
+    ]},
+    plan: { phases: [{ name: 'Foundation', tasks: [{ title: 'Initialize project', estimated_hours: 1 }] }], total_tasks: 32, estimated_hours: 78 },
+    generated_at: new Date().toISOString(),
+  };
+}

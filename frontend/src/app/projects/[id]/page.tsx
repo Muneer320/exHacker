@@ -12,9 +12,9 @@ import {
   GitFork,
   Lightbulb,
 } from 'lucide-react';
-import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, Project, ResearchData, Direction } from '@/services/api';
+import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, Project, ResearchData, Direction, BlueprintData } from '@/services/api';
 
-type Tab = 'overview' | 'research' | 'directions';
+type Tab = 'overview' | 'research' | 'directions' | 'blueprint';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -30,6 +30,8 @@ export default function ProjectDetailPage() {
   const [directions, setDirections] = useState<Direction[]>([]);
   const [directionsLoading, setDirectionsLoading] = useState(false);
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
+  const [blueprint, setBlueprint] = useState<BlueprintData | null>(null);
+  const [blueprintLoading, setBlueprintLoading] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -78,6 +80,15 @@ export default function ProjectDetailPage() {
     if (res.success) {
       setDirections(prev => prev.map(d => ({ ...d, is_selected: d.id === dirId })));
     }
+  };
+
+  const handleGenerateBlueprint = async () => {
+    setBlueprintLoading(true);
+    const res = await generateBlueprint(projectId);
+    if (res.success) {
+      setBlueprint(res.data.blueprint);
+    }
+    setBlueprintLoading(false);
   };
 
   // Load directions on mount
@@ -130,6 +141,7 @@ export default function ProjectDetailPage() {
     { id: 'overview', label: 'Overview', icon: <Compass size={14} /> },
     { id: 'research', label: 'Research', icon: <Lightbulb size={14} /> },
     { id: 'directions', label: 'Directions', icon: <Zap size={14} /> },
+    { id: 'blueprint', label: 'Blueprint', icon: <Compass size={14} /> },
   ];
 
   return (
@@ -220,6 +232,13 @@ export default function ProjectDetailPage() {
             selectedId={selectedDirId}
             onGenerate={handleGenerateDirections}
             onSelect={handleSelectDirection}
+          />
+        )}
+        {activeTab === 'blueprint' && (
+          <BlueprintTab
+            blueprint={blueprint}
+            loading={blueprintLoading}
+            onGenerate={handleGenerateBlueprint}
           />
         )}
       </div>
@@ -404,6 +423,140 @@ function ScoreBadge({ label, value, color }: { label: string; value: number; col
         <span style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${value}%`, background: color, borderRadius: '2px' }} />
       </span>
       <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{label}: {value}</span>
+    </div>
+  );
+}
+
+// ─── Blueprint Tab ──────────────────────────────────────────────────────────
+
+function BlueprintTab({
+  blueprint,
+  loading,
+  onGenerate,
+}: {
+  blueprint: BlueprintData | null;
+  loading: boolean;
+  onGenerate: () => void;
+}) {
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 24px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(124,58,237,0.2)', borderTopColor: 'var(--color-accent-500)', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Generating blueprint...</p>
+      </div>
+    );
+  }
+
+  if (!blueprint) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 24px', border: '1px dashed var(--color-border-default)', borderRadius: '16px' }}>
+        <p style={{ fontSize: '28px', marginBottom: '12px' }}>🏗️</p>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>No blueprint yet</h3>
+        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
+          Generate a complete project blueprint with architecture, tech stack, data model, and plan.
+        </p>
+        <button onClick={onGenerate} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--color-accent-500)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+          Generate Blueprint
+        </button>
+      </div>
+    );
+  }
+
+  const arch = blueprint.architecture as Record<string, unknown> | null;
+  const comps = (arch?.components as Array<Record<string, unknown>>) || [];
+  const dm = blueprint.data_model as Record<string, unknown> | null;
+  const entities = (dm?.entities as Array<Record<string, unknown>>) || [];
+  const api = blueprint.api_contracts as Record<string, unknown> | null;
+  const endpoints = (api?.endpoints as Array<Record<string, unknown>>) || [];
+  const pl = blueprint.plan as Record<string, unknown> | null;
+  const phases = (pl?.phases as Array<Record<string, unknown>>) || [];
+
+  return (
+    <div>
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        <SummaryCard label="Components" value={blueprint.summary.components} color="var(--color-accent-400)" />
+        <SummaryCard label="Entities" value={blueprint.summary.entities} color="var(--color-info)" />
+        <SummaryCard label="Endpoints" value={blueprint.summary.endpoints} color="var(--color-success)" />
+        <SummaryCard label="Tasks" value={blueprint.summary.tasks} color="var(--color-warning)" />
+        <SummaryCard label="Est. Hours" value={blueprint.summary.estimated_hours} color="var(--color-accent-200)" />
+      </div>
+
+      {/* Architecture Components */}
+      {comps.length > 0 && (
+        <Section title="Architecture Components" icon={<GitFork size={14} />} color="var(--color-accent-400)">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+            {comps.map((c: Record<string, unknown>, i: number) => (
+              <div key={i} style={{ padding: '16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{c.name as string}</h4>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>{c.tech as string}</p>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{c.description as string}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Data Model */}
+      {entities.length > 0 && (
+        <Section title="Data Model" icon={<Database size={14} />} color="var(--color-info)">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {entities.map((e: Record<string, unknown>, i: number) => (
+              <div key={i} style={{ padding: '14px 16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px', textTransform: 'capitalize' }}>{e.name as string}</h4>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                  {(e.fields as Array<Record<string, string>>)?.map((f, j) => (
+                    <span key={j} style={{ marginRight: '12px' }}>{f.name}: {f.type}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* API Contracts */}
+      {endpoints.length > 0 && (
+        <Section title="API Endpoints" icon={<GitFork size={14} />} color="var(--color-success)">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {endpoints.slice(0, 8).map((ep: Record<string, unknown>, i: number) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', padding: '8px 12px', borderRadius: '6px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-400)', minWidth: '48px' }}>{ep.method as string}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>{ep.path as string}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{ep.description as string}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Plan */}
+      {phases.length > 0 && (
+        <Section title="Implementation Plan" icon={<Star size={14} />} color="var(--color-warning)">
+          {phases.slice(0, 3).map((phase: Record<string, unknown>, i: number) => (
+            <div key={i} style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Phase {i + 1}: {phase.name as string}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {(phase.tasks as Array<Record<string, unknown>>)?.slice(0, 3).map((t: Record<string, unknown>, j: number) => (
+                  <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                    <span>{t.title as string}</span>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>{t.estimated_hours as number}h</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div style={{ padding: '16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)', textAlign: 'center' }}>
+      <p style={{ fontSize: '28px', fontWeight: 700, color, marginBottom: '2px' }}>{value}</p>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{label}</p>
     </div>
   );
 }
