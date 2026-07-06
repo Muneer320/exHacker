@@ -35,7 +35,7 @@ async def list_exports(
 @router.get("/download", response_class=PlainTextResponse)
 async def download_export(
     project_id: str,
-    format: str = Query("markdown", regex="^(markdown|json)$"),
+    format: str = Query("markdown", pattern="^(markdown|json)$"),
     db: AsyncSession = Depends(get_db),
 ):
     """Download project blueprint in the specified format."""
