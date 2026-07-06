@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI%2bPHBhdGggZD0iTTE1IDN2NEExIDEgMCAwIDAgMTYgOGg0Ii8%2bPHBhdGggZD0iTTE3IDIxaC0yYTIgMiAwIDAgMS0yLTJ2LTJhMiAyIDAgMCAxIDItMmgzYTIgMiAwIDAgMSAyIDJ2MSIvPjxwYXRoIGQ9Ik0xMSAyMUgyYTIgMiAwIDAgMS0yLTJ2LTFhMiAyIDAgMCAxIDItMmgzYTIgMiAwIDAgMSAyIDJ2MiIvPjxwYXRoIGQ9Ik0xMSA1SDJhMiAyIDAgMCAxLTItMlYyYTIgMiAwIDAgMSAyLTJoMTVhMiAyIDAgMCAxIDIgMnYxIi8%2bPC9zdmc%2b&logoColor=white" />
-    <img alt="exHacker" src="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge" />
-  </picture>
+  <img src="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge" alt="exHacker" width="320" />
 </p>
 
 <p align="center">
@@ -74,7 +71,7 @@ npm run dev
 # Type your idea and see a complete project blueprint in seconds
 ```
 
-> **No API keys needed for development.** Set `MOCK_AI=true` and `MOCK_RESEARCH=true` in `.env` — the system generates realistic fake data without any external API calls.
+> **No API keys needed for development.** Set `MOCK_AI=true` and `MOCK_RESEARCH=true` in `.env` — the system runs entirely offline with realistic fake data.
 
 ---
 
@@ -123,9 +120,9 @@ npm run dev
 
 | Component | Method | SDPD Tier | Why |
 |---|---|---|---|
-| Research query generation | AI (Tier 1) | `deepseek-v4-flash` | Simple pattern matching |
-| Direction generation | AI (Tier 2) | `glm-5.2` | Needs product reasoning |
-| Architecture enrichment | AI (Tier 2, optional) | `glm-5.2` | Custom component suggestions |
+| Research query generation | AI (Tier 1 — cheap) | Fast pattern matching |
+| Direction generation | AI (Tier 2 — reasoning) | Product reasoning needed |
+| Architecture enrichment | AI (Tier 2, optional) | Custom component suggestions |
 | Tech stack recommendation | **Decision tree** | Tier 0 — no AI | Rules-based, deterministic |
 | Architecture templates | **Pre-designed** | Tier 0 — no AI | 80% fit for standard patterns |
 | Data model generation | **Keyword → Entity** | Tier 0 — no AI | Template matching |
@@ -140,12 +137,12 @@ npm run dev
 exHacker is built on the **System Design Philosophy Document (SDPD)** — 35 immutable engineering commandments. The most important:
 
 1. **Never use AI where deterministic software suffices.** Template, compute, or decision tree first.
-2. **Cheapest capable model first.** Don't use `glm-5.2` where `deepseek-v4-flash` works.
+2. **Cheapest capable model first.** Don't use an expensive reasoning model where a cheap model works.
 3. **Every AI output must be editable and cacheable.**
 4. **Projects remain portable.** No lock-in. Full export at any time.
 5. **Research is cached, architecture is versioned, exports are reproducible.**
 6. **Templates over prompts for the 80% case.**
-7. **Every project has a maximum AI budget.** Cost per project is a monitored metric.
+7. **Every project has a maximum AI budget.**
 
 ---
 
@@ -160,8 +157,8 @@ exHacker is built on the **System Design Philosophy Document (SDPD)** — 35 imm
 | **Database** | SQLite → PostgreSQL | Persistent storage |
 | **ORM** | SQLAlchemy 2.0 (async) | Data access layer |
 | **AI Gateway** | LiteLLM | Multi-provider model routing |
-| **AI Models** | GLM 5.2 (reasoning), DeepSeek V4 Flash (cheap) | via opencode-go provider |
-| **Search** | Tavily API (via httpx) | Web research |
+| **AI Models** | OpenRouter-style (opencode-go) | Reasoning + cheap inference tiers |
+| **Search** | Tavily API | Web research |
 | **Auth** | NextAuth.js (v2) | OAuth authentication |
 | **Container** | Docker + Docker Compose | Development & deployment |
 
