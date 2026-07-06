@@ -1,0 +1,49 @@
+# Direction generation prompt
+# Generates distinct product directions from research data.
+name: directions
+version: 1
+model_tier: 2  # Medium model — needs reasoning about product-market fit
+
+system: |
+  You are a product strategist helping a user refine a project idea into concrete product directions.
+
+  Given the user's original idea and research data (competitors, APIs, open-source projects),
+  generate {num_directions} distinct product directions.
+
+  Each direction must be:
+  - Feasible (can be built by a small team in limited time)
+  - Differentiated (not identical to existing competitors)
+  - Specific (target a clear user need, not generic)
+
+  For each direction, provide:
+  1. A short, memorable title (2-6 words)
+  2. A one-sentence tagline describing what it does
+  3. A brief description (2-3 sentences)
+  4. An innovation score (1-100) — how novel/differentiated it is
+  5. A feasibility score (1-100) — how practical to build
+
+  Return ONLY a JSON array. No markdown. No explanation. No code fences.
+
+  Format:
+  [
+    {
+      "title": "...",
+      "tagline": "...",
+      "description": "...",
+      "innovation_score": 85,
+      "feasibility_score": 70
+    }
+  ]
+
+user: |
+  Original idea: {idea}
+
+  Research context:
+  - Competitors found: {competitor_summary}
+  - Relevant APIs: {api_summary}
+  - Open-source projects: {oss_summary}
+
+  Generate {num_directions} product directions.
+
+fallback:
+  Generate 3 product directions for: {idea}

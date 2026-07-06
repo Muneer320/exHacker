@@ -253,3 +253,46 @@ export async function getResearch(
   if (res.success) return res;
   return { success: true, data: getMockResearchData() };
 }
+
+// ── Directions ──────────────────────────────────────────────────────────────
+
+export interface Direction {
+  id: string;
+  project_id: string;
+  title: string;
+  tagline: string;
+  description: string | null;
+  innovation_score: number | null;
+  feasibility_score: number | null;
+  is_selected: boolean;
+  created_at: string;
+}
+
+function getMockDirections(): Direction[] {
+  return [
+    { id: 'mock-dir-1', project_id: '', title: 'AI Finance Coach', tagline: 'Personalized AI advisor that learns spending patterns', description: 'An intelligent budgeting coach that analyzes spending habits and provides personalized financial advice through natural conversation.', innovation_score: 92, feasibility_score: 70, is_selected: false, created_at: new Date().toISOString() },
+    { id: 'mock-dir-2', project_id: '', title: 'Gamified Savings Platform', tagline: 'Turn saving into a competitive social game', description: 'A social savings platform where users compete in saving challenges, earn badges, and build financial discipline through gamification.', innovation_score: 85, feasibility_score: 78, is_selected: false, created_at: new Date().toISOString() },
+    { id: 'mock-dir-3', project_id: '', title: 'Financial Habit Builder', tagline: 'Micro-habit coaching with AI nudges', description: 'A micro-habit tracker focused on financial wellness, using AI to nudge users toward better spending decisions throughout the day.', innovation_score: 78, feasibility_score: 85, is_selected: false, created_at: new Date().toISOString() },
+  ];
+}
+
+export async function generateDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
+  const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions', { method: 'POST' });
+  if (res.success) return res;
+  console.warn('[exHacker API] Using mock directions');
+  return { success: true, data: { directions: getMockDirections() } };
+}
+
+export async function getDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
+  const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions');
+  if (res.success) return res;
+  return { success: true, data: { directions: [] } };
+}
+
+export async function selectDirection(projectId: string, directionId: string): Promise<ApiResponse<{ direction: Direction }>> {
+  const res = await request<{ direction: Direction }>('/projects/' + projectId + '/directions/' + directionId + '/select', { method: 'POST' });
+  if (res.success) return res;
+  // In mock mode, mark the direction as selected
+  const dirs = getMockDirections().map(d => ({ ...d, id: directionId, is_selected: d.id === directionId }));
+  return { success: true, data: { direction: dirs.find(d => d.id === directionId) || dirs[0] } };
+}
