@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Zap, LayoutDashboard, Play, Plus, Code2 } from 'lucide-react';
+import { Zap, Plus, List } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const isApp = pathname.startsWith('/projects') || pathname.startsWith('/app');
+
+  if (isApp) return null; // App pages use sidebar navigation
 
   const navLinks = [
-    { href: '/new-project', label: 'New Project', icon: Plus },
-    { href: '/workflow/demo-finance-001', label: 'Workflow', icon: LayoutDashboard },
-    { href: '/dashboard/demo-finance-001', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/demo', label: 'Demo', icon: Play },
+    { href: '/projects', label: 'Projects', icon: List },
+    { href: '/projects/new', label: 'New Project', icon: Plus },
   ];
 
   return (
@@ -22,64 +23,53 @@ export default function Navbar() {
         left: 0,
         right: 0,
         zIndex: 100,
-        height: '64px',
+        height: '56px',
         background: 'rgba(5, 8, 22, 0.8)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--color-border-default)',
       }}
     >
       <div
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '0 32px',
+          padding: '0 24px',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        {/* Logo */}
         <Link
           href="/"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             textDecoration: 'none',
+            color: 'var(--color-text-primary)',
           }}
         >
           <div
             style={{
-              width: '32px',
-              height: '32px',
-              background: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
-              borderRadius: '8px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '7px',
+              background: 'linear-gradient(135deg, var(--color-accent-500), var(--color-info))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Zap size={16} color="#fff" />
+            <Zap size={14} color="#fff" />
           </div>
-          <span
-            style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #A855F7, #06B6D4)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            exHacker
-          </span>
+          <span style={{ fontWeight: 700, fontSize: '16px' }}>exHacker</span>
         </Link>
 
-        {/* Nav Links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {navLinks.map((link) => {
+            const Icon = link.icon;
             const isActive = pathname === link.href;
             return (
               <Link
@@ -89,47 +79,35 @@ export default function Navbar() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '6px 14px',
+                  padding: '8px 14px',
                   borderRadius: '8px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: 500,
                   textDecoration: 'none',
-                  color: isActive ? '#A855F7' : 'rgba(255,255,255,0.6)',
-                  background: isActive ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
-                  transition: 'all 150ms ease-out',
+                  color: isActive
+                    ? 'var(--color-accent-400)'
+                    : 'var(--color-text-secondary)',
+                  background: isActive
+                    ? 'rgba(124, 58, 237, 0.1)'
+                    : 'transparent',
+                  transition: 'all 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
                 }}
               >
+                <Icon size={14} />
                 {link.label}
               </Link>
             );
           })}
-        </div>
-
-        {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.5)',
-              textDecoration: 'none',
-              transition: 'all 150ms ease-out',
-            }}
-          >
-          <Code2 size={16} />
-          </a>
-          <Link href="/demo" className="btn btn-primary" style={{ padding: '8px 20px', fontSize: '14px' }}>
-            <Play size={14} />
-            Watch Demo
-          </Link>
         </div>
       </div>
     </nav>
