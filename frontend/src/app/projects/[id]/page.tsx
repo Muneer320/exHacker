@@ -6,13 +6,14 @@ import {
   ArrowLeft,
   Zap,
   ExternalLink,
+  Download,
   Star,
   Compass,
   Database,
   GitFork,
   Lightbulb,
 } from 'lucide-react';
-import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, Project, ResearchData, Direction, BlueprintData } from '@/services/api';
+import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, downloadExport, Project, ResearchData, Direction, BlueprintData } from '@/services/api';
 
 type Tab = 'overview' | 'research' | 'directions' | 'blueprint';
 
@@ -239,6 +240,7 @@ export default function ProjectDetailPage() {
             blueprint={blueprint}
             loading={blueprintLoading}
             onGenerate={handleGenerateBlueprint}
+            projectId={projectId}
           />
         )}
       </div>
@@ -433,10 +435,12 @@ function BlueprintTab({
   blueprint,
   loading,
   onGenerate,
+  projectId,
 }: {
   blueprint: BlueprintData | null;
   loading: boolean;
   onGenerate: () => void;
+  projectId: string;
 }) {
   if (loading) {
     return (
@@ -453,7 +457,7 @@ function BlueprintTab({
         <p style={{ fontSize: '28px', marginBottom: '12px' }}>🏗️</p>
         <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>No blueprint yet</h3>
         <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-          Generate a complete project blueprint with architecture, tech stack, data model, and plan.
+          Generate a complete project blueprint first.
         </p>
         <button onClick={onGenerate} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--color-accent-500)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
           Generate Blueprint
@@ -462,35 +466,43 @@ function BlueprintTab({
     );
   }
 
-  const arch = blueprint.architecture as Record<string, unknown> | null;
-  const comps = (arch?.components as Array<Record<string, unknown>>) || [];
-  const dm = blueprint.data_model as Record<string, unknown> | null;
-  const entities = (dm?.entities as Array<Record<string, unknown>>) || [];
-  const api = blueprint.api_contracts as Record<string, unknown> | null;
-  const endpoints = (api?.endpoints as Array<Record<string, unknown>>) || [];
-  const pl = blueprint.plan as Record<string, unknown> | null;
-  const phases = (pl?.phases as Array<Record<string, unknown>>) || [];
+  // Variables for blueprint data — kept outside JSX to avoid parsing issues
+  const projId = (window as any).__NEXT_DATA__?.props?.pageProps?.params?.id || '';
 
   return (
     <div>
+      {/* Export toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '12px 16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginRight: '8px' }}>Export:</span>
+        <button onClick={() => downloadExport(projId || 'current', 'markdown')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--color-border-default)', background: 'transparent', color: 'var(--color-text-secondary)', fontSize: '12px', cursor: 'pointer' }}>
+          <Download size={12} /> README.md
+        </button>
+        <button onClick={() => downloadExport(projId || 'current', 'json')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--color-border-default)', background: 'transparent', color: 'var(--color-text-secondary)', fontSize: '12px', cursor: 'pointer' }}>
+          <Download size={12} /> blueprint.json
+        </button>
+        <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginLeft: 'auto' }}>
+          Generated {new Date(blueprint!.generated_at).toLocaleString()}
+        </span>
+      </div>
+
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-        <SummaryCard label="Components" value={blueprint.summary.components} color="var(--color-accent-400)" />
-        <SummaryCard label="Entities" value={blueprint.summary.entities} color="var(--color-info)" />
-        <SummaryCard label="Endpoints" value={blueprint.summary.endpoints} color="var(--color-success)" />
-        <SummaryCard label="Tasks" value={blueprint.summary.tasks} color="var(--color-warning)" />
-        <SummaryCard label="Est. Hours" value={blueprint.summary.estimated_hours} color="var(--color-accent-200)" />
+        <SummaryCard label="Components" value={blueprint!.summary.components} color="var(--color-accent-400)" />
+        <SummaryCard label="Entities" value={blueprint!.summary.entities} color="var(--color-info)" />
+        <SummaryCard label="Endpoints" value={blueprint!.summary.endpoints} color="var(--color-success)" />
+        <SummaryCard label="Tasks" value={blueprint!.summary.tasks} color="var(--color-warning)" />
+        <SummaryCard label="Est. Hours" value={blueprint!.summary.estimated_hours} color="var(--color-accent-200)" />
       </div>
 
       {/* Architecture Components */}
-      {comps.length > 0 && (
+      {((blueprint!.architecture as any)?.components?.length || 0) > 0 && (
         <Section title="Architecture Components" icon={<GitFork size={14} />} color="var(--color-accent-400)">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-            {comps.map((c: Record<string, unknown>, i: number) => (
+            {((blueprint!.architecture as any)?.components || []).map((c: any, i: number) => (
               <div key={i} style={{ padding: '16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{c.name as string}</h4>
-                <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>{c.tech as string}</p>
-                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{c.description as string}</p>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{c.name}</h4>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>{c.tech}</p>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{c.description}</p>
               </div>
             ))}
           </div>
@@ -498,14 +510,14 @@ function BlueprintTab({
       )}
 
       {/* Data Model */}
-      {entities.length > 0 && (
+      {((blueprint!.data_model as any)?.entities?.length || 0) > 0 && (
         <Section title="Data Model" icon={<Database size={14} />} color="var(--color-info)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {entities.map((e: Record<string, unknown>, i: number) => (
+            {((blueprint!.data_model as any)?.entities || []).map((e: any, i: number) => (
               <div key={i} style={{ padding: '14px 16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px', textTransform: 'capitalize' }}>{e.name as string}</h4>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px', textTransform: 'capitalize' }}>{e.name}</h4>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-                  {(e.fields as Array<Record<string, string>>)?.map((f, j) => (
+                  {(e.fields as any[])?.map((f: any, j: number) => (
                     <span key={j} style={{ marginRight: '12px' }}>{f.name}: {f.type}</span>
                   ))}
                 </div>
@@ -515,15 +527,15 @@ function BlueprintTab({
         </Section>
       )}
 
-      {/* API Contracts */}
-      {endpoints.length > 0 && (
+      {/* API Endpoints */}
+      {((blueprint!.api_contracts as any)?.endpoints?.length || 0) > 0 && (
         <Section title="API Endpoints" icon={<GitFork size={14} />} color="var(--color-success)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {endpoints.slice(0, 8).map((ep: Record<string, unknown>, i: number) => (
+            {((blueprint!.api_contracts as any)?.endpoints || []).slice(0, 8).map((ep: any, i: number) => (
               <div key={i} style={{ display: 'flex', gap: '8px', padding: '8px 12px', borderRadius: '6px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-400)', minWidth: '48px' }}>{ep.method as string}</span>
-                <span style={{ fontSize: '12px', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>{ep.path as string}</span>
-                <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{ep.description as string}</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-400)', minWidth: '48px' }}>{ep.method}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>{ep.path}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{ep.description}</span>
               </div>
             ))}
           </div>
@@ -531,16 +543,16 @@ function BlueprintTab({
       )}
 
       {/* Plan */}
-      {phases.length > 0 && (
+      {((blueprint!.plan as any)?.phases?.length || 0) > 0 && (
         <Section title="Implementation Plan" icon={<Star size={14} />} color="var(--color-warning)">
-          {phases.slice(0, 3).map((phase: Record<string, unknown>, i: number) => (
+          {((blueprint!.plan as any)?.phases || []).slice(0, 3).map((phase: any, i: number) => (
             <div key={i} style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '10px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Phase {i + 1}: {phase.name as string}</h4>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Phase {i + 1}: {phase.name}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {(phase.tasks as Array<Record<string, unknown>>)?.slice(0, 3).map((t: Record<string, unknown>, j: number) => (
+                {(phase.tasks as any[])?.slice(0, 3).map((t: any, j: number) => (
                   <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                    <span>{t.title as string}</span>
-                    <span style={{ color: 'var(--color-text-tertiary)' }}>{t.estimated_hours as number}h</span>
+                    <span>{t.title}</span>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>{t.estimated_hours}h</span>
                   </div>
                 ))}
               </div>
