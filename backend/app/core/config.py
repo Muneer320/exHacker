@@ -37,9 +37,9 @@ class Settings(BaseSettings):
 
     # SDPD model tiers (opencode-go provider — litellm-compatible API)
     AI_DEFAULT_PROVIDER: str = "opencode-go"
-    AI_MODEL_TIER_1: str = "deepseek-v4-flash"  # Cheap — research queries, explanations
-    AI_MODEL_TIER_2: str = "glm-5.2"            # Medium — directions, architecture reasoning
-    AI_MODEL_TIER_3: str = "glm-5.2"            # Expensive — complex analysis (upgrade to opus when available)
+    AI_MODEL_TIER_1: str = "deepseek-v4-flash"  # Cheap tier
+    AI_MODEL_TIER_2: str = "glm-5.2"  # Medium tier
+    AI_MODEL_TIER_3: str = "glm-5.2"  # Expensive (upgrade to opus later)
 
     # AI retry / timeout configuration
     MAX_RETRIES: int = 2
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     FREE_TIER_PROJECTS_PER_DAY: int = 3
     PRO_TIER_PROJECTS_PER_DAY: int = 50
     MAX_PROJECTS_PER_USER: int = 50
-    MAX_COST_PER_PROJECT: float = 0.50          # $0.50 max AI spend per project (legacy alias)
+    MAX_COST_PER_PROJECT: float = 0.50  # Legacy alias
 
     # Caching
     CACHE_BACKEND: str = "memory"  # memory or redis

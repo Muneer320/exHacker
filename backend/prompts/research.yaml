@@ -5,6 +5,7 @@
 
 name: research
 version: 1
+model_tier: 1
 description: >-
   Generate targeted research queries from a project idea / problem statement.
 
@@ -25,13 +26,13 @@ system: |
 
 user: |
   Problem statement:
-  \"\"\"
-  ${problem_statement}
-  \"\"\"
+  """
+  {problem_statement}
+  """
 
-  Generate exactly ${num_queries} search queries that will help research this space.
+  Generate exactly {num_queries} search queries that will help research this space.
 
-  Return a JSON array of ${num_queries} query strings. Example:
+  Return a JSON array of {num_queries} query strings. Example:
   ["query one", "query two", "query three"]
 
 response_schema:
@@ -41,9 +42,6 @@ response_schema:
   min_items: 1
   max_items: 20
 
-fallback:
-  system: |
-    You are a helpful research assistant. Generate search queries for the given topic.
-  user: |
-    Topic: ${problem_statement}
-    Generate ${num_queries} search queries as a JSON array of strings.
+fallback: |
+  Topic: {problem_statement}
+  Generate {num_queries} search queries as a JSON array of strings.
