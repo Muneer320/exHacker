@@ -188,3 +188,68 @@ export async function transitionProject(
     { method: 'POST', body: JSON.stringify({ transition }) },
   );
 }
+
+// ── Research ────────────────────────────────────────────────────────────────
+
+export interface ResearchResult {
+  title: string;
+  url: string | null;
+  snippet: string | null;
+  relevance_score: number | null;
+  result_type: string;
+}
+
+export interface ResearchData {
+  summary: {
+    total_results: number;
+    competitors_found: number;
+    apis_found: number;
+    oss_found: number;
+    insights_found: number;
+    cached: boolean;
+  };
+  competitors: ResearchResult[];
+  apis: ResearchResult[];
+  oss_projects: ResearchResult[];
+  insights: ResearchResult[];
+}
+
+function getMockResearchData(): ResearchData {
+  return {
+    summary: { total_results: 5, competitors_found: 3, apis_found: 1, oss_found: 1, insights_found: 0, cached: false },
+    competitors: [
+      { title: 'YNAB (You Need A Budget)', url: 'https://www.ynab.com', snippet: 'Popular budgeting app with envelope-based system. Premium subscription model.', relevance_score: 0.92, result_type: 'competitor' },
+      { title: 'Mint / Credit Karma', url: 'https://mint.intuit.com', snippet: 'Free personal finance tracking app. Connects to bank accounts automatically.', relevance_score: 0.88, result_type: 'competitor' },
+      { title: 'PocketGuard', url: 'https://pocketguard.com', snippet: 'Budgeting app focused on how much spendable money you have left.', relevance_score: 0.75, result_type: 'competitor' },
+    ],
+    apis: [
+      { title: 'Plaid API', url: 'https://plaid.com', snippet: 'Financial institution data aggregation API. Connects to 12,000+ institutions.', relevance_score: 0.95, result_type: 'api' },
+    ],
+    oss_projects: [
+      { title: 'Firefly III', url: 'https://github.com/firefly-iii/firefly-iii', snippet: 'Self-hosted personal finance manager. PHP/Laravel, REST API.', relevance_score: 0.7, result_type: 'oss' },
+    ],
+    insights: [],
+  };
+}
+
+export async function startResearch(
+  projectId: string,
+): Promise<ApiResponse<ResearchData>> {
+  const res = await request<ResearchData>(
+    '/projects/' + projectId + '/research',
+    { method: 'POST' },
+  );
+  if (res.success) return res;
+  console.warn('[exHacker API] Using mock research data');
+  return { success: true, data: getMockResearchData() };
+}
+
+export async function getResearch(
+  projectId: string,
+): Promise<ApiResponse<ResearchData>> {
+  const res = await request<ResearchData>(
+    '/projects/' + projectId + '/research',
+  );
+  if (res.success) return res;
+  return { success: true, data: getMockResearchData() };
+}
