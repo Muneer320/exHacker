@@ -325,6 +325,136 @@ export async function getChallengeAnalysis(projectId: string): Promise<ApiRespon
   return { success: true, data: getMockChallengeData() };
 }
 
+// ── Competitor Intelligence (S3) ──────────────────────────────────────────
+
+export interface CompetitorProfile {
+  name: string;
+  description: string;
+  target_users: string;
+  strengths: string[];
+  weaknesses: string[];
+  tech_stack: string[];
+  business_model: string;
+  missing_features: string[];
+  innovation_level: number;
+  market_maturity: string;
+  last_activity: string;
+}
+
+export interface ComparisonRow {
+  dimension: string;
+  scores: Record<string, number>;
+}
+
+export interface GapAnalysis {
+  patterns: string[];
+  white_space: string[];
+  pain_points: string[];
+  hackathon_opportunities: string[];
+  oversaturated: string[];
+  to_avoid: string[];
+}
+
+export interface Opportunity {
+  title: string;
+  difficulty: number;
+  impact: number;
+  judge_appeal: number;
+  effort_hours: number;
+}
+
+export interface InnovationBreakdown {
+  market_saturation: number;
+  technical_novelty: number;
+  execution_feasibility: number;
+  judge_memorability: number;
+  business_potential: number;
+}
+
+export interface Warning {
+  warning: string;
+  why: string;
+  alternative: string;
+}
+
+export interface CompetitorData {
+  summary: string;
+  landscape_summary: string;
+  competitors: CompetitorProfile[];
+  comparison_matrix: ComparisonRow[];
+  gap_analysis: GapAnalysis;
+  quick_wins: Opportunity[];
+  medium_innovations: Opportunity[];
+  moonshots: Opportunity[];
+  innovation_score: number | null;
+  innovation_breakdown: InnovationBreakdown;
+  warnings: Warning[];
+  keywords: string[];
+  themes: string[];
+  confidence: number;
+  model_used: string;
+}
+
+function getMockCompetitorData(): CompetitorData {
+  return {
+    summary: 'The student budgeting space is moderately competitive with 3 direct competitors.',
+    landscape_summary: 'Fragmented market dominated by YNAB, Mint, and PocketGuard.',
+    competitors: [
+      { name: 'YNAB', description: 'Zero-based budgeting', target_users: 'Adults 25-45', strengths: ['Proven methodology'], weaknesses: ['No AI features'], tech_stack: ['React', 'Rails', 'PostgreSQL'], business_model: 'Subscription', missing_features: ['AI coaching'], innovation_level: 45, market_maturity: 'mature', last_activity: 'Monthly' },
+      { name: 'Mint', description: 'Free finance tracker', target_users: 'Consumers 20-50', strengths: ['Free', 'Bank integration'], weaknesses: ['Cluttered UI'], tech_stack: ['React', 'Java', 'MySQL'], business_model: 'Free', missing_features: ['AI coaching'], innovation_level: 35, market_maturity: 'mature', last_activity: 'Quarterly' },
+      { name: 'PocketGuard', description: 'Simplified budgeting', target_users: 'Beginners 18-30', strengths: ['Simple UX'], weaknesses: ['Limited features'], tech_stack: ['React Native', 'Node.js', 'MongoDB'], business_model: 'Freemium', missing_features: ['AI coaching'], innovation_level: 50, market_maturity: 'growing', last_activity: '2 months ago' },
+    ],
+    comparison_matrix: [
+      { dimension: 'Innovation', scores: { YNAB: 45, Mint: 35, PocketGuard: 50 } },
+      { dimension: 'UX Quality', scores: { YNAB: 70, Mint: 50, PocketGuard: 75 } },
+      { dimension: 'AI Usage', scores: { YNAB: 10, Mint: 15, PocketGuard: 20 } },
+    ],
+    gap_analysis: {
+      patterns: ['All focus on tracking not behavior change', 'AI features minimal', 'Social accountability absent'],
+      white_space: ['AI-powered coaching', 'Social accountability', 'Emotional spending'],
+      pain_points: ['Users feel judged', 'Budgeting is a chore', 'Students priced out'],
+      hackathon_opportunities: ['AI coaching prototype', 'Social saving challenge', 'Gen Z UX'],
+      oversaturated: ['Basic trackers', 'Manual entry'],
+      to_avoid: ['General budgeting app', 'Complex integrations', 'Student subscriptions'],
+    },
+    quick_wins: [
+      { title: 'AI spending chat', difficulty: 30, impact: 85, judge_appeal: 90, effort_hours: 4 },
+      { title: 'Saving challenge', difficulty: 25, impact: 75, judge_appeal: 80, effort_hours: 3 },
+    ],
+    medium_innovations: [
+      { title: 'Emotional spending', difficulty: 55, impact: 80, judge_appeal: 85, effort_hours: 12 },
+    ],
+    moonshots: [
+      { title: 'Full AI coach', difficulty: 85, impact: 95, judge_appeal: 95, effort_hours: 40 },
+    ],
+    innovation_score: 82,
+    innovation_breakdown: { market_saturation: 65, technical_novelty: 78, execution_feasibility: 72, judge_memorability: 85, business_potential: 70 },
+    warnings: [
+      { warning: 'Plaid dependency', why: 'Banking APIs need partnerships', alternative: 'Mock data for prototype' },
+    ],
+    keywords: ['fintech', 'budgeting', 'AI coaching'],
+    themes: ['financial literacy', 'AI'],
+    confidence: 0.85,
+    model_used: 'glm-5.2',
+  };
+}
+
+export async function analyzeCompetitors(projectId: string): Promise<ApiResponse<CompetitorData>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/competitors`, { method: 'POST' });
+    if (res.ok) { const d = await res.json(); if (d?.data?.competitors) return { success: true, data: d.data }; }
+  } catch { /* fallback */ }
+  return { success: true, data: getMockCompetitorData() };
+}
+
+export async function getCompetitorAnalysis(projectId: string): Promise<ApiResponse<CompetitorData>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/competitors`);
+    if (res.ok) { const d = await res.json(); if (d?.data) return { success: true, data: d.data }; }
+  } catch { /* fallback */ }
+  return { success: true, data: getMockCompetitorData() };
+}
+
 // ── Directions ──────────────────────────────────────────────────────────
 
 export interface Direction {
