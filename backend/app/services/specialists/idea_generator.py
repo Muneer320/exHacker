@@ -40,67 +40,91 @@ async def generate_ideas(
     project_id: str,
 ) -> dict[str, Any]:
     """Run the full Idea Generation pipeline (S5)."""
-    # 1. Check cache
-    cached = await _get_existing(db, project_id)
-    if cached:
-        return cached
+    try:
+        # 1. Check cache
+        cached = await _get_existing(db, project_id)
+        if cached:
+            return cached
 
-    # 2. Load shared context
-    ctx = await load_context(db, project_id)
-    project = ctx.get("project", {})
+        # 2. Load shared context
+        ctx = await load_context(db, project_id)
+        project = ctx.get("project", {})
 
-    # 3. Build context dict for prompts
-    context = _build_context(ctx, project)
-    context_str = format_context_for_prompt(ctx)
+        # 3. Build context dict for prompts
+        context = _build_context(ctx, project)
+        context_str = format_context_for_prompt(ctx)
 
-    logger.info("Generating ideas for project %s with %d memory entries",
-                project_id, len(ctx.get("memory_list", [])))
+        logger.info("Generating ideas for project %s with %d memory entries",
+                    project_id, len(ctx.get("memory_list", [])))
 
-    # 4. Generate ideas (Tier 2)
-    ideas_data = await _generate(context)
+        # 4. Generate ideas (Tier 2)
+        ideas_data = await _generate(context)
 
-    # 5. Self-critique (Tier 2)
-    ideas_data = await _critique(ideas_data, project)
+        # 5. Self-critique (Tier 2)
+        ideas_data = await _critique(ideas_data, project)
 
-    # 6. Parse and validate
-    parsed = _parse_ideas(ideas_data)
-    if not parsed:
-        logger.warning("Failed to parse ideas for project %s, using fallback", project_id)
+        # 6. Parse and validate
+        parsed = _parse_ideas(ideas_data)
+        if not parsed:
+            logger.warning("Failed to parse ideas for project %s, using fallback", project_id)
+            parsed = _fallback_ideas()
+
+        # 7. Enrich with metadata
+        generation_id = str(uuid.uuid4())
+        stored = []
+        for i, idea in enumerate(parsed):
+            entry = await _store_idea(db, project_id, generation_id, idea, i)
+            stored.append(entry)
+
+        # 8. Log decisions (best-effort)
+        try:
+            await log_decision(
+                db, project_id=project_id,
+                title=f"Generated {len(stored)} product ideas",
+                category="direction_generated",
+                description=f"S5 generated {len(stored)} distinct product ideas across different strategic directions.",
+                originating_specialist="idea_generator",
+                references=[s["id"] for s in stored],
+            )
+        except Exception:
+            pass
+
+        # 9. Store in shared memory (best-effort)
+        try:
+            await store_memory(
+                db, project_id=project_id,
+                specialist="idea_generator",
+                memory_type="ideas_generated",
+                content={"generation_id": generation_id, "count": len(stored)},
+                confidence=0.85,
+                references=[s["id"] for s in stored],
+            )
+        except Exception:
+            pass
+
+        result = {
+            "generation_id": generation_id,
+            "ideas": stored,
+            "count": len(stored),
+        }
+        return result
+    except Exception as e:
+        logger.error("Idea generation failed catastrophically for %s: %s", project_id, e, exc_info=True)
+        # Store fallback ideas as last resort
         parsed = _fallback_ideas()
-
-    # 7. Enrich with metadata
-    generation_id = str(uuid.uuid4())
-    stored = []
-    for i, idea in enumerate(parsed):
-        entry = await _store_idea(db, project_id, generation_id, idea, i)
-        stored.append(entry)
-
-    # 8. Log decisions
-    await log_decision(
-        db, project_id=project_id,
-        title=f"Generated {len(stored)} product ideas",
-        category="direction_generated",
-        description=f"S5 generated {len(stored)} distinct product ideas across different strategic directions.",
-        originating_specialist="idea_generator",
-        references=[s["id"] for s in stored],
-    )
-
-    # 9. Store in shared memory
-    await store_memory(
-        db, project_id=project_id,
-        specialist="idea_generator",
-        memory_type="ideas_generated",
-        content={"generation_id": generation_id, "count": len(stored)},
-        confidence=0.85,
-        references=[s["id"] for s in stored],
-    )
-
-    result = {
-        "generation_id": generation_id,
-        "ideas": stored,
-        "count": len(stored),
-    }
-    return result
+        generation_id = str(uuid.uuid4())
+        stored = []
+        for i, idea in enumerate(parsed):
+            try:
+                entry = await _store_idea(db, project_id, generation_id, idea, i)
+                stored.append(entry)
+            except Exception:
+                stored.append(idea)
+        return {
+            "generation_id": generation_id,
+            "ideas": stored or _fallback_ideas(),
+            "count": len(stored) or len(_fallback_ideas()),
+        }
 
 
 async def get_ideas(

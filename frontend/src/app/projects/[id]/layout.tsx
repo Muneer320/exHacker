@@ -8,6 +8,10 @@ import PipelineSidebar from "@/components/pipeline/PipelineSidebar";
 import { ToastProvider } from "@/components/shared/Toast";
 import CommandPalette from "@/components/shared/CommandPalette";
 
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? 'https://exhacker-backend.vercel.app/api/v1'
+  : 'http://localhost:8000/api/v1';
+
 export const WORKSPACE_SECTIONS = [
   { id: "overview",     label: "Overview",             icon: "◈" },
   { id: "challenge",    label: "Challenge",            icon: "◇" },
@@ -113,33 +117,40 @@ export default function ProjectWorkspaceLayout({
 // ─── Pipeline Sync ─────────────────────────────────────────────────────────────
 
 function PipelineSync({ projectId, children }: { projectId: string; children: React.ReactNode }) {
-  const { state, dispatch } = usePipeline();
+  const { dispatch } = usePipeline();
 
   useEffect(() => {
     if (!projectId) return;
-    // Check which specialists have data and mark them as completed
+
     const checkStages = async () => {
-      const checks = [
-        { id: "challenge", url: `/projects/${projectId}/challenge` },
-        { id: "research", url: `/projects/${projectId}/research` },
-        { id: "competitors", url: `/projects/${projectId}/competitors` },
-        { id: "ideas", url: `/projects/${projectId}/ideas` },
-        { id: "architecture", url: `/projects/${projectId}/architecture` },
-        { id: "docs", url: `/projects/${projectId}/docs` },
+      const checks: { id: string; url: string; key?: string }[] = [
+        { id: "challenge", url: `/projects/${projectId}/challenge`, key: "executive_summary" },
+        { id: "research", url: `/projects/${projectId}/research`, key: "summary" },
+        { id: "competitors", url: `/projects/${projectId}/competitors`, key: "competitors" },
+        { id: "ideas", url: `/projects/${projectId}/ideas`, key: "ideas" },
+        { id: "architecture", url: `/projects/${projectId}/architecture`, key: "system_overview" },
+        { id: "docs", url: `/projects/${projectId}/docs`, key: "documents" },
       ];
       for (const check of checks) {
         try {
-          const res = await fetch(check.url);
+          const res = await fetch(`${API_BASE_URL}${check.url}`);
           if (res.ok) {
             const d = await res.json();
-            if (d?.data && !d.error) {
+            const hasData = d?.data && !d.error && (
+              check.key ? (Array.isArray(d.data[check.key]) ? d.data[check.key].length > 0 : !!d.data[check.key])
+              : !!d.data
+            );
+            if (hasData) {
               dispatch({ type: "SET_STAGE_STATUS", stageId: check.id, status: "completed" });
             }
           }
         } catch {}
       }
     };
-    checkStages();
+
+    // Debounce: wait 500ms for page to settle
+    const timer = setTimeout(checkStages, 500);
+    return () => clearTimeout(timer);
   }, [projectId]);
 
   return <>{children}</>;

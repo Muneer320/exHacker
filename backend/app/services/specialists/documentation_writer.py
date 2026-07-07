@@ -52,61 +52,71 @@ async def generate_documentation(
     5. Store in DB
     6. Return complete package
     """
-    # 1. Load context
-    ctx = await load_context(db, project_id)
-    project = ctx.get("project", {})
+    try:
+        # 1. Load context
+        ctx = await load_context(db, project_id)
+        project = ctx.get("project", {})
 
-    # 2. Load selected idea
-    idea = await _get_selected_idea(db, project_id)
+        # 2. Load selected idea
+        idea = await _get_selected_idea(db, project_id)
 
-    # 3. Build document context
-    doc_data = _build_doc_data(ctx, project, idea)
+        # 3. Build document context
+        doc_data = _build_doc_data(ctx, project, idea)
 
-    # 4. Generate documents
-    documents = {}
-    for filename in DOCUMENT_ORDER:
-        doc_info = DOCUMENTS.get(filename)
-        if not doc_info:
-            continue
-        generator = doc_info["generator"]
+        # 4. Generate documents
+        documents = {}
+        for filename in DOCUMENT_ORDER:
+            doc_info = DOCUMENTS.get(filename)
+            if not doc_info:
+                continue
+            generator = doc_info["generator"]
+            try:
+                content = generator(doc_data)
+            except Exception as e:
+                logger.warning("Failed to generate %s: %s", filename, e)
+                content = f"# {doc_info['title']}\n\n*Document generation failed.*"
+            documents[filename] = {
+                "filename": filename,
+                "title": doc_info["title"],
+                "description": doc_info["description"],
+                "content": content,
+                "size_bytes": len(content.encode("utf-8")),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "version": "1.0",
+                "status": "completed",
+            }
+
+        # 5. Compile package
+        package = _compile_package(documents, project_id)
+
+        # 6. Store in shared memory
         try:
-            content = generator(doc_data)
-        except Exception as e:
-            logger.warning("Failed to generate %s: %s", filename, e)
-            content = f"# {doc_info['title']}\n\n*Document generation failed.*"
-        documents[filename] = {
-            "filename": filename,
-            "title": doc_info["title"],
-            "description": doc_info["description"],
-            "content": content,
-            "size_bytes": len(content.encode("utf-8")),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "version": "1.0",
-            "status": "completed",
-        }
+            await store_memory(
+                db, project_id=project_id,
+                specialist="documentation_writer",
+                memory_type="documentation_package",
+                content={"summary": f"Generated {len(documents)} documents"},
+                confidence=0.90,
+            )
+        except Exception:
+            pass
 
-    # 5. Compile package
-    package = _compile_package(documents, project_id)
+        # 7. Log decision
+        try:
+            await log_decision(
+                db, project_id=project_id,
+                title=f"Documentation generated ({len(documents)} files)",
+                category="feature_scoped",
+                description=f"S13 compiled {len(documents)} documentation files from existing specialist outputs.",
+                originating_specialist="documentation_writer",
+            )
+        except Exception:
+            pass
 
-    # 6. Store in shared memory
-    await store_memory(
-        db, project_id=project_id,
-        specialist="documentation_writer",
-        memory_type="documentation_package",
-        content={"summary": f"Generated {len(documents)} documents"},
-        confidence=0.90,
-    )
-
-    # 7. Log decision
-    await log_decision(
-        db, project_id=project_id,
-        title=f"Documentation generated ({len(documents)} files)",
-        category="feature_scoped",
-        description=f"S13 compiled {len(documents)} documentation files from existing specialist outputs.",
-        originating_specialist="documentation_writer",
-    )
-
-    return package
+        return package
+    except Exception as e:
+        logger.error("Documentation generation failed catastrophically for %s: %s", project_id, e, exc_info=True)
+        return {"documents": [], "metadata": {"project_id": project_id, "generated_at": datetime.now(timezone.utc).isoformat(), "count": 0}, "generated_at": datetime.now(timezone.utc).isoformat()}
 
 
 async def get_documentation(
