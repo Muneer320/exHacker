@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-7C3AED?style=for-the-badge" alt="exHacker" width="320" />
+  <img src="https://img.shields.io/badge/exHacker-AI%20Product%20Studio-3D7CF6?style=for-the-badge" alt="exHacker" width="320" />
 </p>
 
 <p align="center">
-  <b>From idea to production-ready project blueprint in under 30 seconds.</b><br />
-  AI-powered research, architecture, planning, and export — <br />before you write a single line of code.
+  <b>From hackathon idea to complete strategy in under 3 minutes.</b><br />
+  7 AI specialists research, analyse, architect, and document your project<br />
+  <i>before you write a single line of code.</i>
 </p>
 
 <p align="center">
@@ -13,213 +14,158 @@
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg" alt="FastAPI" /></a>
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-000000.svg" alt="Next.js" /></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB.svg" alt="React" /></a>
-  <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-State%20Store-003B57.svg" alt="SQLite" /></a>
-  <a href="https://litellm.ai/"><img src="https://img.shields.io/badge/LiteLLM-Router-FF6F00.svg" alt="LiteLLM" /></a>
   <br />
   <a href="https://github.com/Muneer320/exHacker/actions"><img src="https://img.shields.io/github/actions/workflow/status/Muneer320/exHacker/ci.yml?branch=main&label=CI" alt="CI" /></a>
   <a href="https://github.com/Muneer320/exHacker"><img src="https://img.shields.io/github/stars/Muneer320/exHacker?style=social" alt="Stars" /></a>
   <a href="https://github.com/Muneer320/exHacker/commits/main"><img src="https://img.shields.io/github/last-commit/Muneer320/exHacker/main" alt="Last Commit" /></a>
-  <a href="https://github.com/Muneer320/exHacker/issues"><img src="https://img.shields.io/github/issues/Muneer320/exHacker" alt="Issues" /></a>
+</p>
+
+<p align="center">
+  <a href="https://exhacker-frontend.vercel.app/">🚀 Live Demo</a>
+  ·
+  <a href="#-architecture">Architecture</a>
+  ·
+  <a href="#-specialists">Specialists</a>
+  ·
+  <a href="#-quick-start">Quick Start</a>
 </p>
 
 ---
 
 ## ✨ What is exHacker?
 
-exHacker is an **AI product studio** that transforms raw ideas into validated, architecturally-sound, presentation-ready project blueprints — before you write a single line of code.
+exHacker is an **AI-powered hackathon strategy engine** built by participants, for participants. Paste any hackathon challenge and watch 7 AI specialists work together to produce:
 
-Unlike existing tools that help you *code faster* (Cursor, Claude Code) or *generate apps from prompts* (Bolt, Lovable), exHacker handles the **planning phase** — the 4-8 hours of analysis paralysis, shallow competitor research, architecture guesswork, and panic-rushed presentations that happen *before* and *after* coding.
+- 🧠 **Challenge Intelligence** — Deep analysis of constraints, opportunities, and strategy
+- 🔍 **Research** — 10-category market research with synthesis
+- 🎯 **Competitor Analysis** — Gap analysis, white space, differentiation opportunities
+- 💡 **Scored Ideas** — 5 differentiated concepts with 8-dimension scoring
+- 🏗️ **Architecture Blueprint** — System design with Mermaid diagrams, API contracts, trade-offs
+- 📝 **Documentation Package** — PRD, README, tech stack, API docs, database design, pitch guide
+- ⏱ **Decision Timeline** — Every decision tracked and explainable
 
-### The Pipeline
+### 🎯 Live Demo
+
+**Frontend:** https://exhacker-frontend.vercel.app/  
+**API:** https://exhacker-backend.vercel.app/health  
+**API Docs:** https://exhacker-backend.vercel.app/docs  
+
+---
+
+## 🏆 WOW Features
+
+| Feature | Description |
+|---|---|
+| **Live Architecture Evolution** | Watch your system design being built component-by-component |
+| **Project Readiness Score** | Real-time 0-100 score with 5 sub-scores in the sidebar |
+| **Command Palette** | Ctrl+K to navigate across all workspace pages |
+| **Idea Comparison** | Side-by-side table comparing 10 scores, features, and effort |
+| **Mermaid Diagrams** | All architecture diagrams rendered as interactive SVGs |
+| **GitHub-Style Docs Viewer** | Rendered markdown with syntax highlighting and inline Mermaid |
+
+---
+
+## 🏗 Architecture
 
 ```
-┌─────────┐    ┌──────────┐    ┌────────────┐    ┌──────────┐    ┌────────┐
-│  Idea   │ →  │ Research │ →  │ Directions  │ →  │Blueprint │ →  │ Export │
-│ Input   │    │ Pipeline │    │ & Selection │    │Engine    │    │ Files  │
-└─────────┘    └──────────┘    └────────────┘    └──────────┘    └────────┘
-     │              │                │                 │               │
-  30 seconds      3-5 queries    3 AI-generated      Tech stack,    README.md
-  to create       competitors,   product directions  architecture,   blueprint.json
-  a project       APIs, OSS      with scores         data model,
-                                                      API contracts,
-                                                      implementation
-                                                      plan
+Frontend (Next.js 16 + React 19)
+├── /app        → 12 pages (landing, workspace × 10, projects)
+├── /components → 4 domains (pipeline, shared, diagrams, markdown)
+└── /services   → API client with mock fallback
+
+Backend (FastAPI + Python 3.11)
+├── /api/v1     → 10 routers, 40 endpoints
+├── /services
+│   ├── /specialists  → 7 AI specialist implementations
+│   └── /shared       → Memory, journal, context API
+└── /models     → 10 SQLAlchemy models
 ```
+
+---
+
+## 🧠 Specialists
+
+| # | Specialist | Purpose | Model Tier |
+|---|---|---|---|
+| S1 | **Challenge Analyst** | Extract themes, constraints, opportunities | Tier 2 (glm-5.2) |
+| S2 | **Research Specialist** | 10-category market research | Tier 1 (deepseek) + Tier 2 |
+| S3 | **Competitor Analyst** | Gap analysis, white space, differentiation | Tier 2 |
+| S4 | **Shared Intelligence** | Memory + decision journal + context API | Tier 0 (deterministic) |
+| S5 | **Idea Generator** | 5 scored ideas with self-critique | Tier 2 × 2 |
+| S7 | **Solution Architect** | Full technical blueprint with Mermaid | Tier 2 |
+| S13 | **Documentation Writer** | 10 deterministic document templates | Tier 0 (templates) |
 
 ---
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- Python 3.11+
+- Node.js 22+
+- SQLite (bundled with Python)
+
+### Backend
+
 ```bash
-# 1. Clone the repository
-git clone https://github.com/Muneer320/exHacker.git
-cd exHacker
-
-# 2. Start the backend (requires Python 3.11+)
 cd backend
-uv venv && uv pip install -e ".[dev]"
-uv run uvicorn app.main:app --reload
-# → http://localhost:8000 | Swagger at /docs
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+# Mock mode (no AI API key needed):
+MOCK_AI=true MOCK_RESEARCH=true uvicorn app.main:app --reload
+```
 
-# 3. Start the frontend (requires Node.js 20+)
-cd ../frontend
+### Frontend
+
+```bash
+cd frontend
 npm install
 npm run dev
-# → http://localhost:3000
-
-# 4. Open the app in your browser
-# Type your idea and see a complete project blueprint in seconds
 ```
 
-> **No API keys needed for development.** Set `MOCK_AI=true` and `MOCK_RESEARCH=true` in `.env` — the system runs entirely offline with realistic fake data.
+### Environment Variables
 
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Next.js 16 Frontend                     │
-│  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────┐   │
-│  │ Landing │ │ Projects │ │Research  │ │Blue- │ │Export│   │
-│  │ Page    │ │ List     │ │& Direc-  │ │print  │ │      │   │
-│  │         │ │ / Detail │ │tions Tab │ │Tab    │ │Modal │   │
-│  └─────────┘ └──────────┘ └──────────┘ └──────┘ └──────┘   │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ HTTP/REST
-┌──────────────────────▼──────────────────────────────────────┐
-│                    FastAPI Backend                           │
-│                                                              │
-│  ┌──────────┐  ┌──────────┐  ┌────────────────────────┐    │
-│  │ Project  │  │ Research │  │   Blueprint Engine      │    │
-│  │ Service  │  │ Service  │  │  ┌──────────────────┐  │    │
-│  │ (CRUD +  │  │ (Tavily  │  │  │ Tech Stack       │  │    │
-│  │  State   │  │  Search) │  │  │ (Decision Tree)  │  │    │
-│  │  Machine)│  │          │  │  ├──────────────────┤  │    │
-│  └──────────┘  └──────────┘  │  │ Architecture     │  │    │
-│                               │  │ (Templates + AI) │  │    │
-│  ┌──────────┐  ┌──────────┐  │  ├──────────────────┤  │    │
-│  │ Direction│  │  Export  │  │  │ Data Model       │  │    │
-│  │ Generator│  │  Service │  │  │ (Entity Templates)│  │    │
-│  │ (AI T2)  │  │(Markdown)│  │  ├──────────────────┤  │    │
-│  └──────────┘  └──────────┘  │  │ API Contracts    │  │    │
-│                               │  │ (CRUD Templates) │  │    │
-│  ┌────────────────────────┐  │  ├──────────────────┤  │    │
-│  │    AI Gateway           │  │  │ Implementation  │  │    │
-│  │  (LiteLLM + Routing)    │  │  │ Plan (Tasks)    │  │    │
-│  └────────────────────────┘  │  └──────────────────┘  │    │
-│                               │                        │    │
-│  ┌────────────────────────┐  └────────────────────────┘    │
-│  │      SQLite Database    │                                │
-│  │  (SQLAlchemy 2.0 Async) │                                │
-│  └────────────────────────┘                                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### What Uses AI vs What's Deterministic
-
-| Component | Method | SDPD Tier | Why |
+| Variable | Required | Default | Purpose |
 |---|---|---|---|
-| Research query generation | AI (Tier 1 — cheap) | Fast pattern matching |
-| Direction generation | AI (Tier 2 — reasoning) | Product reasoning needed |
-| Architecture enrichment | AI (Tier 2, optional) | Custom component suggestions |
-| Tech stack recommendation | **Decision tree** | Tier 0 — no AI | Rules-based, deterministic |
-| Architecture templates | **Pre-designed** | Tier 0 — no AI | 80% fit for standard patterns |
-| Data model generation | **Keyword → Entity** | Tier 0 — no AI | Template matching |
-| API contract generation | **CRUD patterns** | Tier 0 — no AI | Deterministic templates |
-| Implementation plan | **Component → Tasks** | Tier 0 — no AI | Deterministic mapping |
-| Markdown/JSON export | **Templates** | Tier 0 — no AI | String formatting |
+| `MOCK_AI` | No | `false` | Bypass AI APIs with mock responses |
+| `MOCK_RESEARCH` | No | `false` | Bypass search APIs with mock data |
+| `NEXT_PUBLIC_API_URL` | No | `http://localhost:8000/api/v1` | Backend URL for frontend |
 
 ---
 
-## 🧠 System Philosophy
+## 🧪 Testing
 
-exHacker is built on the **System Design Philosophy Document (SDPD)** — 35 immutable engineering commandments. The most important:
+```bash
+# Backend
+cd backend && pytest -v
 
-1. **Never use AI where deterministic software suffices.** Template, compute, or decision tree first.
-2. **Cheapest capable model first.** Don't use an expensive reasoning model where a cheap model works.
-3. **Every AI output must be editable and cacheable.**
-4. **Projects remain portable.** No lock-in. Full export at any time.
-5. **Research is cached, architecture is versioned, exports are reproducible.**
-6. **Templates over prompts for the 80% case.**
-7. **Every project has a maximum AI budget.**
+# Frontend (type check)
+cd frontend && npx tsc --noEmit
 
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend** | Next.js 16, React 19, TypeScript | UI framework |
-| **Styling** | Tailwind CSS + CSS Variables | Dark theme design system |
-| **State** | TanStack Query + Zustand | Server + client state |
-| **Backend** | FastAPI (Python 3.11+) | REST API server |
-| **Database** | SQLite → PostgreSQL | Persistent storage |
-| **ORM** | SQLAlchemy 2.0 (async) | Data access layer |
-| **AI Gateway** | LiteLLM | Multi-provider model routing |
-| **AI Models** | OpenRouter-style (opencode-go) | Reasoning + cheap inference tiers |
-| **Search** | Tavily API | Web research |
-| **Auth** | NextAuth.js (v2) | OAuth authentication |
-| **Container** | Docker + Docker Compose | Development & deployment |
-
----
-
-## 📂 Repository Structure
-
-```
-exHacker/
-├── backend/
-│   ├── app/
-│   │   ├── ai/              # AI Gateway, Prompt Manager
-│   │   ├── api/v1/          # FastAPI route handlers
-│   │   ├── core/            # Config, exceptions, logging
-│   │   ├── db/              # SQLAlchemy session + migrations
-│   │   ├── models/          # SQLAlchemy ORM models
-│   │   ├── services/        # Business logic
-│   │   │   ├── blueprint/   # Tech stack, architecture, data model, plan, export
-│   │   │   ├── project.py   # CRUD + state machine
-│   │   │   └── research.py  # Tavily search + caching
-│   │   └── main.py          # FastAPI entry point
-│   ├── prompts/             # YAML prompt templates
-│   ├── templates/           # Architecture templates
-│   └── tests/               # pytest suite
-├── frontend/
-│   ├── src/
-│   │   ├── app/             # Next.js pages
-│   │   ├── components/      # UI components
-│   │   └── services/        # API client
-│   └── package.json
-├── docs/                    # Architecture documentation
-├── docker-compose.yml
-└── Makefile
+# CI (GitHub Actions)
+# Triggered automatically on push to main
 ```
 
 ---
 
-## 📋 Roadmap
+## 🛠 Tech Stack
 
-| Phase | Status | Features |
-|---|---|---|
-| **M0 — Bootstrap** | ✅ Complete | Repo structure, Docker, CI, tooling |
-| **M1 — Project Foundation** | ✅ Complete | CRUD, state machine, landing page |
-| **M2 — Research Pipeline** | ✅ Complete | AI Gateway, Tavily search, caching |
-| **M3 — Direction Generation** | ✅ Complete | AI directions, selection, state transitions |
-| **M4 — Blueprint Engine** | ✅ Complete | Tech stack, architecture, data model, plan |
-| **M5 — Export** | ✅ Complete | Markdown/JSON download |
-| **Auth & Persistence** | 🔜 Planned | Google/GitHub OAuth, user accounts |
-| **Team Collaboration** | 🔜 Planned | Shared projects, team workspaces |
-| **Pitch Generation** | 🔜 Planned | AI narrative agent for presentations |
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 16, React 19, TypeScript, lucide-react |
+| **Backend** | FastAPI, Python 3.11, SQLAlchemy, SQLite |
+| **AI** | LiteLLM gateway, DeepSeek V4, GLM 5.2 |
+| **Diagrams** | mermaid.js, react-markdown, react-syntax-highlighter |
+| **Infrastructure** | Vercel (frontend + serverless API), GitHub Actions |
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+MIT © Muneer Alam
 
 ---
 
-<p align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/Muneer320">Muneer Alam</a></sub>
-  <br />
-  <sub>Powered by <a href="https://opencode.ai">OpenCode</a> · <a href="https://litellm.ai">LiteLLM</a> · <a href="https://nextjs.org">Next.js</a></sub>
-</p>
+## 🙏 Acknowledgements
+
+Built during a hackathon, for hackathon participants. Inspired by the belief that great ideas deserve a great strategy before a single line of code is written.
