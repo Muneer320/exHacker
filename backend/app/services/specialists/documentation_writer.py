@@ -125,7 +125,7 @@ async def _get_selected_idea(db: AsyncSession, project_id: str) -> dict[str, Any
     result = await db.execute(
         select(Idea)
         .where(Idea.project_id == project_id)
-        .order_by(Idea.is_selected.desc().nullsfirst(), Idea.rank)
+        .order_by(Idea.is_selected.desc().nulls_first(), Idea.rank)
         .limit(1)
     )
     idea = result.scalar_one_or_none()
