@@ -262,17 +262,33 @@ export interface Direction {
   title: string;
   tagline: string;
   description: string | null;
-  innovation_score: number | null;
-  feasibility_score: number | null;
+  elevator_pitch: string | null;
+  problem_statement: string | null;
+  solution: string | null;
+  differentiation: string | null;
+  core_features: string[] | null;
+  stretch_features: string[] | null;
+  risks: { title: string; severity: string; mitigation: string }[] | null;
+  scores: {
+    innovation: number | null;
+    creativity: number | null;
+    technical_depth: number | null;
+    feasibility: number | null;
+    demo_potential: number | null;
+    judge_appeal: number | null;
+    business_potential: number | null;
+    overall: number | null;
+  } | null;
+  estimated_effort_hours: number | null;
   is_selected: boolean;
   created_at: string;
 }
 
 function getMockDirections(): Direction[] {
   return [
-    { id: 'mock-dir-1', project_id: '', title: 'AI Finance Coach', tagline: 'Personalized AI advisor that learns spending patterns', description: 'An intelligent budgeting coach that analyzes spending habits and provides personalized financial advice through natural conversation.', innovation_score: 92, feasibility_score: 70, is_selected: false, created_at: new Date().toISOString() },
-    { id: 'mock-dir-2', project_id: '', title: 'Gamified Savings Platform', tagline: 'Turn saving into a competitive social game', description: 'A social savings platform where users compete in saving challenges, earn badges, and build financial discipline through gamification.', innovation_score: 85, feasibility_score: 78, is_selected: false, created_at: new Date().toISOString() },
-    { id: 'mock-dir-3', project_id: '', title: 'Financial Habit Builder', tagline: 'Micro-habit coaching with AI nudges', description: 'A micro-habit tracker focused on financial wellness, using AI to nudge users toward better spending decisions throughout the day.', innovation_score: 78, feasibility_score: 85, is_selected: false, created_at: new Date().toISOString() },
+    { id: 'mock-dir-1', project_id: '', title: 'AI Finance Coach', tagline: 'Personalized AI advisor that learns spending patterns', description: 'An intelligent budgeting coach that analyzes spending habits.', elevator_pitch: 'Get personalized financial coaching that learns your habits.', problem_statement: 'Students struggle to manage finances without guidance.', solution: 'AI coach that learns spending patterns and provides personalized advice.', differentiation: 'Truly personalized — adapts to individual behavior over time.', core_features: ['Spending analysis', 'Personalized insights', 'Goal tracking'], stretch_features: ['Community challenges', 'Bank integration'], risks: [{ title: 'Data privacy', severity: 'medium', mitigation: 'Local-first data processing' }], scores: { innovation: 92, creativity: 85, technical_depth: 78, feasibility: 70, demo_potential: 88, judge_appeal: 85, business_potential: 75, overall: 82 }, estimated_effort_hours: 28, is_selected: false, created_at: new Date().toISOString() },
+    { id: 'mock-dir-2', project_id: '', title: 'Gamified Savings Platform', tagline: 'Turn saving into a competitive social game', description: 'A social savings platform where users compete in saving challenges.', elevator_pitch: 'Make saving money as addictive as a game.', problem_statement: 'Students find saving boring and lack motivation.', solution: 'Gamified savings with challenges, badges, and social competition.', differentiation: 'First savings app that makes saving genuinely fun.', core_features: ['Savings challenges', 'Leaderboards', 'Badges'], stretch_features: ['Group challenges', 'Reward marketplace'], risks: [{ title: 'Superficial gamification', severity: 'medium', mitigation: 'Partner with behavioral psychologists' }], scores: { innovation: 85, creativity: 90, technical_depth: 65, feasibility: 78, demo_potential: 82, judge_appeal: 80, business_potential: 70, overall: 79 }, estimated_effort_hours: 24, is_selected: false, created_at: new Date().toISOString() },
+    { id: 'mock-dir-3', project_id: '', title: 'Financial Habit Builder', tagline: 'Micro-habit coaching with AI nudges', description: 'Build better financial habits through micro-actions and AI-powered nudges.', elevator_pitch: 'Build better money habits one micro-action at a time.', problem_statement: 'Behavior change is hard without consistent reinforcement.', solution: 'AI-powered micro-habit coaching with smart notifications.', differentiation: 'Focus on habit formation rather than tracking.', core_features: ['Micro-habits', 'AI nudges', 'Progress tracking'], stretch_features: ['Spending insights', 'Habit streaks'], risks: [{ title: 'User fatigue', severity: 'high', mitigation: 'Adaptive notification frequency' }], scores: { innovation: 78, creativity: 82, technical_depth: 72, feasibility: 85, demo_potential: 75, judge_appeal: 78, business_potential: 65, overall: 76 }, estimated_effort_hours: 20, is_selected: false, created_at: new Date().toISOString() },
   ];
 }
 
