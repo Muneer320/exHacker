@@ -7,6 +7,7 @@ import { PipelineProvider } from "@/components/pipeline/PipelineContext";
 import PipelineSidebar from "@/components/pipeline/PipelineSidebar";
 import WorkspaceNavigation from "./WorkspaceNavigation";
 import { ToastProvider } from "@/components/shared/Toast";
+import CommandPalette from "@/components/shared/CommandPalette";
 
 // ─── Navigation sections ──────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ export default function ProjectWorkspaceLayout({ children }: { children: React.R
             {children}
           </div>
         </div>
+        <CommandPalette projectId={projectId} />
       </div></ToastProvider>
     </PipelineProvider>
   );
