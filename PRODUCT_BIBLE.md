@@ -1,0 +1,1279 @@
+# exHacker — Product Bible
+
+> **Version:** 1.0  
+> **Status:** Definitive Specification  
+> **Authority:** This document is the single source of truth for all exHacker product, engineering, and design decisions. Every implementation decision must be derived from this document. Nothing in this document may be overridden by prior planning documents, architecture decisions, or implementation artifacts.  
+> **Challenge process:** Any team member may propose revisions via a written rationale. Revisions require consensus from Founder + Engineering Lead. This document is not static — but it cannot be changed casually.
+
+---
+
+## Table of Contents
+
+1. [Product Definition](#1-product-definition)
+2. [Competitive Analysis](#2-competitive-analysis)
+3. [User Personas](#3-user-personas)
+4. [Core Philosophy & Principles](#4-core-philosophy--principles)
+5. [The Complete User Journey](#5-the-complete-user-journey)
+6. [The AI Team](#6-the-ai-team)
+7. [Shared Intelligence Model](#7-shared-intelligence-model)
+8. [Information Model](#8-information-model)
+9. [Product Workflow](#9-product-workflow)
+10. [UX Philosophy](#10-ux-philosophy)
+11. [Design System](#11-design-system)
+12. [Documentation System](#12-documentation-system)
+13. [Export System](#13-export-system)
+14. [Engineering Philosophy](#14-engineering-philosophy)
+15. [Self-Critique & Revisions](#15-self-critique--revisions)
+16. [Competitive Benchmarking](#16-competitive-benchmarking)
+17. [Long-Term Vision](#17-long-term-vision)
+
+---
+
+## 1. Product Definition
+
+### 1.1 What exHacker Is
+
+exHacker is an **AI co-pilot for hackathon teams and time-constrained builders**.
+
+It compresses the first 6-10 hours of a hackathon — the research, ideation, architecture, planning, and documentation — into 10-15 minutes.
+
+It is a **product studio** that operates *before* code is written. It does not generate code. It generates validated ideas, architectural blueprints, implementation plans, and professional documentation that can be handed directly to coding tools (Cursor, Claude Code, Codex) or human engineering teams.
+
+### 1.2 What exHacker Is NOT
+
+| It is NOT | Because |
+|---|---|
+| An AI coding assistant | Cursor, Claude Code, and Codex already own this space. exHacker prepares the blueprint *for* these tools. |
+| A ChatGPT wrapper | ChatGPT answers questions. exHacker runs a structured, multi-agent pipeline that produces a repeatable, exportable artifact. |
+| A project management tool | Linear and Notion handle execution tracking. exHacker handles *pre*-execution planning. |
+| A boilerplate generator | Lovable and Bolt generate code from prompts. exHacker generates the specification *before* code. |
+| A replacement for human judgment | exHacker automates research and documentation. Strategic decisions remain with the human team. |
+| A "vibe coding" tool | exHacker is structured, deliberate, and opinionated. It produces engineering artifacts, not prototypes. |
+
+### 1.3 Who It Is For
+
+**Primary:** Hackathon participants — college students, solo developers, small teams (2-5 people) competing in 24-48 hour events.
+
+**Secondary:** Startup founders validating ideas before building MVPs. Engineering teams planning sprints. Indie hackers scoping side projects.
+
+**Tertiary:** Anyone who needs to go from a vague idea to a structured plan with architecture, tasks, and documentation — *before* writing code.
+
+### 1.4 Who It Is NOT For
+
+- Professional software engineers who already have a clear architecture and plan in mind
+- Teams that have already started coding and don't need planning assistance
+- Non-technical users who want a finished product without understanding the architecture (use Lovable/Bolt)
+- Organizations needing project management, task tracking, or team communication features (use Linear/Notion)
+
+### 1.5 Problems It Solves
+
+| Problem | How exHacker Solves It |
+|---|---|
+| **"What should we build?"** | AI generates 3-5 validated product directions from the challenge + research data |
+| **"Is it actually unique?"** | Competitor, API, and OSS research is done before any idea is proposed |
+| **"Can we finish it in time?"** | Every idea is scored for feasibility within the available time |
+| **"What technology should we use?"** | Tech stack is recommended based on team skills, project type, and constraints |
+| **"How should we divide the work?"** | Tasks are generated with effort estimates, organized into phases, and assignable by skill |
+| **"How do we maximize our chances of winning?"** | Ideas are scored against judging criteria, and the export includes a pitch deck and demo script |
+| **"We wasted 4 hours on research that didn't matter"** | Research is automated, structured, and focused on what matters for the specific challenge |
+| **"We realized too late that our idea already exists"** | Competitor analysis happens before idea selection |
+| **"Our architecture was wrong and we had to rewrite"** | Architecture is generated by templates + AI enrichment, adapted to the team's skill level |
+| **"We have nothing to submit beyond the code"** | Documentation, pitch, demo script, and judging FAQ are all generated automatically |
+
+### 1.6 Problems It Intentionally Refuses to Solve
+
+- **Code generation.** The market has excellent tools for this. exHacker feeds *into* them.
+- **Execution tracking.** Once the team starts coding, exHacker's job is done.
+- **Real-time collaboration.** Multiple users cannot edit the same project simultaneously in V1.
+- **Native mobile app.** The product is web-only in V1.
+- **Integration with calendars, email, or communication tools.** These are distractions from the core mission.
+
+### 1.7 Why It Should Exist
+
+Hackathons are the most time-constrained creative environment in software engineering. Teams consistently lose not because they can't code, but because they spend the first 4-6 hours on:
+
+1. **Analysis paralysis** — debating which idea to build
+2. **Shallow research** — a 5-minute Google search that misses obvious competitors
+3. **Architecture guesswork** — designing a system without understanding trade-offs
+4. **Panic documentation** — writing a README and pitch in the last 30 minutes
+
+exHacker eliminates all four failure modes in a single structured pipeline. No existing product does this. The code generation tools start *after* planning. The research tools are general-purpose, not hackathon-specific. The project management tools assume the plan already exists.
+
+exHacker fills the gap between "we have an idea" and "we know what to build."
+
+### 1.8 Why Choose exHacker Over Alternatives
+
+| Instead of... | Use exHacker because... |
+|---|---|
+| **ChatGPT** | exHacker doesn't answer questions — it runs a structured multi-agent pipeline that produces a repeatable, complete artifact with research, citations, architecture, and plans. ChatGPT gives opinions. exHacker delivers a specification. |
+| **Cursor** | Cursor helps you code faster. exHacker helps you decide *what* to code. They are complementary — exHacker's export feeds directly into Cursor. |
+| **Lovable / Bolt** | These tools generate code from prompts. They assume you already know what to build. exHacker validates that your idea is worth building before any code is generated. |
+| **Brainstorming with friends** | Friends have opinions. exHacker has research, data, competitor analysis, architecture templates, and scoring. Friends can't process 20 search queries across 4 research categories in 30 seconds. |
+
+---
+
+## 2. Competitive Analysis
+
+### 2.1 Direct Competitors
+
+None. No product exists that does what exHacker does — structured, multi-stage planning specifically optimized for hackathon time constraints.
+
+### 2.2 Adjacent Competitors
+
+| Product | What They Do | exHacker Advantage |
+|---|---|---|
+| **ChatGPT / Claude** | Answer questions, generate text | exHacker runs structured pipelines, not single prompts. Output is a complete, exportable engineering artifact, not a chat message. |
+| **Cursor** | AI-assisted code editing | exHacker generates the blueprint that tells Cursor *what* to build. Complementary, not competitive. |
+| **Lovable / Bolt** | Generate apps from prompts | exHacker validates that the idea is worth building and produces the architecture spec. Lovable generates code for the spec. |
+| **Linear / Notion** | Project management | exHacker generates the plan. Linear tracks its execution. |
+| **v0 by Vercel** | Generate UI components | exHacker generates the full system architecture, not just UI. |
+| **Perplexity / Gemini** | Web search + synthesis | exHacker structures research around hackathon-specific categories (competitors, APIs, OSS, judging criteria). |
+| **Miro / FigJam** | Visual collaboration | exHacker is asynchronous and AI-driven. No whiteboarding required. |
+
+### 2.3 Competitive Moats
+
+1. **Hackathon-specific optimization.** Every feature is designed for 24-48 hour constraints. General-purpose tools don't optimize for time pressure.
+2. **Multi-agent pipeline with shared memory.** Not a single AI call — a team of specialists that collaborate, challenge each other, and improve outputs iteratively.
+3. **Export that feeds into coding tools.** The output is designed to be consumed by Cursor, Claude Code, and Codex — not just human-readable.
+4. **Judging criteria integration.** The pipeline adapts to how hackathons are actually judged — something no general-purpose tool does.
+5. **Deterministic + AI hybrid.** 70% of the pipeline is deterministic (tech stack decision trees, architecture templates, entity mappings, export formatting). This means predictable quality and cost.
+6. **Time-aware scoring.** Every idea and plan is evaluated against the available time. A product that's impressive but unfinishable scores lower than a simpler, complete-able idea.
+
+---
+
+## 3. User Personas
+
+### 3.1 The First-Time Hacker — Arjun
+
+| Attribute | Detail |
+|---|---|
+| **Age** | 19 |
+| **Role** | Second-year CS student |
+| **Experience** | Has built 3 small web apps. Never used version control beyond `git add/commit/push`. |
+| **Team** | 4 friends from class. None have competed before. |
+| **Motivation** | "I want to see if I can build something real in a weekend." |
+| **Fear** | "What if my idea is stupid? What if everyone else is way better?" |
+| **Frustration** | Spent 3 hours in the first hackathon debating ideas. Built something that already existed. Didn't finish. |
+| **Decision style** | Overthinker. Defers decisions until the last possible moment. |
+| **What exHacker does for them** | Validates the idea before they commit. Gives them confidence that their plan is achievable. Produces a demo script so they don't freeze during the pitch. |
+
+### 3.2 The Serial Hacker — Priya
+
+| Attribute | Detail |
+|---|---|
+| **Age** | 24 |
+| **Role** | Full-stack developer at a startup |
+| **Experience** | Won 4 hackathons. Has shipped 2 side projects to production. |
+| **Team** | Frequent collaborator with 2 other experienced devs. |
+| **Motivation** | "I want to win prizes and build my network." |
+| **Fear** | "That I'll waste time on an idea that doesn't impress the judges." |
+| **Frustration** | "I can build anything. The bottleneck is deciding *what* to build and making sure it's differentiated." |
+| **Decision style** | Decisive but impatient. Wants to skip to coding as fast as possible. |
+| **What exHacker does for them** | Research + differentiation in 2 minutes. Lets them skip the planning phase and start coding with confidence. |
+
+### 3.3 The Solo Founder — Marcus
+
+| Attribute | Detail |
+|---|---|
+| **Age** | 31 |
+| **Role** | Indie hacker / solopreneur |
+| **Experience** | 10+ years as a senior engineer. Has launched 4 products. |
+| **Team** | Solo |
+| **Motivation** | "I need to validate this idea and build an MVP before I run out of savings." |
+| **Fear** | "That I'll spend 3 months building something nobody wants." |
+| **Frustration** | "I can architect and code anything. But I waste weeks going down rabbit holes that don't matter." |
+| **Decision style** | Methodical. Wants data before decisions. |
+| **What exHacker does for them** | Provides a complete blueprint with research, competitor analysis, and architecture so they can start building with a clear direction. |
+
+### 3.4 The Non-Technical Founder — Sarah
+
+| Attribute | Detail |
+|---|---|
+| **Age** | 27 |
+| **Role** | Product manager at a mid-size company |
+| **Experience** | Can write basic HTML/CSS. Understands APIs conceptually. |
+| **Team** | Looking for a technical co-founder |
+| **Motivation** | "I have a validated business idea but I need a technical plan to recruit a co-founder." |
+| **Fear** | "That technical people won't take me seriously if I can't speak their language." |
+| **Frustration** | "I know the problem. I don't know the *solution architecture*." |
+| **Decision style** | Research-heavy. Reads everything before making a decision. |
+| **What exHacker does for them** | Produces a professional technical specification they can share with potential co-founders. Translates business requirements into engineering language. |
+
+### 3.5 The UX Designer — Elena
+
+| Attribute | Detail |
+|---|---|
+| **Age** | 26 |
+| **Role** | Product designer at a fintech startup |
+| **Experience** | Expert in Figma, user research, design systems. Limited coding. |
+| **Team** | Paired with a developer for hackathons |
+| **Motivation** | "I want to build products that people actually use, not just design pretty screens." |
+| **Fear** | "That my ideas aren't technically feasible within the time limit." |
+| **Frustration** | "I spend hours designing the perfect UX, then the dev tells me we can't build it in 48 hours." |
+| **Decision style** | User-first. Visual thinker. |
+| **What exHacker does for them** | Validates technical feasibility before design begins. Produces architecture and plans that the designer and developer can agree on. |
+
+---
+
+## 4. Core Philosophy & Principles
+
+### 4.1 First Principles
+
+**P1. Maximum leverage, not maximum automation.** The human should only make decisions where creativity, taste, or strategy matter. Everything repetitive, research-heavy, or documentation-heavy should be automated.
+
+**P2. Structured pipelines over chat.** Chat-based AI (ChatGPT, Claude) is unbounded — the user must drive every step. exHacker uses structured, multi-stage pipelines where each stage enriches the next. The user only intervenes at specific decision points.
+
+**P3. Research before ideation.** Never suggest an idea without understanding the competitive landscape first. This is the single biggest failure mode in hackathon planning.
+
+**P4. Engineering artifacts, not chat messages.** Every output of exHacker is a structured, versioned, exportable artifact. Nothing is ephemeral.
+
+**P5. The human chooses the direction; the machine handles the details.** The user selects from AI-generated directions. The machine then produces the full architecture, plan, and documentation.
+
+**P6. Confidence must be communicated.** Every AI-generated output includes a confidence score. Low-confidence outputs invite user review. High-confidence outputs can be accepted automatically.
+
+**P7. Cost awareness.** Every AI call has a tracked cost. The system optimizes for value, not accuracy. Cheap models for pattern matching. Expensive models for reasoning.
+
+### 4.2 The exHacker Manifesto
+
+1. We optimize for *time to confidence*, not time to code.
+2. We believe structure beats creativity when the clock is ticking.
+3. We believe research without citations is opinion.
+4. We believe architecture should match team skill level — no Kubernetes for a team of college freshmen.
+5. We believe the best hackathon projects are *complete*, not ambitious.
+6. We believe documentation should be written before code, not after.
+7. We believe the demo script matters more than the feature set.
+8. We believe 70% of the pipeline should be deterministic (templates, decision trees, rules). AI should handle the 30% that requires reasoning.
+9. We believe the human should make approximately 3 decisions per project — everything else is automation.
+10. We believe exHacker's success is measured by whether the team ships and wins, not by whether they liked using the tool.
+
+### 4.3 Design Tenets
+
+| Tenet | Meaning |
+|---|---|
+| **Opinionated** | exHacker has strong opinions about the right way to plan a project. Users who disagree can edit outputs. |
+| **Fast by default** | Every user interaction should feel instant. AI generation can take time, but navigation should be instantaneous. |
+| **Progressive disclosure** | Show the headline first. Details on demand. |
+| **Error-tolerant** | Every stage has a fallback. If AI fails, use templates. If templates fail, use defaults. |
+| **Export-first** | Nothing is locked inside exHacker. Every artifact can be downloaded in multiple formats. |
+| **Dark by default** | Developer tools are dark. exHacker is a developer tool. |
+| **Keyboard-first** | Power users should never need a mouse for common operations. |
+| **State-aware** | The UI always reflects the current project state. Empty states are guides, not blank pages. |
+
+---
+
+## 5. The Complete User Journey
+
+### 5.1 Journey Map
+
+```
+[Landing] ──→ [Create Project] ──→ [Research] ──→ [Directions] ──→ [Architecture] ──→ [Documentation] ──→ [Export] ──→ [Done]
+    │                │                │               │                │                  │                 │
+    │              30s              30-60s          10s              5-10s             10-15s            5s
+    │           Type idea        AI research     Pick a         AI generates       AI generates      Download
+    │                          runs in bg    direction      full blueprint      docs package      artifacts
+    │
+    └── Timeline: <2 minutes from landing to export ──→
+```
+
+### 5.2 Stage Detail: Landing Page
+
+**Purpose:** Single input field. Zero friction.
+
+**What the user sees:**
+- Clean dark page with a centered text input
+- Placeholder: "What do you want to build?"
+- Subtle animation suggesting the pipeline below
+- No sign-up wall — first project is anonymous
+
+**UX principles:**
+- One click to start. No onboarding tour.
+- The input accepts anything from a phrase ("budget app for students") to a paragraph.
+- After creating a project, the user is prompted to sign up if they want to save it.
+
+**States:**
+| State | UI |
+|---|---|
+| Empty | Single input field, centered, with subtle glow on focus |
+| Typing | Character count, auto-expand textarea |
+| Loading | Button shows "Generating..." with pulse animation |
+| Error | Inline error message with retry option |
+
+### 5.3 Stage Detail: Project Creation
+
+**Purpose:** Gather just enough context to generate realistic recommendations.
+
+**Required fields:**
+1. What do you want to build? (free text, 10-500 chars)
+
+**Optional fields (progressive disclosure — shown only after user clicks "Add details"):**
+1. Challenge statement or hackathon theme
+2. Available time (24h / 36h / 48h / other)
+3. Team size (1 / 2 / 3 / 4 / 5+)
+4. Preferred programming languages
+5. Preferred frameworks
+6. Team members' skills (comma-separated tags)
+7. Technologies to avoid
+8. Target platform (web / mobile / desktop / CLI / IoT)
+
+**Design decisions:**
+- Required fields are visible immediately. Optional fields are hidden behind an "Add details" expander.
+- The form validates in real-time. No submit button — the user presses Enter or clicks a visible arrow.
+- The form saves to local storage so users don't lose their input if they navigate away.
+
+### 5.4 Stage Detail: Research
+
+**Purpose:** Understand the landscape before proposing ideas.
+
+**What the user sees:**
+- A progress screen showing research categories being completed in real-time
+- Each completed category shows a summary count ("3 competitors found")
+- Results appear as they arrive (streaming, not loading spinner)
+- The user can click on any category to expand it and see details
+
+**Research categories:**
+1. **Competitors** — Existing products, startups, direct competitors
+2. **APIs** — Relevant APIs and services
+3. **Open Source** — GitHub repositories, libraries
+4. **Market Insights** — Trends, statistics, market data
+5. **Hackathon Winners** — Similar projects that won at other events
+
+**Design decisions:**
+- Research runs in the background. The user can navigate to other tabs while it runs.
+- Each result has a confidence score and citations.
+- Research is cached for 24 hours. Repeated runs reuse cached data.
+- If research fails (API error, timeout), the system degrades gracefully with fallback data.
+
+### 5.5 Stage Detail: Directions (Idea Selection — The Primary Human Checkpoint)
+
+**Purpose:** This is the single most important decision the user makes.
+
+**What the user sees:**
+- 3 AI-generated product directions displayed as cards
+- Each card shows: name, one-line pitch, 8 score dimensions, key features, risks, estimated effort
+- Cards are sorted by overall confidence score (highest first)
+- The user selects one direction
+
+**Score dimensions (each 0-100):**
+1. **Innovation** — How novel is this idea?
+2. **Creativity** — How creative is the approach?
+3. **Technical Depth** — Does it demonstrate skill?
+4. **Feasibility** — Can it be built in the available time?
+5. **Demo Potential** — How impressive will the demo be?
+6. **Judge Appeal** — How well does it match judging criteria?
+7. **Business Potential** — Could this become a real product?
+8. **Overall Confidence** — How confident is the system in this recommendation?
+
+**Design decisions:**
+- The user MUST select a direction before proceeding to architecture. This is the primary human-in-the-loop checkpoint.
+- Selected direction is visually distinguished (scale up, accent border, "Selected" badge).
+- Non-selected directions dim slightly but remain visible for comparison.
+- The user can click "Details" on any direction to see the full analysis.
+- After selection, the project status changes to READY and architecture generation becomes available.
+
+### 5.6 Stage Detail: Architecture
+
+**Purpose:** Generate a complete technical specification.
+
+**Automatically generated, in order:**
+1. **Tech Stack** — Frontend, backend, database, AI, auth, hosting, CI/CD. Each with trade-offs and alternatives.
+2. **System Architecture** — Component diagram with data flow. Rendered as Mermaid diagram.
+3. **Data Model** — Entities, fields, relationships, types. Rendered as ER diagram.
+4. **API Contracts** — Endpoints, methods, request/response shapes, auth requirements.
+5. **Implementation Plan** — Phases, tasks, estimated effort, dependencies, skill requirements.
+
+**User interactions:**
+- Can regenerate individual sections (e.g., "Give me a different tech stack")
+- Can edit any section directly (inline editing)
+- Can add custom components to the architecture
+- Can mark tasks as "already done" or "not relevant"
+
+### 5.7 Stage Detail: Documentation
+
+**Purpose:** Generate a complete engineering documentation package.
+
+**Generated files:**
+1. **README.md** — Project overview, setup instructions, architecture summary
+2. **EXECUTIVE_SUMMARY.md** — One-page executive summary for judges
+3. **PRD.md** — Product Requirements Document with user stories
+4. **ARCHITECTURE.md** — System architecture, data flow, deployment
+5. **API.md** — Complete API reference with examples
+6. **DATABASE.md** — Schema, relationships, migrations
+7. **SETUP.md** — Development environment setup guide
+8. **DEMO_SCRIPT.md** — Step-by-step demo script for judging
+9. **PITCH.md** — Elevator pitch, value proposition, competitive advantage
+10. **FAQ.md** — Anticipated judge questions with prepared answers
+
+### 5.8 Stage Detail: Export
+
+**Purpose:** Deliver the complete package in the user's preferred format.
+
+**Available formats:**
+- **Markdown** (.md) — Full documentation package as individual files
+- **ZIP** (.zip) — All files packaged together
+- **JSON** (.json) — Raw data for programmatic consumption
+- **CLAUDE.md / AGENTS.md** — Configuration files for AI coding tools
+
+### 5.9 Stage Detail: Post-Export
+
+**What happens after export:**
+- The project is saved to the user's account (if signed in)
+- A shareable link is generated (view-only, no auth required)
+- The user can return to any stage to make changes
+- The user can regenerate specific sections without re-running the entire pipeline
+
+---
+
+## 6. The AI Team
+
+### 6.1 Design Philosophy
+
+exHacker does not use "pipeline stages." It uses **specialists** — AI agents with defined roles, responsibilities, and interaction patterns. Each specialist has:
+
+- A **purpose** (why it exists)
+- **Inputs** (what it needs from other specialists)
+- **Outputs** (what it produces for other specialists)
+- **Limits** (what it must NOT do)
+- **Success criteria** (how to know if it did a good job)
+- **Failure modes** (what to do when it can't do its job)
+
+### 6.2 Specialist Roster
+
+#### S1 — Challenge Analyst
+| Attribute | Detail |
+|---|---|
+| **Purpose** | Understand the hackathon challenge deeply |
+| **Model** | Tier 2 (reasoning) |
+| **Inputs** | Challenge statement, theme, evaluation criteria |
+| **Outputs** | Structured challenge understanding: themes, constraints, hidden opportunities, judging priorities |
+| **Limits** | Must NOT propose solutions. Analysis only. |
+| **Success** | Correctly identifies 3+ constraints and 2+ hidden opportunities not obvious in the text |
+| **Failure** | Returns a generic analysis. Fallback: template-based keyword extraction. |
+
+#### S2 — Research Specialist
+| Purpose | Execute comprehensive market research |
+| Model | Tier 1 (cheap — search queries) + Tier 2 (reasoning — synthesis) |
+| Inputs | Challenge understanding, project description |
+| Outputs | Research data: competitors, APIs, OSS projects, market insights, similar hackathon winners |
+| Limits | Must include citations for every claim. Must report confidence per result. |
+| Success | Finds 3+ relevant competitors, 3+ APIs, 2+ OSS projects with citations |
+| Failure | Returns partial results with reduced confidence. Never fabricates results. |
+
+#### S3 — Competitor Analyst
+| Purpose | Analyze competitive landscape and identify differentiation opportunities |
+| Model | Tier 2 (reasoning) |
+| Inputs | Research data from S2 |
+| Outputs | Competitive analysis: strengths, weaknesses, gaps, differentiation strategies |
+| Limits | Must NOT suggest copying competitors. Focus on gaps and weaknesses. |
+| Success | Identifies 3+ meaningful differentiation strategies |
+| Failure | Returns generic analysis. Fallback: template-based SWOT format. |
+
+#### S4 — Innovation Specialist
+| Purpose | Identify underserved problems and innovation opportunities |
+| Model | Tier 2 (reasoning) |
+| Inputs | Challenge analysis (S1), competitive analysis (S3) |
+| Outputs | Opportunity map: 5+ potential innovation angles with rationale |
+| Limits | Must ground every opportunity in the research data |
+| Success | 3+ opportunities are genuinely non-obvious |
+| Failure | Falls back to generic innovation patterns (faster/cheaper/better automated) |
+
+#### S5 — Idea Generator
+| Purpose | Generate 3 complete product ideas from the opportunity map |
+| Model | Tier 2 (reasoning) |
+| Inputs | Opportunity map (S4), project parameters (time, team size, skills) |
+| Outputs | 3 ideas, each with: name, one-line pitch, elevator pitch, problem, solution, differentiation, features (core + stretch), risks, estimated effort, 8-dimensional scores |
+| Limits | Each idea must be realistically finishable within the available time. No "add AI to everything" without justification. |
+| Success | 3 distinct ideas with clear differentiation from each other and from competitors |
+| Failure | 2 ideas are similar. Fallback: generate 2 additional ideas with different starting assumptions. |
+
+#### S6 — Risk Analyst
+| Purpose | Evaluate risks in each generated idea |
+| Model | Tier 2 (reasoning) |
+| Inputs | Ideas (S5), research data (S2) |
+| Outputs | Per-idea risk assessment: technical risks, feasibility risks, time risks, competition risks |
+| Limits | Must assign a severity (low/medium/high/critical) and mitigation strategy per risk |
+| Success | Identifies at least 1 non-obvious risk per idea |
+
+#### S7 — Solution Architect
+| Purpose | Design the system architecture |
+| Model | Tier 0 (templates) + Tier 2 (AI enrichment, optional) |
+| Inputs | Selected idea, team skills, tech preferences |
+| Outputs | Full architecture: components, data flow, services, deployment |
+| Limits | Must match the team's experience level. No Kubernetes for beginners. |
+| Success | Architecture is within the team's skill level and achievable in available time |
+
+#### S8 — Senior Engineer (Tech Stack)
+| Purpose | Recommend the optimal technology stack |
+| Model | Tier 0 (decision tree — deterministic) |
+| Inputs | Project type, team skills, preferences, target platform |
+| Outputs | Complete stack: frontend, backend, database, AI, auth, hosting, CI/CD, with trade-offs per choice |
+| Limits | Every recommendation must include at least one alternative and a rationale |
+| Success | Stack is internally consistent and matches team experience |
+| Failure | Falls back to the "default" stack for the project type |
+
+#### S9 — Frontend Architect
+| Purpose | Design the frontend architecture |
+| Model | Tier 0 (templates) |
+| Inputs | Selected idea, tech stack, target platform |
+| Outputs | Component tree, state management design, route design, data fetching strategy |
+| Limits | Must not exceed the team's frontend experience level |
+
+#### S10 — Backend Architect
+| Purpose | Design the backend architecture |
+| Model | Tier 0 (templates) + Tier 1 (explanations) |
+| Inputs | Selected idea, tech stack, data model |
+| Outputs | Service design, API organization, middleware, auth flow, data pipeline |
+
+#### S11 — Data Modeler
+| Purpose | Design the database schema |
+| Model | Tier 0 (entity templates — deterministic) |
+| Inputs | Selected idea, architecture |
+| Outputs | Entities, fields, types, relationships, indexes |
+| Limits | Must use the selected database technology's idioms |
+
+#### S12 — Planning Engineer
+| Purpose | Generate the implementation plan |
+| Model | Tier 0 (component → task mapping — deterministic) |
+| Inputs | Architecture components, tech stack, team size, available time, team skills |
+| Outputs | Phases, tasks, effort estimates, dependencies, skill tags, suggested assignments |
+| Limits | Total estimated effort must not exceed available time |
+| Success | Every major component has tasks, and the plan fits the time constraint |
+
+#### S13 — Documentation Writer
+| Purpose | Generate all project documentation |
+| Model | Tier 1 (templates + filling) |
+| Inputs | Full project data (all previous outputs) |
+| Outputs | 10+ documentation files in markdown |
+| Limits | Must not invent facts not present in the project data |
+
+#### S14 — Pitch Coach
+| Purpose | Prepare the team for judging |
+| Model | Tier 2 (reasoning) |
+| Inputs | Project data, judging criteria, competitive analysis |
+| Outputs | Elevator pitch (30s), full pitch (2m), demo script, anticipated Q&A |
+| Limits | Must be deliverable by a human in the time limit |
+
+#### S15 — Judge Simulator
+| Purpose | Evaluate the project from a judge's perspective |
+| Model | Tier 2 (reasoning) |
+| Inputs | Full project data, judging criteria |
+| Outputs | Evaluation scores across judging dimensions, anticipated questions, weaknesses to address |
+| Limits | Must be honest — identifies real weaknesses, not flattery |
+
+#### S16 — Critic
+| Purpose | Challenge every assumption and find flaws |
+| Model | Tier 2 (reasoning) |
+| Inputs | Any output from any specialist |
+| Outputs | Critique: assumptions challenged, weak arguments identified, alternatives suggested |
+| Limits | Must provide constructive criticism, not just negativity |
+| Success | Identifies at least 2 genuine weaknesses in the current plan |
+
+#### S17 — Fact Checker
+| Purpose | Verify claims made by other AI specialists |
+| Model | Tier 1 (search + verify) |
+| Inputs | Claims from other specialists |
+| Outputs | Verification: confirmed, disputed, or unverifiable per claim |
+| Limits | Must provide sources for disputed claims |
+
+### 6.3 Specialist Invocation Rules
+
+| Rule | Description |
+|---|---|
+| **R1** | No specialist is called until its inputs are available |
+| **R2** | S1-S5 run sequentially (each depends on previous) |
+| **R3** | S7-S11 run in dependency order (architecture → tech stack → data model) |
+| **R4** | S14 and S15 can run in parallel (no dependencies) |
+| **R5** | S16 (Critic) is called after every major output to identify flaws |
+| **R6** | S17 (Fact Checker) is called whenever a specialist makes factual claims |
+| **R7** | If any specialist fails (error, timeout, low confidence), fallback is used |
+
+---
+
+## 7. Shared Intelligence Model
+
+### 7.1 Why Shared Memory
+
+In a sequential pipeline, each stage starts with limited context. The research specialist's findings are summarized for the idea generator, losing nuance. The architect doesn't know what the risk analyst found. The pitch coach doesn't know what the critic identified.
+
+Shared memory solves this. Every specialist reads from and writes to a central project memory. This means:
+- No information is lost between stages
+- Later specialists can challenge earlier assumptions
+- The critic can review *everything*, not just the latest output
+- The judge simulator can evaluate the final plan with full context
+
+### 7.2 Memory Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Project Memory (JSON document)                │
+│                                                                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐  │
+│  │ Challenge │ │ Research │ │  Ideas   │ │ Decision │ │Arch. │  │
+│  │ Analysis  │ │  Data    │ │(3 scored)│ │ (chosen) │ │Plan  │  │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────┘  │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │                  Decision Journal (append-only log)           ││
+│  │  [S5] Generated 3 ideas. Idea #1 scored highest at 92.       ││
+│  │  [S6] Risk: "Budget API has rate limits" → mitigation added  ││
+│  │  [S16] Critic: "Auth flow has an edge case with OAuth"       ││
+│  │  [User] Selected Idea #2 "Gamified Savings"                   ││
+│  └──────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 7.3 Memory Structure
+
+```json
+{
+  "project_id": "uuid",
+  "stage": "research_complete",
+  "challenge": { ... },
+  "research": { ... },
+  "ideas": [
+    { "name": "Idea 1", "scores": { ... }, "risks": [ ... ] },
+    { "name": "Idea 2", "scores": { ... }, "risks": [ ... ] },
+    { "name": "Idea 3", "scores": { ... }, "risks": [ ... ] }
+  ],
+  "selected_idea": 2,
+  "architecture": { ... },
+  "tech_stack": {
+    "frontend": { "choice": "Next.js", "alternatives": ["Remix"], "rationale": "..." },
+    ...
+  },
+  "plan": { ... },
+  "decision_journal": [
+    { "agent": "S5", "action": "generated_ideas", "timestamp": "...", "summary": "..." },
+    { "agent": "S16", "action": "critique", "timestamp": "...", "summary": "..." },
+    { "agent": "user", "action": "selected_direction", "timestamp": "...", "summary": "..." }
+  ],
+  "confidence_scores": {
+    "research_quality": 0.85,
+    "idea_quality": 0.78,
+    "architecture_quality": 0.92
+  }
+}
+```
+
+### 7.4 Collaboration Patterns
+
+| Pattern | How It Works |
+|---|---|
+| **Review & Revise** | S5 (Idea Generator) → S16 (Critic) → S5 (revises) |
+| **Verification** | Any specialist making claims → S17 (Fact Checker) confirms |
+| **Escalation** | Low-confidence output → S16 (Critic) reviews → optionally regenerates |
+| **Conflict Resolution** | If two specialists disagree, S16 (Critic) evaluates both positions and recommends |
+| **Parallel Execution** | Independent specialists (S14, S15) run simultaneously |
+
+---
+
+## 8. Information Model
+
+### 8.1 Project
+
+| Field | Type | Required | Purpose |
+|---|---|---|---|
+| `id` | UUID | Auto | Unique identifier |
+| `name` | string | Auto | Auto-generated from idea |
+| `idea` | text | Yes | The user's original idea |
+| `status` | enum | Auto | Current pipeline stage |
+| `team_size` | int | No | Used for effort estimation |
+| `available_hours` | int | No | Time constraint for feasibility scoring |
+| `challenge_statement` | text | No | Hackathon challenge description |
+| `evaluation_criteria` | text | No | Judging rubric |
+| `target_platform` | string | No | web/mobile/desktop/cli/iot |
+| `preferred_languages` | string[] | No | Language constraints |
+| `preferred_frameworks` | string[] | No | Framework constraints |
+| `skills` | string[] | No | Team skill tags |
+| `excluded_technologies` | string[] | No | Tech to avoid |
+| `created_at` | datetime | Auto | |
+| `updated_at` | datetime | Auto | |
+
+### 8.2 Challenge Analysis
+
+| Field | Type | Purpose |
+|---|---|---|
+| `themes` | string[] | Extracted themes |
+| `constraints` | string[] | Identified constraints |
+| `hidden_opportunities` | string[] | Non-obvious angles |
+| `judging_priorities` | string[] | What judges care about |
+| `keywords` | string[] | Important keywords |
+| `confidence` | float | Analysis quality (0-1) |
+
+### 8.3 Research Result
+
+| Field | Type | Purpose |
+|---|---|---|
+| `type` | enum | competitor / api / oss / insight / winner |
+| `title` | string | Name of the result |
+| `url` | string | Source URL |
+| `snippet` | text | Key information |
+| `relevance_score` | float | Relevance to project (0-1) |
+| `confidence` | float | Confidence in accuracy (0-1) |
+| `source` | string | Where this was found |
+
+### 8.4 Idea
+
+| Field | Type | Purpose |
+|---|---|---|
+| `name` | string | Short project name |
+| `one_liner` | string | Tagline (10 words max) |
+| `elevator_pitch` | text | 60-second pitch |
+| `problem_statement` | text | The problem being solved |
+| `solution` | text | How the problem is solved |
+| `differentiation` | text | Why this is unique |
+| `core_features` | string[] | Must-have features |
+| `stretch_features` | string[] | Nice-to-haves |
+| `risks` | Risk[] | Potential problems |
+| `estimated_effort_hours` | int | How long to build |
+| `scores` | Score[] | 8 dimension scores |
+
+### 8.5 Score
+
+| Field | Type | Range |
+|---|---|---|
+| `dimension` | string | innovation / creativity / technical_depth / feasibility / demo_potential / judge_appeal / business_potential / overall |
+| `value` | int | 0-100 |
+| `rationale` | text | Why this score was assigned |
+
+### 8.6 Architecture Component
+
+| Field | Type | Purpose |
+|---|---|---|
+| `name` | string | Component name |
+| `description` | text | What it does |
+| `tech` | string | Technology used |
+| `responsibilities` | string[] | What this component handles |
+| `dependencies` | string[] | What it depends on |
+| `data_flow` | text | How data moves through it |
+
+### 8.7 Tech Stack Choice
+
+| Field | Type | Purpose |
+|---|---|---|
+| `category` | string | frontend / backend / database / ai / auth / hosting / cicd |
+| `choice` | string | Selected technology |
+| `alternatives` | string[] | Other viable options |
+| `rationale` | text | Why this was chosen |
+| `experience_level` | string | beginner / intermediate / advanced |
+
+### 8.8 Task
+
+| Field | Type | Purpose |
+|---|---|---|
+| `title` | string | Task description |
+| `phase` | int | Which phase this belongs to |
+| `estimated_hours` | float | Effort estimate |
+| `skill_required` | string | Skill category |
+| `dependencies` | string[] | Tasks that must be done first |
+| `status` | enum | pending / in_progress / done |
+
+### 8.9 Decision
+
+| Field | Type | Purpose |
+|---|---|---|
+| `agent` | string | Which specialist made this |
+| `action` | string | What was decided |
+| `summary` | text | Decision details |
+| `alternatives_considered` | string[] | Other options |
+| `rationale` | text | Why this path was chosen |
+| `confidence` | float | Confidence in this decision |
+
+---
+
+## 9. Product Workflow
+
+### 9.1 Three Separate Workflows
+
+| Workflow | What It Is | Who Drives It |
+|---|---|---|
+| **User Workflow** | What the user sees and does | The user |
+| **AI Workflow** | What the AI team does | The system |
+| **Project Lifecycle** | The state machine tracking progress | The system |
+
+### 9.2 User Workflow (Stages the user interacts with)
+
+```
+1. Landing ──→ Type idea
+2. Project ──→ Add details (optional)
+3. Research ──→ Wait for results / navigate away and come back
+4. Directions ──→ Review 3 ideas → Select one ← CRITICAL DECISION POINT
+5. Architecture ──→ Review → Edit (optional) → Approve
+6. Documentation ──→ Review summary → Export
+7. Done ──→ Download artifacts → Start coding
+```
+
+### 9.3 AI Workflow (What happens in the background)
+
+```
+S1 Challenge Analyst ──→ S2 Research Specialist ──→ S3 Competitor Analyst ──→ S4 Innovation Specialist
+    │                        │                            │                        │
+    └──────── S5 Idea Generator ←────────────────────────────┘ ←────────────────────┘
+                    │
+                    ├── S6 Risk Analyst (per idea)
+                    │
+                    └── S16 Critic (review all ideas)
+                            │
+                      [User selects an idea]
+                            │
+                    ┌───────┴───────┐
+                    │               │
+              S7 Solution      S8 Senior Engineer
+              Architect        (Tech Stack)
+                    │               │
+              S9 Frontend      S10 Backend
+              Architect        Architect
+                    │               │
+                    └── S11 Data Modeler ──┘
+                            │
+                      S12 Planning Engineer
+                            │
+                      S13 Documentation Writer
+                            │
+                    ┌───────┴───────┐
+                    │               │
+              S14 Pitch        S15 Judge
+              Coach            Simulator
+                    │               │
+              S16 Critic (final review)
+```
+
+### 9.4 Project Lifecycle (State machine)
+
+```
+INITIALIZED ──→ RESEARCHING ──→ IDEAS_READY ──→ DIRECTION_SELECTED ──→ ARCHITECTING ──→ READY ──→ EXPORTED
+     │               │                │                    │                   │           │
+     │               ├──→ FAILED      │                    │                   │           │
+     │               │                │                    │                   │           │
+     └──→ ARCHIVED   └──→ ARCHIVED    └──→ ARCHIVED        └──→ ARCHIVED       └──→ ARCHIVED
+```
+
+Transitions:
+- `INITIALIZED → RESEARCHING`: Research pipeline starts
+- `RESEARCHING → IDEAS_READY`: Research + ideas generated
+- `IDEAS_READY → DIRECTION_SELECTED`: User selects an idea
+- `DIRECTION_SELECTED → ARCHITECTING`: Architecture pipeline starts
+- `ARCHITECTING → READY`: Architecture + plan + docs complete
+- `READY → EXPORTED`: Export generated
+- `Any → FAILED`: Non-recoverable error
+- `Any → ARCHIVED`: User archives the project
+
+---
+
+## 10. UX Philosophy
+
+### 10.1 Design Principles
+
+1. **The interface should help users think, not overwhelm them.**
+2. **Progressive disclosure is the default.** 80% of users should only see 20% of the available UI.
+3. **Every screen should answer "What should I do next?"** In 3 seconds or less.
+4. **Empty states are guides, not blank pages.** If nothing is there, explain why and what to do.
+5. **Loading states are informative, not decorative.** Show what's happening, not a spinner.
+6. **Errors are recoverable.** Every error should offer a path forward.
+7. **Success is visible.** When a stage completes, the user should feel progress.
+8. **The interface should feel like a premium AI-native product.** This means intentional spacing, typography, motion, and dark theme.
+9. **Keyboard shortcuts for everything.** ⌘K for command palette. ⌘Enter to confirm.
+10. **Mobile responsive.** A user should be able to create a project from their phone.
+
+### 10.2 What the User Should Feel
+
+| Stage | Feeling |
+|---|---|
+| Landing | Curious. "What happens if I type something?" |
+| Creating | Hopeful. "This might actually work." |
+| Researching | Informed. "I didn't know about those competitors." |
+| Reviewing ideas | Confident. "I know which one to pick now." |
+| Selecting | Decisive. "This is the right choice." |
+| Reviewing architecture | Impressed. "This is exactly what I needed." |
+| Exporting | Prepared. "I have everything I need to win." |
+| Done | Relieved. "I can start coding now." |
+
+### 10.3 What Should Never Happen
+
+- The user should never wonder what to do next.
+- The user should never lose work (autosave to localStorage + server).
+- The user should never see a raw AI response (always formatted).
+- The user should never be asked "What would you like me to do?" (exHacker is opinionated).
+- The user should never need to debug the pipeline.
+- The user should never need to read documentation to understand the interface.
+
+### 10.4 What Should Be Automatic
+
+- **Project naming** — Generate from the idea text
+- **Language detection** — Detect programming language from the description
+- **Time inference** — Default to 48h if not specified
+- **Team size inference** — Default to 4 if not specified
+- **Stack defaults** — Default stack per project type
+- **Caching** — Research cached for 24h
+- **Saving** — Autosave every 30 seconds
+- **Export naming** — Generate filenames from project name
+
+### 10.5 What Should Require Human Approval
+
+- **Direction selection** — The user must pick one.
+- **Tech stack changes** — If the system recommends something the user disagrees with.
+- **Architecture edits** — Any AI-generated architecture can be accepted or edited.
+- **Export confirmation** — Confirm before downloading.
+
+### 10.6 How to Handle Uncertainty
+
+| Situation | UX |
+|---|---|
+| Low AI confidence (< 0.6) | Show warning badge: "Low confidence — please review." |
+| Medium AI confidence (0.6-0.85) | Show subtle indicator: "AI-generated — verify key facts." |
+| High AI confidence (> 0.85) | No indicator. Trust the output. |
+| AI error / timeout | Graceful degradation with template fallback. Toast notification. |
+| Research partially complete | Show what's done, what's pending, offer to continue or proceed. |
+| No results found | Show empty section with explanation. Don't fabricate results. |
+
+---
+
+## 11. Design System
+
+### 11.1 Visual Identity
+
+exHacker's visual identity is defined by:
+- **Purple** as the primary brand color (#7C3AED)
+- **Dark theme** as default (developer tool convention)
+- **Clean typography** (Inter for UI, JetBrains Mono for code)
+- **Generous whitespace** (reduced cognitive load)
+- **Subtle borders** over box shadows (cleaner hierarchy)
+- **Motion as communication** (not decoration)
+
+### 11.2 Typography
+
+| Role | Font | Weight | Size |
+|---|---|---|---|
+| Display | Inter | 700 | 48px |
+| H1 | Inter | 700 | 32px |
+| H2 | Inter | 600 | 24px |
+| H3 | Inter | 600 | 18px |
+| Body | Inter | 400 | 14px |
+| Small | Inter | 400 | 12px |
+| Mono | JetBrains Mono | 400 | 13px |
+| Badge | Inter | 600 | 11px |
+
+### 11.3 Color System (Dark Theme)
+
+| Token | Value | Purpose |
+|---|---|---|
+| `--color-bg` | #050816 | App background |
+| `--color-surface-1` | #0B1020 | Cards, sidebar |
+| `--color-surface-2` | #111827 | Elevated surfaces |
+| `--color-border` | rgba(255,255,255,0.06) | Default borders |
+| `--color-text-primary` | #F1F5F9 | Headings |
+| `--color-text-secondary` | rgba(255,255,255,0.55) | Body text |
+| `--color-text-tertiary` | rgba(255,255,255,0.3) | Metadata |
+| `--color-accent` | #7C3AED | Buttons, links, active states |
+| `--color-success` | #22C55E | |
+| `--color-warning` | #F59E0B | |
+| `--color-error` | #EF4444 | |
+| `--color-info` | #06B6D4 | |
+
+### 11.4 Elevation (No box shadows)
+
+| Level | Usage | Visual |
+|---|---|---|
+| 0 | Default surface | No shadow |
+| 1 | Hover | Purple border tint |
+| 2 | Dropdown, modal | Dark shadow |
+| 3 | Command palette | Elevated shadow |
+
+### 11.5 Spacing
+
+| Token | Value |
+|---|---|
+| Micro | 4px |
+| Tight | 8px |
+| Element | 12px |
+| Base | 16px |
+| Section | 24px |
+| Card | 24px padding |
+| Page | 32px margin |
+| Major | 48px |
+
+### 11.6 Animation Principles
+
+- Every animation communicates state. None are decorative.
+- Page transitions: slide up + fade (200ms, ease-out)
+- Element appears: slide up + fade (300ms, ease-out)
+- Element exits: fade + scale down (150ms, ease-in)
+- Loading: shimmer skeleton (not spinner)
+- Processing: pulse ring on status badge
+- `prefers-reduced-motion`: everything appears instantly
+
+### 11.7 Components
+
+See [COMPONENT_SPEC.md](./COMPONENT_SPEC.md) for detailed component specifications.
+
+Core components:
+- Sidebar (resizable, collapsible to icons)
+- Tab bar (project detail view)
+- Direction Card (scoring, selection)
+- Research Result Card (competitor/API/OSS)
+- Tech Stack Card Group (category + choice + alternatives)
+- Architecture Diagram (Mermaid rendered as SVG)
+- Task List (checklist with phases)
+- Export Card (format + download)
+- Command Palette (⌘K)
+- Status Badge (pill, color-coded)
+- Progress Bar (thin, animated)
+- Toast Notification (non-blocking)
+
+---
+
+## 12. Documentation System
+
+### 12.1 Philosophy
+
+Every generated document has a specific audience and purpose. Documents are independent — each can be consumed without reading others. But together they form a complete engineering package.
+
+### 12.2 Document Catalog
+
+| # | Document | Audience | Purpose | Generated By |
+|---|---|---|---|---|
+| 1 | `README.md` | Anyone | First impression, project overview, setup | S13 |
+| 2 | `EXECUTIVE_SUMMARY.md` | Judges | One-page project summary | S13 |
+| 3 | `PRD.md` | Team | Complete product requirements | S13 |
+| 4 | `ARCHITECTURE.md` | Developers | System design, data flow | S13 |
+| 5 | `API.md` | Developers | API reference with examples | S13 |
+| 6 | `DATABASE.md` | Developers | Schema, relationships, migrations | S13 |
+| 7 | `SETUP.md` | Team | Dev environment setup | S13 |
+| 8 | `DEMO_SCRIPT.md` | Presenter | Step-by-step demo for judging | S14 |
+| 9 | `PITCH.md` | Presenter | Elevator pitch + full pitch | S14 |
+| 10 | `FAQ.md` | Team | Anticipated judge questions | S15 |
+
+### 12.3 Document Generation Rules
+
+- Every document is generated from the project memory, not from scratch
+- Documents share a common header (project name, date, version)
+- No information is duplicated across documents if it can be cross-referenced
+- Each document contains a summary at the top for quick scanning
+- Technical accuracy is verified by S17 (Fact Checker) before export
+
+---
+
+## 13. Export System
+
+### 13.1 Export Formats (V1)
+
+| Format | Extension | Contents | Use Case |
+|---|---|---|---|
+| Markdown | `.md` | Individual docs, 10 files | Human reading, GitHub |
+| JSON | `.json` | Raw project data | Programmatic, AI tool input |
+| ZIP | `.zip` | All files packaged | Easy download |
+| CLAUDE.md | `.md` | Tool config file | Claude Code context |
+| AGENTS.md | `.md` | Agent config file | Agentic coding tools |
+
+### 13.2 Export Formats (V2)
+
+| Format | Extension | Contents |
+|---|---|---|
+| Mermaid | `.mmd` | Architecture diagrams |
+| OpenAPI | `.json` | API specification |
+| PDF | `.pdf` | Formatted document (judge-ready) |
+| DOCX | `.docx` | Editable document |
+
+### 13.3 Export Rules
+
+- Every export is reproducible (same input → same output)
+- No export contains sensitive information
+- ZIP exports preserve directory structure
+- JSON exports are always self-contained
+- Export timestamps are included
+
+---
+
+## 14. Engineering Philosophy
+
+### 14.1 The SDPD (System Design Philosophy Document)
+
+The SDPD contains 35 engineering commandments. The most important:
+
+**C1 — Tier 0 First.** Never use AI where deterministic software suffices. Template, compute, or decision tree first. AI is for the 30% that genuinely needs reasoning.
+
+**C2 — Cheapest Capable Model First.** Don't use a reasoning model where a cheap model works. Model selection is a product decision with cost implications.
+
+**C3 — Every AI Output Must Be Editable.** The user must be able to modify, reject, or regenerate any AI output.
+
+**C4 — Every AI Output Must Be Cacheable.** If the same input produces the same output twice, the second call should return cached data.
+
+**C5 — Projects Must Be Portable.** No lock-in. Full export at any time. The user should be able to delete their account and keep everything.
+
+**C6 — Research Is Cached.** Results are stored with 24h TTL. Re-running research within that window returns cached data with a "cached" indicator.
+
+**C7 — Architecture Is Versioned.** Each architecture generation creates a new version. Previous versions are accessible.
+
+**C8 — Exports Are Reproducible.** Same input → same output. Deterministic export code.
+
+**C9 — Cost Tracking.** Every AI call is tracked. Cost per project is visible to the user. Cost anomalies trigger alerts.
+
+**C10 — Graceful Degradation.** Every AI-dependent feature has a non-AI fallback. If the LLM is down, templates work.
+
+### 14.2 Technology Decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| **Backend framework** | FastAPI | Async-native, Python, excellent DX |
+| **Frontend framework** | Next.js 16 | React, SSR, Vercel deployment |
+| **Database (dev)** | SQLite | Zero config, portable |
+| **Database (prod)** | PostgreSQL (Supabase) | Production-ready, managed |
+| **ORM** | SQLAlchemy 2.0 async | Mature, well-tested |
+| **AI Gateway** | LiteLLM | Multi-provider, cost tracking |
+| **Search API** | Tavily | Purpose-built for LLM research |
+| **CI** | GitHub Actions | Co-located with code |
+| **Hosting (frontend)** | Vercel | Next.js-native, fast |
+| **Hosting (backend)** | Vercel (Python) | Single platform, simple |
+| **Auth** | NextAuth.js | Standard OAuth |
+
+### 14.3 Should This Be AI? Decision Tree
+
+```
+Is there a deterministic algorithm that solves this?
+├── YES → Tier 0 (deterministic). No AI.
+└── NO → Does this need reasoning or creativity?
+    ├── NO → Template or lookup table. No AI.
+    └── YES → Can a cheap model do it?
+        ├── YES → Tier 1 (cheap model)
+        └── NO → Does it need deep analysis?
+            ├── YES → Tier 2 (reasoning model)
+            └── Highly complex → Tier 3 (expensive model)
+```
+
+### 14.4 Cost Budget
+
+| Model Tier | Cost per 1M tokens | Used For |
+|---|---|---|
+| Tier 0 | $0 | Decision trees, templates, exports |
+| Tier 1 | ~$0.15 | Research queries, tech explanations |
+| Tier 2 | ~$2.50 | Direction generation, architecture enrichment |
+| Tier 3 | ~$15 | Reserved for future deep analysis |
+
+**Budget per project:** $0.50 max (in mock mode: $0). The system tracks running cost and warns if a project approaches the budget limit.
+
+---
+
+## 15. Self-Critique & Revisions
+
+### 15.1 First Design Pass Critique
+
+| Weakness | Response |
+|---|---|
+| **The Product Bible is long.** Teams may not read it. | This is an engineering reference, not a marketing document. It's meant to be consulted, not consumed linearly. |
+| **17 AI specialists is ambitious.** Each requires prompt engineering, testing, and maintenance. | V1 will implement the minimum viable set: Challenge Analyst, Research Specialist, Idea Generator, Solution Architect, Senior Engineer, Planning Engineer, Documentation Writer, Pitch Coach. The remaining 9 are V2+. |
+| **Shared memory adds complexity.** Synchronization, versioning, and conflict resolution are hard. | V1 uses a simple JSON document with append-only journal. V2 adds proper versioning and conflict resolution. |
+| **User-optional fields may lead to incomplete plans.** | The system infers sensible defaults for all optional fields. The user can override. |
+| **"10-15 minutes" is optimistic.** AI calls can be slow. | Research and direction generation run in parallel where possible. Results stream as they arrive. |
+| **No mobile app limits real-time use.** | V1 is web-only. Mobile responsive design is required. A native app is V3. |
+
+### 15.2 Second Design Pass Critique
+
+| Weakness | Response |
+|---|---|
+| **The AI team is designed for hackathons, but the product should also work for non-hackathon use cases.** | The architecture is generalizable. The hackathon-specific features (judging criteria, time constraints, demo scripts) are optional. Without them, exHacker is a general-purpose product studio. |
+| **The product requires API keys for full functionality.** | Mock mode works offline. The user can try the full experience without any API keys. |
+| **Competitor analysis is the most valuable feature but the hardest to get right.** | Tavily provides good web search. For V1, we accept that competitor analysis will be incomplete. Accuracy improves with model improvements. |
+| **The user must make exactly 1 critical decision (direction selection). This adds pressure.** | The scoring system provides confidence levels. Low-confidence ideas are flagged. The user can also select "surprise me" for a random choice. |
+
+### 15.3 Key Revisions From Previous Architecture
+
+| Previous Decision | Revised Decision | Rationale |
+|---|---|---|
+| 4-state machine | 7-state machine | More granular state tracking allows better UX and error recovery |
+| 5 research categories | 5 research categories (kept) | Sufficient for V1 |
+| 8 score dimensions | 8 score dimensions (kept) | Validated against hackathon judging rubrics |
+| 5 export formats (V1) | 5 export formats (kept) | Covers the essential formats |
+| AI-only architecture | Shared memory + deterministic fallback | Prevents information loss and reduces cost |
+| Single pipeline | 17 specialists with collaboration patterns | More accurate modeling of how real product teams work |
+
+---
+
+## 16. Competitive Benchmarking
+
+### 16.1 Comparison Table
+
+| Capability | exHacker | ChatGPT | Cursor | Lovable | Bolt | Linear |
+|---|---|---|---|---|---|---|
+| Idea validation | ✅ Native | ⚠️ Manual prompting | ❌ | ❌ | ❌ | ❌ |
+| Competitor research | ✅ Automated | ⚠️ Manual search | ❌ | ❌ | ❌ | ❌ |
+| Architecture design | ✅ Templates + AI | ⚠️ Text only | ❌ | ❌ | ❌ | ❌ |
+| Tech stack advice | ✅ Decision tree | ⚠️ Opinions | ❌ | ✅ Fixed stack | ✅ Fixed stack | ❌ |
+| Implementation plan | ✅ Deterministic | ⚠️ Text only | ❌ | ❌ | ❌ | ❌ |
+| Document generation | ✅ 10 files | ⚠️ Per-file prompts | ❌ | ❌ | ❌ | ❌ |
+| Pitch preparation | ✅ AI-generated | ⚠️ Text only | ❌ | ❌ | ❌ | ❌ |
+| Export to coding tools | ✅ CLAUDE.md, etc. | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hackathon optimization | ✅ Native | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Offline mode (mock) | ✅ Complete | ✅ Partial | ❌ | ❌ | ❌ | ❌ |
+| Cost tracking | ✅ Per project | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Shared AI memory | ✅ Decision journal | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+### 16.2 Where exHacker Wins
+
+1. **Pre-coding planning.** No other product combines research, ideation, architecture, planning, and documentation in a single structured pipeline.
+2. **Hackathon-specific optimization.** Time awareness, judging criteria, demo scripts — features no general-purpose tool offers.
+3. **Export to coding tools.** The output is designed to be consumed by Cursor, Claude Code, and Codex.
+4. **Deterministic + AI hybrid.** Predictable quality and cost. Templates for the 80% case, AI for the 20% that needs reasoning.
+5. **Decision journal.** Traceability for every AI decision. Users can understand *why* a recommendation was made.
+
+### 16.3 Where exHacker Needs Improvement
+
+1. **Maturity.** Cursor, Linear, and ChatGPT have years of UX refinement. exHacker is new.
+2. **Market education.** Users don't yet know they need a pre-coding planning tool. This is a new category.
+3. **Accuracy.** AI-powered research and ideation will sometimes produce incorrect or unoriginal results.
+4. **Performance.** The full pipeline requires multiple AI calls. Parallel execution and caching mitigate this, but the first run is not instant.
+
+---
+
+## 17. Long-Term Vision
+
+### 17.1 Version Roadmap
+
+| Version | Focus | Key Features |
+|---|---|---|
+| **V1 (Current)** | Core pipeline | 8 specialists, shared memory, 5 export formats, hackathon-focused |
+| **V2 (3 months)** | Depth + accuracy | 17 specialists, fact-checking pipeline, critique & revision cycle, PDF/DOCX export |
+| **V3 (6 months)** | Team collaboration | Shared projects, multi-user editing, team workspaces, leaderboard |
+| **V4 (9 months)** | Platform | API for external integrations, plugin system, marketplace for templates |
+| **V5 (12 months)** | Intelligence | Self-improving agents (learn from user corrections), continuous research updates, predictive scoring |
+
+### 17.2 V1 Scope (What We Build Now)
+
+**Must have (P0):**
+- [ ] 8 core AI specialists (S1, S2, S3/S4 combined, S5, S7, S8, S12, S13)
+- [ ] Shared memory with decision journal
+- [ ] 7-state project lifecycle
+- [ ] Research pipeline (5 categories)
+- [ ] Direction generation with 8-dimension scoring
+- [ ] Architecture generation (tech stack, components, data model, plan)
+- [ ] Documentation generation (10 files)
+- [ ] Export (Markdown, JSON, ZIP, CLAUDE.md, AGENTS.md)
+- [ ] Mock mode (full offline functionality)
+
+**Nice to have (P1):**
+- [ ] User accounts and project persistence
+- [ ] Shareable project links (view-only)
+- [ ] Inline editing of AI outputs
+- [ ] Regenerate individual sections
+- [ ] Command palette (⌘K)
+
+**Future (P2+):**
+- [ ] Critic specialist (S16)
+- [ ] Judge simulator (S15)
+- [ ] Fact checker (S17)
+- [ ] PDF/DOCX export
+- [ ] Mermaid diagram export
+- [ ] Team collaboration
+
+### 17.3 What We Explicitly Exclude From V1
+
+- Real-time collaboration
+- Native mobile apps
+- Plugin/extension system
+- API for external developers
+- Self-improving agents
+- Continuous research monitoring
+- Integration with external tools beyond export
+- Social features (leaderboards, sharing feeds)
+
+---
+
+*This document is the definitive specification for exHacker. It supersedes all prior planning documents, architecture decisions, and implementation artifacts. Every future engineering decision must trace back to this document.*
