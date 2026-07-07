@@ -1,35 +1,25 @@
 """FastAPI application entry point."""
 
-from contextlib import asynccontextmanager
-
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.core.exceptions import (
-    ExHackerError,
-    exhacker_error_handler,
-    generic_error_handler,
-)
 from app.core.logging import setup_logging
+from app.core.exceptions import exhacker_error_handler, generic_error_handler, ExHackerError
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifecycle."""
-    setup_logging()
-    logger.info("Starting exHacker in %s environment", settings.ENV)
-    # Tables are created on first access, not at startup
-    yield
-
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=None,
 )
+
+setup_logging()
+logger.info("Starting exHacker in %s environment", settings.ENV)
 
 # CORS
 app.add_middleware(
