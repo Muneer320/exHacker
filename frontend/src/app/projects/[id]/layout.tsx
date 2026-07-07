@@ -13,14 +13,14 @@ import CommandPalette from "@/components/shared/CommandPalette";
 
 export const WORKSPACE_SECTIONS = [
   { id: "overview",     label: "Overview",             icon: "◈" },
-  { id: "challenge",    label: "Challenge",            icon: "🧠" },
-  { id: "research",     label: "Research",             icon: "🔍" },
-  { id: "competitors",  label: "Competitors",          icon: "🎯" },
-  { id: "ideas",        label: "Ideas",                icon: "💡" },
-  { id: "architecture", label: "Architecture",         icon: "🏗️" },
-  { id: "docs",         label: "Documentation",        icon: "📝" },
-  { id: "timeline",     label: "Timeline",             icon: "⏱" },
-  { id: "exports",      label: "Exports",              icon: "📦" },
+  { id: "challenge",    label: "Challenge",            icon: "◇" },
+  { id: "research",     label: "Research",             icon: "◎" },
+  { id: "competitors",  label: "Competitors",          icon: "⊕" },
+  { id: "ideas",        label: "Ideas",                icon: "✦" },
+  { id: "architecture", label: "Architecture",         icon: "▣" },
+  { id: "docs",         label: "Documentation",        icon: "☰" },
+  { id: "timeline",     label: "Timeline",             icon: "◈" },
+  { id: "exports",      label: "Exports",              icon: "⊞" },
 ];
 
 // ─── Workspace Shell Layout ────────────────────────────────────────────────────

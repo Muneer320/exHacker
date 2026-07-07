@@ -8,12 +8,12 @@ import { PIPELINE_STAGES } from "@/components/pipeline/types";
 import { Card, Pill, Grid } from "@/components/shared/ui";
 
 const QUICK_ACTIONS = [
-  { section: "challenge", label: "Analyze challenge", icon: "🧠", desc: "Extract constraints, opportunities, and strategy" },
-  { section: "research", label: "Run research", icon: "🔍", desc: "Scan competitors, APIs, OSS, trends" },
-  { section: "ideas", label: "Generate ideas", icon: "💡", desc: "Create 5 scored product concepts" },
-  { section: "architecture", label: "Design architecture", icon: "🏗️", desc: "Complete technical blueprint" },
-  { section: "docs", label: "Build docs", icon: "📝", desc: "Generate 10 documentation files" },
-  { section: "exports", label: "Export package", icon: "📦", desc: "Download your project" },
+  { section: "challenge", label: "Analyze challenge", icon: "◇", desc: "Extract constraints, opportunities, and strategy" },
+  { section: "research", label: "Run research", icon: "◎", desc: "Scan competitors, APIs, OSS, trends" },
+  { section: "ideas", label: "Generate ideas", icon: "✦", desc: "Create 5 scored product concepts" },
+  { section: "architecture", label: "Design architecture", icon: "▣", desc: "Complete technical blueprint" },
+  { section: "docs", label: "Build docs", icon: "☰", desc: "Generate 10 documentation files" },
+  { section: "exports", label: "Export package", icon: "⊞", desc: "Download your project" },
 ];
 
 export default function OverviewPage() {
@@ -89,24 +89,28 @@ export default function OverviewPage() {
         {QUICK_ACTIONS.map(qa => {
           const stageState = state.stages[qa.section];
           const isDone = stageState?.status === "completed" || stageState?.status === "cached";
+          const isFirst = qa.section === "challenge";
           return (
             <button
               key={qa.section}
               onClick={() => router.push(`/projects/${projectId}/${qa.section}`)}
               style={{
                 display: "flex", gap: "12px", alignItems: "center",
-                padding: "14px 16px", background: isDone ? "rgba(194,255,77,0.04)" : "var(--surface-1)",
-                border: `1px solid ${isDone ? "rgba(194,255,77,0.15)" : "var(--border)"}`,
+                padding: "14px 16px", background: isFirst && !isDone ? "var(--blue-dim)" : isDone ? "rgba(194,255,77,0.04)" : "var(--surface-1)",
+                border: `1px solid ${
+                  isFirst && !isDone ? "var(--blue)" :
+                  isDone ? "rgba(194,255,77,0.15)" : "var(--border)"
+                }`,
                 borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left",
                 transition: "all 0.15s",
               }}
               onMouseEnter={e => { (e.currentTarget).style.borderColor = "var(--border-mid)"; (e.currentTarget).style.background = "var(--surface-2)"; }}
-              onMouseLeave={e => { (e.currentTarget).style.borderColor = isDone ? "rgba(194,255,77,0.15)" : "var(--border)"; (e.currentTarget).style.background = isDone ? "rgba(194,255,77,0.04)" : "var(--surface-1)"; }}
+              onMouseLeave={e => { (e.currentTarget).style.borderColor = isDone ? "rgba(194,255,77,0.15)" : "var(--border)"; (e.currentTarget).style.background = isFirst && !isDone ? "var(--blue-dim)" : isDone ? "rgba(194,255,77,0.04)" : "var(--surface-1)"; }}
             >
-              <span style={{ fontSize: "18px" }}>{qa.icon}</span>
+              <span style={{ fontSize: "16px" }}>{qa.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: isDone ? "var(--lime)" : "var(--text-1)" }}>{qa.label}</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: isFirst && !isDone ? "var(--blue-light)" : isDone ? "var(--lime)" : "var(--text-1)" }}>{qa.label}</span>
                   {isDone && <span style={{ fontSize: "9px", color: "var(--lime)" }}>✓</span>}
                 </div>
                 <span style={{ fontSize: "10px", color: "var(--text-3)", display: "block", marginTop: "1px" }}>{qa.desc}</span>
@@ -116,6 +120,22 @@ export default function OverviewPage() {
           );
         })}
       </div>
+
+      {/* Start here prompt */}
+      {completed === 0 && (
+        <div className="anim-fade-up" style={{ marginBottom: "24px", padding: "16px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--blue)", background: "var(--blue-dim)", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--blue)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ color: "#fff", fontSize: "14px", fontWeight: 700 }}>1</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-1)", marginBottom: "2px" }}>Start with Challenge Intelligence</p>
+            <p style={{ fontSize: "11px", color: "var(--text-2)" }}>Analyze the challenge to uncover hidden problems, constraints, and opportunities — this feeds every downstream specialist.</p>
+          </div>
+          <button onClick={() => router.push(`/projects/${projectId}/challenge`)} className="btn btn-primary" style={{ whiteSpace: "nowrap", fontSize: "12px", padding: "8px 16px" }}>
+            Analyze Challenge →
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <span className="sec-num" style={{ marginBottom: "12px" }}>[ PROJECT STATS ]</span>

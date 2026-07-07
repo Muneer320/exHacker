@@ -121,15 +121,7 @@ export default function Home() {
         {/* ══ HERO ════════════════════════════════════════════════════════════════ */}
         <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", paddingTop: "60px", position: "relative", overflow: "hidden", background: "transparent" }}>
           <div className="container" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 40px" }}>
-            <div className="anim-fade-up" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "40px", flexWrap: "wrap" }}>
-              <span className="badge badge-blue">
-                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--blue)", animation: "pulse 1.8s infinite" }} />
-                AI-Powered Product Studio
-              </span>
-              <span className="badge">7 Specialists · Human-in-the-Loop</span>
-            </div>
-
-            <div className="anim-fade-up-1" style={{ marginBottom: "32px" }}>
+            <div className="anim-fade-up" style={{ marginBottom: "40px" }}>
               <h1 className="d1" style={{ color: "var(--text-1)", marginBottom: "0" }}>BUILD YOUR</h1>
               <h1 className="d1" style={{ marginBottom: "0" }}>
                 <span className="grad-blue">HACKATHON</span>
@@ -291,8 +283,21 @@ export default function Home() {
         {/* ══ Footer ════════════════════════════════════════════════════════════ */}
         <footer style={{ borderTop: "1px solid var(--border)", padding: "28px 0", background: "rgba(8,8,8,0.90)" }}>
           <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", color: "var(--text-3)" }}>exHacker</span>
-            <span style={{ fontSize: "11px", color: "var(--text-3)" }}>AI-Powered Strategy · 7 Specialists · Open Source</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", color: "var(--text-3)" }}>exHacker</span>
+              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>by</span>
+              <a href="https://github.com/Muneer320" target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "var(--blue-light)", textDecoration: "none" }}>
+                Muneer Alam
+              </a>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <a href="https://github.com/Muneer320/exHacker" target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "var(--text-3)", textDecoration: "none" }}>
+                GitHub
+              </a>
+              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
+                &copy; {new Date().getFullYear()} Muneer Alam. MIT License.
+              </span>
+            </div>
           </div>
         </footer>
 
