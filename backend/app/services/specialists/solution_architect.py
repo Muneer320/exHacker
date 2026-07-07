@@ -62,7 +62,11 @@ async def generate_architecture(
     context = _build_context(project, selected_idea, ctx)
 
     # 5. Generate AI reasoning (Tier 2)
-    ai_output = await _generate_reasoning(context)
+    try:
+        ai_output = await _generate_reasoning(context)
+    except Exception as e:
+        logger.warning("AI reasoning failed for project %s: %s — using fallback blueprint", project_id, e)
+        ai_output = None
 
     # 6. Assemble complete blueprint
     blueprint = _assemble_blueprint(project, selected_idea, ai_output, context)
