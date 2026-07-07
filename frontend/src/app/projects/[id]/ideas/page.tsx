@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { getIdeas, selectIdea, IdeaData } from "@/services/api";
 import { Card, Pill, ScoreBar, Grid, SeverityBadge, LoadingState, EmptyState } from "@/components/shared/ui";
 import IdeaComparison from "@/components/comparison/IdeaComparison";
+import GuidedSection from "@/components/shared/GuidedSection";
 
 const SCORE_DEFS = [
   { key: "innovation", label: "Innovation", color: "var(--blue)" },

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { analyzeCompetitors, CompetitorData } from "@/services/api";
-import { Card, Section, ScoreBar, ScoreRow, Grid, Pill, SeverityBadge, LoadingState } from "@/components/shared/ui";
+import { Card, Section, ScoreRow, ScoreBar, Grid, Pill, SeverityBadge, LoadingState } from "@/components/shared/ui";
+import GuidedSection from "@/components/shared/GuidedSection";
 
 export default function CompetitorsPage() {
   const params = useParams();
