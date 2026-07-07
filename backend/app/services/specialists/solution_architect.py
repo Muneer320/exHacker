@@ -43,56 +43,71 @@ async def generate_architecture(
     5. Assemble complete blueprint
     6. Store in DB + shared memory + journal
     """
-    # 1. Check cache
-    existing = await _get_existing(db, project_id)
-    if existing:
-        return existing
-
-    # 2. Load selected idea
-    selected_idea = await _get_selected_idea(db, project_id)
-    if not selected_idea:
-        logger.warning("No selected idea for project %s, using project context", project_id)
-        selected_idea = {}
-
-    # 3. Load context
-    ctx = await load_context(db, project_id)
-    project = ctx.get("project", {})
-
-    # 4. Build prompt context
-    context = _build_context(project, selected_idea, ctx)
-
-    # 5. Generate AI reasoning (Tier 2)
     try:
-        ai_output = await _generate_reasoning(context)
+        # 1. Check cache
+        existing = await _get_existing(db, project_id)
+        if existing:
+            return existing
+
+        # 2. Load selected idea
+        selected_idea = await _get_selected_idea(db, project_id)
+        if not selected_idea:
+            logger.warning("No selected idea for project %s, using project context", project_id)
+            selected_idea = {}
+
+        # 3. Load context
+        ctx = await load_context(db, project_id)
+        project = ctx.get("project", {})
+
+        # 4. Build prompt context
+        context = _build_context(project, selected_idea, ctx)
+
+        # 5. Generate AI reasoning (Tier 2)
+        try:
+            ai_output = await _generate_reasoning(context)
+        except Exception as e:
+            logger.warning("AI reasoning failed for project %s: %s — using fallback blueprint", project_id, e)
+            ai_output = None
+
+        # 6. Assemble complete blueprint
+        blueprint = _assemble_blueprint(project, selected_idea, ai_output, context)
+
+        # 7. Store in DB
+        try:
+            stored = await _store_blueprint(db, project_id, blueprint)
+        except Exception as e:
+            logger.error("Failed to store blueprint for project %s: %s", project_id, e)
+            await db.rollback()
+            return blueprint
+
+        # 8. Log decision (best-effort)
+        try:
+            await log_decision(
+                db, project_id=project_id,
+                title="Architecture designed",
+                category="architecture_tradeoff",
+                description=f"Complete technical architecture generated for {selected_idea.get('title', 'the project')}.",
+                originating_specialist="solution_architect",
+            )
+        except Exception:
+            pass
+
+        # 9. Store in shared memory (best-effort)
+        try:
+            await store_memory(
+                db, project_id=project_id,
+                specialist="solution_architect",
+                memory_type="architecture",
+                content={"summary": f"Architecture for {selected_idea.get('title', '')}"},
+                confidence=0.85,
+            )
+        except Exception:
+            pass
+
+        return stored
     except Exception as e:
-        logger.warning("AI reasoning failed for project %s: %s — using fallback blueprint", project_id, e)
-        ai_output = None
-
-    # 6. Assemble complete blueprint
-    blueprint = _assemble_blueprint(project, selected_idea, ai_output, context)
-
-    # 7. Store in DB
-    stored = await _store_blueprint(db, project_id, blueprint)
-
-    # 8. Log decision
-    await log_decision(
-        db, project_id=project_id,
-        title="Architecture designed",
-        category="architecture_tradeoff",
-        description=f"Complete technical architecture generated for {selected_idea.get('title', 'the project')}.",
-        originating_specialist="solution_architect",
-    )
-
-    # 9. Store in shared memory
-    await store_memory(
-        db, project_id=project_id,
-        specialist="solution_architect",
-        memory_type="architecture",
-        content={"summary": f"Architecture for {selected_idea.get('title', '')}"},
-        confidence=0.85,
-    )
-
-    return stored
+        logger.error("Architecture generation failed catastrophically for %s: %s", project_id, e, exc_info=True)
+        return _fallback_blueprint({}, {})
 
 
 async def get_architecture(
