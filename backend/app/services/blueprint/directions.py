@@ -96,23 +96,38 @@ async def generate_directions(
         model_tier=ModelTier.TIER_2,
     )
 
-    # 5. Parse the response
+    # 5. Parse the response — supports both old format (flat keys) and new format (scores dict)
     raw_directions = _parse_directions(response.content)
     if not raw_directions:
         logger.warning("Failed to parse directions from AI response for project %s", project_id)
-        # Return fallback directions
         raw_directions = _fallback_directions(project.idea)
 
     # 6. Store in database
     stored = []
     for raw in raw_directions:
+        # Extract scores — support both old (flat) and new (nested) format
+        scores = raw.get("scores") if isinstance(raw.get("scores"), dict) else {}
         direction = Direction(
             project_id=project_id,
             title=raw.get("title", "Untitled Direction"),
             tagline=raw.get("tagline", ""),
+            elevator_pitch=raw.get("elevator_pitch", ""),
             description=raw.get("description", ""),
-            innovation_score=raw.get("innovation_score"),
-            feasibility_score=raw.get("feasibility_score"),
+            problem_statement=raw.get("problem_statement", ""),
+            solution=raw.get("solution", ""),
+            differentiation=raw.get("differentiation", ""),
+            core_features=raw.get("core_features"),
+            stretch_features=raw.get("stretch_features"),
+            risks=raw.get("risks"),
+            innovation_score=scores.get("innovation") or raw.get("innovation_score"),
+            creativity_score=scores.get("creativity"),
+            technical_depth_score=scores.get("technical_depth"),
+            feasibility_score=scores.get("feasibility") or raw.get("feasibility_score"),
+            demo_potential_score=scores.get("demo_potential"),
+            judge_appeal_score=scores.get("judge_appeal"),
+            business_potential_score=scores.get("business_potential"),
+            overall_score=scores.get("overall"),
+            estimated_effort_hours=raw.get("estimated_effort_hours"),
         )
         db.add(direction)
         stored.append(direction)
@@ -241,37 +256,65 @@ def _fallback_directions(idea: str) -> list[dict[str, Any]]:
         {
             "title": f"{idea[:40]} — Core",
             "tagline": f"Build the essential version of {idea[:30]}",
-            "description": f"A focused implementation of {idea[:60]}, prioritizing the core features that deliver immediate value.",
-            "innovation_score": 70,
-            "feasibility_score": 85,
+            "description": f"A focused implementation of {idea[:60]}, prioritizing the core features.",
+            "elevator_pitch": f"Quickly build and ship {idea[:50]} with the features that matter most.",
+            "core_features": ["Core feature 1", "Core feature 2", "Core feature 3"],
+            "stretch_features": ["Enhancement 1", "Enhancement 2"],
+            "risks": [{"title": "Scope creep", "severity": "medium", "mitigation": "Strictly prioritize core features"}],
+            "scores": {"innovation": 65, "creativity": 60, "technical_depth": 55, "feasibility": 90, "demo_potential": 70, "judge_appeal": 75, "business_potential": 60, "overall": 70},
+            "estimated_effort_hours": 24,
         },
         {
             "title": f"{idea[:40]} — AI-First",
             "tagline": f"Add intelligent features to {idea[:30]}",
-            "description": f"Leverage AI to provide personalized recommendations, automation, and smart insights on top of the core {idea[:40]} concept.",
-            "innovation_score": 85,
-            "feasibility_score": 65,
+            "description": f"Leverage AI on top of the core {idea[:40]} concept.",
+            "elevator_pitch": f"Supercharge {idea[:50]} with AI-powered features.",
+            "core_features": ["AI feature 1", "Core feature", "Integration"],
+            "stretch_features": ["Advanced AI", "Personalization"],
+            "risks": [{"title": "AI API costs", "severity": "medium", "mitigation": "Use cheap inference models"}],
+            "scores": {"innovation": 82, "creativity": 78, "technical_depth": 75, "feasibility": 60, "demo_potential": 85, "judge_appeal": 80, "business_potential": 70, "overall": 76},
+            "estimated_effort_hours": 32,
         },
         {
             "title": f"{idea[:40]} — Platform",
             "tagline": f"Build a platform around {idea[:30]}",
-            "description": f"Create an extensible platform that allows third-party integrations, community contributions, and customization on top of {idea[:40]}.",
-            "innovation_score": 80,
-            "feasibility_score": 55,
+            "description": f"Create an extensible platform for {idea[:40]}.",
+            "elevator_pitch": f"Build a platform that enables {idea[:50]} at scale.",
+            "core_features": ["Platform core", "Integration API", "Extension system"],
+            "stretch_features": ["Marketplace", "Community features"],
+            "risks": [{"title": "Platform complexity", "severity": "high", "mitigation": "Start with a focused vertical, expand later"}],
+            "scores": {"innovation": 78, "creativity": 72, "technical_depth": 80, "feasibility": 50, "demo_potential": 75, "judge_appeal": 72, "business_potential": 85, "overall": 73},
+            "estimated_effort_hours": 40,
         },
     ]
 
 
 def _direction_to_dict(d: Direction) -> dict[str, Any]:
-    """Convert a Direction model to a dict for API responses."""
+    """Convert a Direction model to a dict for API responses (Bible §8.4)."""
     return {
         "id": d.id,
         "project_id": d.project_id,
         "title": d.title,
         "tagline": d.tagline,
-        "description": d.description,
-        "innovation_score": d.innovation_score,
-        "feasibility_score": d.feasibility_score,
+        "elevator_pitch": d.elevator_pitch or "",
+        "description": d.description or "",
+        "problem_statement": d.problem_statement or "",
+        "solution": d.solution or "",
+        "differentiation": d.differentiation or "",
+        "core_features": d.core_features or [],
+        "stretch_features": d.stretch_features or [],
+        "risks": d.risks or [],
+        "scores": {
+            "innovation": d.innovation_score,
+            "creativity": d.creativity_score,
+            "technical_depth": d.technical_depth_score,
+            "feasibility": d.feasibility_score,
+            "demo_potential": d.demo_potential_score,
+            "judge_appeal": d.judge_appeal_score,
+            "business_potential": d.business_potential_score,
+            "overall": d.overall_score,
+        },
+        "estimated_effort_hours": d.estimated_effort_hours,
         "is_selected": d.is_selected,
         "created_at": d.created_at.isoformat() if d.created_at else None,
     }

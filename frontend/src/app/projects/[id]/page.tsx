@@ -389,42 +389,93 @@ function DirectionsTab({
 }
 
 function DirectionCard({ direction, isSelected, onSelect }: { direction: Direction; isSelected: boolean; onSelect: () => void }) {
+  const s = direction.scores;
+  const scoreBars = s ? [
+    { label: 'Innovation', value: s.innovation ?? 0, color: 'var(--color-accent-400)' },
+    { label: 'Creativity', value: s.creativity ?? 0, color: 'var(--color-info)' },
+    { label: 'Technical', value: s.technical_depth ?? 0, color: 'var(--color-accent-200)' },
+    { label: 'Feasibility', value: s.feasibility ?? 0, color: 'var(--color-success)' },
+    { label: 'Demo', value: s.demo_potential ?? 0, color: 'var(--color-warning)' },
+    { label: 'Judge', value: s.judge_appeal ?? 0, color: 'var(--color-accent-500)' },
+    { label: 'Business', value: s.business_potential ?? 0, color: 'var(--color-accent-300)' },
+  ] : [];
+  const overall = s?.overall ?? null;
+
   return (
     <div style={{
-      padding: '20px', borderRadius: '12px', background: 'var(--color-surface-1)',
+      padding: '24px', borderRadius: '12px', background: 'var(--color-surface-1)',
       border: `1px solid ${isSelected ? 'var(--color-accent-500)' : 'var(--color-border-default)'}`,
-      transition: 'border-color 150ms ease', opacity: isSelected ? 1 : undefined,
+      transition: 'all 200ms ease', opacity: isSelected ? 1 : undefined,
       position: 'relative',
     }}>
-      {isSelected && <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--color-accent-500)', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px' }}>SELECTED</div>}
-      <div style={{ marginBottom: '12px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{direction.title}</h3>
+      {/* Selected badge */}
+      {isSelected && <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--color-accent-500)', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 10px', borderRadius: '99px', letterSpacing: '0.5px' }}>SELECTED</div>}
+
+      {/* Header */}
+      <div style={{ marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '4px' }}>{direction.title}</h3>
         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>{direction.tagline}</p>
       </div>
-      {direction.description && (
-        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '12px' }}>{direction.description}</p>
+
+      {/* Elevator pitch */}
+      {direction.elevator_pitch && (
+        <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: 1.5, marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--color-accent-400)' }}>
+          {direction.elevator_pitch}
+        </p>
       )}
+
+      {/* Description */}
+      {direction.description && (
+        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>{direction.description}</p>
+      )}
+
+      {/* Score bars grid */}
+      {scoreBars.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', marginBottom: '16px' }}>
+          {scoreBars.map((sb) => (
+            <div key={sb.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', minWidth: '60px', textAlign: 'right' }}>{sb.label}</span>
+              <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, Math.max(0, sb.value))}%`, height: '100%', borderRadius: '3px', background: sb.color, transition: 'width 300ms ease' }} />
+              </div>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', minWidth: '24px', fontWeight: 600 }}>{sb.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Overall + effort + select button row */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <ScoreBadge label="Innovation" value={direction.innovation_score ?? 0} color="var(--color-accent-400)" />
-        <ScoreBadge label="Feasibility" value={direction.feasibility_score ?? 0} color="var(--color-info)" />
+        {overall !== null && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(124,58,237,0.1)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Overall</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: overall >= 80 ? 'var(--color-success)' : overall >= 60 ? 'var(--color-warning)' : 'var(--color-error)' }}>{overall}</span>
+          </div>
+        )}
+        {direction.estimated_effort_hours && (
+          <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
+            ~{direction.estimated_effort_hours}h effort
+          </span>
+        )}
         <div style={{ flex: 1 }} />
         {!isSelected && (
-          <button onClick={onSelect} style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--color-accent-500)', background: 'transparent', color: 'var(--color-accent-400)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={onSelect} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--color-accent-500)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
             Select Direction
           </button>
         )}
       </div>
-    </div>
-  );
-}
 
-function ScoreBadge({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ width: '28px', height: '4px', borderRadius: '2px', background: `${color}30`, position: 'relative', overflow: 'hidden', display: 'inline-block' }}>
-        <span style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${value}%`, background: color, borderRadius: '2px' }} />
-      </span>
-      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{label}: {value}</span>
+      {/* Core features */}
+      {direction.core_features && direction.core_features.length > 0 && (
+        <div style={{ display: 'flex', gap: '6px', marginTop: '16px', flexWrap: 'wrap' }}>
+          {direction.core_features.map((f: string, i: number) => (
+            <span key={i} style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(34,197,94,0.1)', color: 'var(--color-success)' }}>{f}</span>
+          ))}
+          {direction.stretch_features?.map((f: string, i: number) => (
+            <span key={`s-${i}`} style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(245,158,11,0.1)', color: 'var(--color-warning)' }}>{f} ✱</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

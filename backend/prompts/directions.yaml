@@ -1,7 +1,7 @@
 # Direction generation prompt
-# Generates distinct product directions from research data.
+# Generates distinct product directions with 8-dimension scoring (Bible §5.5).
 name: directions
-version: 1
+version: 2
 model_tier: 2  # Medium model — needs reasoning about product-market fit
 
 system: |
@@ -15,12 +15,22 @@ system: |
   - Differentiated (not identical to existing competitors)
   - Specific (target a clear user need, not generic)
 
-  For each direction, provide:
-  1. A short, memorable title (2-6 words)
-  2. A one-sentence tagline describing what it does
-  3. A brief description (2-3 sentences)
-  4. An innovation score (1-100) — how novel/differentiated it is
-  5. A feasibility score (1-100) — how practical to build
+  For each direction, you MUST provide scores for ALL 8 dimensions on a 0-100 scale:
+  1. innovation — How novel/differentiated is this idea from existing solutions?
+  2. creativity — How creative is the approach?
+  3. technical_depth — How much engineering skill does this demonstrate?
+  4. feasibility — How practical is this to build in the available time?
+  5. demo_potential — How impressive will the demo presentation be?
+  6. judge_appeal — How well does this match typical judging criteria?
+  7. business_potential — Could this become a real product or startup?
+  8. overall — Overall confidence in this recommendation.
+
+  Also provide:
+  - A one-sentence elevator pitch
+  - Core features (3-5 must-haves)
+  - Stretch features (1-3 nice-to-haves)
+  - Key risks with severity (low/medium/high) and mitigation
+  - Estimated effort in person-hours
 
   Return ONLY a JSON array. No markdown. No explanation. No code fences.
 
@@ -30,8 +40,26 @@ system: |
       "title": "...",
       "tagline": "...",
       "description": "...",
-      "innovation_score": 85,
-      "feasibility_score": 70
+      "elevator_pitch": "...",
+      "problem_statement": "...",
+      "solution": "...",
+      "differentiation": "...",
+      "core_features": ["...", "..."],
+      "stretch_features": ["...", "..."],
+      "risks": [
+        {"title": "...", "severity": "low|medium|high", "mitigation": "..."}
+      ],
+      "scores": {
+        "innovation": 85,
+        "creativity": 72,
+        "technical_depth": 68,
+        "feasibility": 90,
+        "demo_potential": 78,
+        "judge_appeal": 82,
+        "business_potential": 65,
+        "overall": 80
+      },
+      "estimated_effort_hours": 24
     }
   ]
 
@@ -43,7 +71,4 @@ user: |
   - Relevant APIs: {api_summary}
   - Open-source projects: {oss_summary}
 
-  Generate {num_directions} product directions.
-
-fallback:
-  Generate 3 product directions for: {idea}
+  Generate {num_directions} product directions with 8-dimension scoring.
