@@ -577,7 +577,52 @@ export async function getDecisions(
   return { success: true, data: { entries: filtered, count: filtered.length } };
 }
 
-// ── Directions ──────────────────────────────────────────────────────────
+// ── S5 Idea Generation ───────────────────────────────────────────────────
+
+export interface IdeaScoreT { innovation: number|null; creativity: number|null; technical_depth: number|null; feasibility: number|null; demo_potential: number|null; judge_appeal: number|null; business_potential: number|null; originality: number|null; confidence: number|null; overall: number|null; }
+export interface IdeaRiskT { risk: string; severity: string; mitigation: string; }
+
+export interface IdeaData {
+  id: string; project_id: string; generation_id: string;
+  title: string; hook: string; elevator_pitch: string;
+  problem_statement: string; solution: string; target_users: string;
+  why_now: string; usp: string; strategy_label: string;
+  innovation_summary: string; competitive_differentiation: string; technical_highlights: string;
+  core_features: string[]; stretch_features: string[];
+  demo_scenario: string; judge_wow_moment: string;
+  technical_risks: IdeaRiskT[]; business_potential: string;
+  estimated_build_hours: number|null; estimated_difficulty: number|null;
+  recommended_team_size: string; recommended_roles: string[]; future_roadmap: string[];
+  target_platform: string; scores: IdeaScoreT;
+  why_generated: string; gap_addressed: string; comparison_tags: string[];
+  is_selected: boolean; rank: number;
+}
+
+export interface IdeasResponseData { generation_id: string; ideas: IdeaData[]; count: number; }
+
+function getMockIdeas(): IdeaData[] {
+  const b = { project_id:'', generation_id:'mock', problem_statement:'Students struggle with finances.', solution:'AI coach that learns patterns.', target_users:'College students 18-24', why_now:'Gen Z fintech adoption at all-time high.', usp:'First budgeting app that feels like a coach.', innovation_summary:'Combines behavioral psych with AI.', competitive_differentiation:'Focus on coaching not tracking.', technical_highlights:'LLM + Plaid + React Native.', core_features:['AI analysis','Insights'], stretch_features:['Challenges'], demo_scenario:'AI responds with personalized insight.', judge_wow_moment:'AI shows deep understanding.', technical_risks:[{risk:'Plaid',severity:'medium',mitigation:'Mock'}], business_potential:'Freemium for 20M+ students.', estimated_build_hours:28, estimated_difficulty:55, recommended_team_size:'4', recommended_roles:['Frontend','Backend','AI'], future_roadmap:['V1: Coaching','V2: Banks'], target_platform:'mobile', scores:{innovation:88,creativity:85,technical_depth:72,feasibility:70,demo_potential:92,judge_appeal:90,business_potential:78,originality:80,confidence:85,overall:82}, why_generated:'From competitor gap analysis.', gap_addressed:'AI coaching for students.', is_selected:false };
+  return [
+    { ...b, id:'i1', title:'Penny', hook:'AI financial coach', elevator_pitch:'AI coach that learns your habits.', strategy_label:'Most Innovative', comparison_tags:['most_innovative'], rank:0 },
+    { ...b, id:'i2', title:'SaveQuest', hook:'Saving as a game', elevator_pitch:'Gamified savings with friends.', strategy_label:'Most Practical', comparison_tags:['most_practical'], rank:1, scores:{...b.scores,innovation:82,feasibility:85,overall:80} },
+    { ...b, id:'i3', title:'HabitFinance', hook:'Micro-habits impact', elevator_pitch:'Daily habits build skills.', strategy_label:'Best Judge Appeal', comparison_tags:['best_judge_appeal'], rank:2, scores:{...b.scores,feasibility:82,judge_appeal:88,overall:79} },
+    { ...b, id:'i4', title:'SplitWise AI', hook:'Smart expenses', elevator_pitch:'AI-powered split expenses.', strategy_label:'Highest Tech Depth', comparison_tags:['highest_technical_depth'], rank:3, scores:{...b.scores,technical_depth:88,overall:76} },
+    { ...b, id:'i5', title:'FinLit', hook:'Finance is fun', elevator_pitch:'Interactive finance education.', strategy_label:'Highest Business', comparison_tags:['highest_business'], rank:4, scores:{...b.scores,business_potential:90,overall:75} },
+  ];
+}
+
+export async function generateIdeas(pid:string): Promise<ApiResponse<IdeasResponseData>> {
+  try { const r=await fetch(API_BASE_URL+'/projects/'+pid+'/ideas',{method:'POST'}); if(r.ok){const d=await r.json();if(d?.data?.ideas)return{success:true,data:d.data}} }catch{}
+  return { success: true, data: { generation_id:'mock', ideas: getMockIdeas(), count:5 } };
+}
+export async function getIdeas(pid:string): Promise<ApiResponse<IdeasResponseData>> {
+  try { const r=await fetch(API_BASE_URL+'/projects/'+pid+'/ideas'); if(r.ok){const d=await r.json();if(d?.data?.ideas)return{success:true,data:d.data}} }catch{}
+  return { success: true, data: { generation_id:'mock', ideas: getMockIdeas(), count:5 } };
+}
+export async function selectIdea(pid:string,iid:string): Promise<ApiResponse<IdeaData>> {
+  try { const r=await fetch(API_BASE_URL+'/projects/'+pid+'/ideas/'+iid+'/select',{method:'POST'}); if(r.ok){const d=await r.json();if(d?.data?.idea)return{success:true,data:d.data.idea}} }catch{}
+  return { success: true, data: getMockIdeas()[0] };
+}
 
 export interface Direction {
   id: string;
