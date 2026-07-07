@@ -668,6 +668,44 @@ function getMockDirections(): Direction[] {
   ];
 }
 
+// ── Architecture ──────────────────────────────────────────────────────────────
+
+export interface ArchitectureData {
+  system_overview?: string;
+  architecture_rationale?: string;
+  components?: { name: string; tech?: string; purpose?: string; description?: string }[];
+  mermaid_system?: string;
+  mermaid_request_flow?: string;
+  mermaid_data_flow?: string;
+  mermaid_deployment?: string;
+  frontend?: { framework: string; routing?: { path: string; component: string }[]; component_hierarchy?: string[] };
+  backend?: { framework: string; modules?: string[] };
+  database?: { entities: { name: string; fields: { name: string; type: string; pk?: boolean; unique?: boolean }[] }[]; mermaid_er?: string };
+  api_contracts?: { method: string; path: string; description?: string }[];
+  authentication?: { provider: string; model?: string };
+  external_services?: { name: string; purpose: string; fallback?: string }[];
+  tradeoffs?: { decision: string; rationale: string; alternatives?: string[]; pros?: string[]; cons?: string[] }[];
+  review?: { weak_points?: string[]; failure_modes?: string[] };
+  scalability?: { hackathon_version: string; production_version: string };
+  generated_at?: string;
+}
+
+export async function getArchitecture(projectId: string): Promise<ApiResponse<{ architecture: ArchitectureData }>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/architecture`);
+    if (res.ok) { const d = await res.json(); if (d?.data) return { success: true, data: { architecture: d.data } }; }
+  } catch {}
+  return { success: true, data: { architecture: {} as ArchitectureData } };
+}
+
+export async function generateArchitecture(projectId: string): Promise<ApiResponse<{ architecture: ArchitectureData }>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/architecture`, { method: 'POST' });
+    if (res.ok) { const d = await res.json(); if (d?.data) return { success: true, data: { architecture: d.data } }; }
+  } catch {}
+  return { success: true, data: { architecture: {} as ArchitectureData } };
+}
+
 // ── Export ────────────────────────────────────────────────────────────────
 
 export async function downloadExport(projectId: string, format: 'markdown' | 'json' = 'markdown'): Promise<void> {
