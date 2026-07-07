@@ -1,22 +1,6 @@
 {
-  "version": 2,
-  "buildCommand": "cd ../frontend && npm run build",
-  "outputDirectory": "../frontend/.next",
-  "installCommand": "cd ../frontend && npm install",
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.11",
-      "memory": 512,
-      "maxDuration": 60
-    }
-  },
-  "rewrites": [
-    { "source": "/api/v1/(.*)", "destination": "/api/index" },
-    { "source": "/docs", "destination": "/api/index" },
-    { "source": "/redoc", "destination": "/api/index" },
-    { "source": "/openapi.json", "destination": "/api/index" }
-  ],
-  "env": {
-    "ENV": "production"
-  }
+  "framework": "nextjs",
+  "rootDirectory": "frontend",
+  "buildCommand": "npx next build",
+  "installCommand": "npm install"
 }
