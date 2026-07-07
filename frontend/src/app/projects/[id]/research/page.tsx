@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { startResearchV2, ResearchData2 } from "@/services/api";
 import { Card, Section, Pill, ScoreBar, Grid, LoadingState, EmptyState } from "@/components/shared/ui";
+import GuidedSection from "@/components/shared/GuidedSection";
 
 const CATEGORY_COLORS: Record<string, string> = {
   product: "var(--blue)", startup: "var(--sky)", oss: "var(--lime)", github: "var(--blue-light)",
@@ -18,18 +19,42 @@ export default function ResearchPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  useEffect(() => { if (projectId) { setLoading(true); startResearchV2(projectId).then(r => { if (r.success) setData(r.data); }).finally(() => setLoading(false)); } }, [projectId]);
+  const handleResearch = async () => { setLoading(true); const res = await startResearchV2(projectId); if (res.success) setData(res.data); setLoading(false); };
+
+  useEffect(() => { if (projectId) { handleResearch(); } }, [projectId]);
+
+  const cats = data?.summary?.categories || [];
+  const syn = data?.synthesis?.synthesis;
+  const techRecs = data?.synthesis?.technology_recommendations || [];
+  const diffOpps = data?.synthesis?.differentiation_opportunities || [];
 
   if (loading) return <LoadingState label="Running research..." />;
-  if (!data) return null;
-
-  const cats = data.summary?.categories || [];
-  const syn = data.synthesis?.synthesis;
-  const techRecs = data.synthesis?.technology_recommendations || [];
-  const diffOpps = data.synthesis?.differentiation_opportunities || [];
+  if (!data || !data.summary?.categories?.length) return (
+    <GuidedSection
+      title="Research"
+      whyMatters="Understand the market landscape, competitors, and technologies before building."
+      status="idle"
+      actionLabel="Start Research"
+      onAction={handleResearch}
+      estimatedTime="~20-30 seconds"
+      whatProduced="10 categories of research findings: products, startups, OSS, GitHub, papers, APIs, frameworks, winners, trends"
+      unlocks="Competitor analysis and idea generation"
+    />
+  );
 
   return (
-    <div>
+      <GuidedSection
+        title="Research"
+        whyMatters="Understand the market landscape, competitors, and technologies before building."
+        status="done"
+        actionLabel="Re-run Research"
+        onAction={handleResearch}
+        whatProduced={`${data.summary.total_results || 0} results across ${data.summary.categories_found || 0} categories`}
+        unlocks="Competitor analysis and idea generation"
+      >
+
+
+  return (
       <div className="anim-fade-up" style={{ marginBottom: "20px" }}>
         <span className="sec-num">[ RESEARCH ]</span>
         <h2 className="d4" style={{ color: "var(--text-1)", marginBottom: "4px" }}>Research Dashboard</h2>
@@ -120,6 +145,6 @@ export default function ResearchPage() {
           </div>
         </Section>
       )}
-    </div>
+    </GuidedSection>
   );
-}
+};
