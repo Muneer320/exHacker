@@ -13,9 +13,9 @@ import {
   GitFork,
   Lightbulb,
 } from 'lucide-react';
-import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, downloadExport, Project, ResearchData, Direction, BlueprintData } from '@/services/api';
+import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, downloadExport, analyzeChallenge, getChallengeAnalysis, Project, ResearchData, Direction, BlueprintData, ChallengeData } from '@/services/api';
 
-type Tab = 'overview' | 'research' | 'directions' | 'blueprint';
+type Tab = 'overview' | 'research' | 'directions' | 'blueprint' | 'challenge';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -33,6 +33,8 @@ export default function ProjectDetailPage() {
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<BlueprintData | null>(null);
   const [blueprintLoading, setBlueprintLoading] = useState(false);
+  const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
+  const [challengeLoading, setChallengeLoading] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -41,6 +43,7 @@ export default function ProjectDetailPage() {
         setProject(res.data.project);
         loadResearch();
         loadDirections();
+        loadChallenge();
       } else {
         setError(res.error?.message || 'Project not found.');
       }
@@ -92,6 +95,15 @@ export default function ProjectDetailPage() {
     setBlueprintLoading(false);
   };
 
+  const handleAnalyzeChallenge = async () => {
+    setChallengeLoading(true);
+    const res = await analyzeChallenge(projectId);
+    if (res.success) {
+      setChallengeData(res.data);
+    }
+    setChallengeLoading(false);
+  };
+
   // Load directions on mount
   const loadDirections = useCallback(async () => {
     const res = await getDirections(projectId);
@@ -99,6 +111,13 @@ export default function ProjectDetailPage() {
       setDirections(res.data.directions);
       const sel = res.data.directions.find(d => d.is_selected);
       if (sel) setSelectedDirId(sel.id);
+    }
+  }, [projectId]);
+
+  const loadChallenge = useCallback(async () => {
+    const res = await getChallengeAnalysis(projectId);
+    if (res.success) {
+      setChallengeData(res.data);
     }
   }, [projectId]);
 
@@ -143,6 +162,7 @@ export default function ProjectDetailPage() {
     { id: 'research', label: 'Research', icon: <Lightbulb size={14} /> },
     { id: 'directions', label: 'Directions', icon: <Zap size={14} /> },
     { id: 'blueprint', label: 'Blueprint', icon: <Compass size={14} /> },
+    { id: 'challenge', label: 'Intelligence', icon: <Star size={14} /> },
   ];
 
   return (
@@ -241,6 +261,13 @@ export default function ProjectDetailPage() {
             loading={blueprintLoading}
             onGenerate={handleGenerateBlueprint}
             projectId={projectId}
+          />
+        )}
+        {activeTab === 'challenge' && (
+          <ChallengeTab
+            data={challengeData}
+            loading={challengeLoading}
+            onAnalyze={handleAnalyzeChallenge}
           />
         )}
       </div>
@@ -610,6 +637,236 @@ function BlueprintTab({
             </div>
           ))}
         </Section>
+      )}
+    </div>
+  );
+}
+
+// ─── Challenge Intelligence Tab (Bible §8.2, §6.2 S1) ────────────────────────
+
+function ChallengeTab({
+  data,
+  loading,
+  onAnalyze,
+}: {
+  data: ChallengeData | null;
+  loading: boolean;
+  onAnalyze: () => void;
+}) {
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 24px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(124,58,237,0.2)', borderTopColor: 'var(--color-accent-500)', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Analyzing challenge...</p>
+      </div>
+    );
+  }
+
+  if (!data || !data.executive_summary) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 24px', border: '1px dashed var(--color-border-default)', borderRadius: '16px' }}>
+        <p style={{ fontSize: '28px', marginBottom: '12px' }}>🧠</p>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Challenge Intelligence</h3>
+        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
+          Analyze the challenge to get structured intelligence: core problems, hidden opportunities, stakeholder analysis, and a recommended strategy.
+        </p>
+        <button onClick={onAnalyze} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--color-accent-500)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+          Analyze Challenge
+        </button>
+      </div>
+    );
+  }
+
+  const d = data;
+  const diff = d.difficulty;
+
+  return (
+    <div>
+      {/* Confidence + Model badge */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px' }}>
+        {d.confidence > 0 && (
+          <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '99px', background: d.confidence >= 0.8 ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: d.confidence >= 0.8 ? 'var(--color-success)' : 'var(--color-warning)', fontWeight: 600 }}>
+            {d.confidence >= 0.8 ? '✓ High confidence' : '○ Medium confidence'}
+          </span>
+        )}
+        {d.model_used && (
+          <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '99px', background: 'rgba(124,58,237,0.1)', color: 'var(--color-accent-400)' }}>
+            {d.model_used}
+          </span>
+        )}
+      </div>
+
+      {/* Executive Summary */}
+      <div style={{ padding: '20px 24px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(6,182,212,0.04) 100%)', border: '1px solid rgba(124,58,237,0.15)', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-accent-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Executive Summary</h3>
+        <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', lineHeight: 1.7 }}>{d.executive_summary}</p>
+      </div>
+
+      {/* Two-column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        {/* Core Problem */}
+        <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+          <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: 'var(--color-accent-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Core Problem</h4>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: 1.6, marginBottom: '12px' }}>{d.core_problem.problem}</p>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            <p><strong>Who:</strong> {d.core_problem.who_experiences}</p>
+            <p style={{ marginTop: '4px' }}><strong>Why:</strong> {d.core_problem.why_important}</p>
+          </div>
+        </div>
+
+        {/* Difficulty Radar */}
+        <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+          <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: 'var(--color-accent-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Difficulty Assessment</h4>
+          {diff && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { label: 'Technical', value: diff.technical, color: 'var(--color-accent-400)' },
+                { label: 'Research', value: diff.research, color: 'var(--color-info)' },
+                { label: 'Demo', value: diff.demo, color: 'var(--color-warning)' },
+                { label: 'Judge', value: diff.judge, color: 'var(--color-accent-500)' },
+                { label: 'Overall', value: diff.overall, color: 'var(--color-success)' },
+              ].map((s) => (
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', minWidth: '60px', textAlign: 'right' }}>{s.label}</span>
+                  <div style={{ flex: 1, height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, Math.max(0, s.value ?? 50))}%`, height: '100%', borderRadius: '4px', background: s.color, transition: 'width 300ms ease' }} />
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', minWidth: '24px', fontWeight: 600 }}>{s.value ?? '—'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden Problems */}
+      {d.hidden_problems.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <Section title="Hidden Problems" icon={<Star size={14} />} color="var(--color-warning)">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {d.hidden_problems.map((hp: string, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                  <span style={{ color: 'var(--color-warning)', fontSize: '12px', fontWeight: 700 }}>{'⚠'}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{hp}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Stakeholders */}
+      {d.stakeholders.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <Section title="Stakeholders" icon={<Star size={14} />} color="var(--color-info)">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+              {d.stakeholders.map((s: { role: string; description: string }, i: number) => (
+                <div key={i} style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                  <h5 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-400)', marginBottom: '4px' }}>{s.role}</h5>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{s.description}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Constraints */}
+      {d.constraints.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <Section title="Constraints" icon={<Star size={14} />} color="var(--color-error)">
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {d.constraints.map((c: { type: string; description: string }, i: number) => (
+                <div key={i} style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)', display: 'flex', gap: '8px', alignItems: 'flex-start', maxWidth: '320px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-error)', textTransform: 'uppercase', minWidth: '48px' }}>{c.type}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{c.description}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Success Criteria */}
+      {d.success_criteria.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <Section title="Success Criteria" icon={<Star size={14} />} color="var(--color-success)">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {d.success_criteria.map((sc: { criterion: string; weight: number; description: string }, i: number) => (
+                <div key={i} style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{sc.criterion}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-400)' }}>{sc.weight}%</span>
+                  </div>
+                  <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', marginBottom: '6px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, Math.max(0, sc.weight))}%`, height: '100%', borderRadius: '2px', background: 'var(--color-success)' }} />
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{sc.description}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Opportunity Areas + Innovation Opportunities — two columns */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        {/* Opportunity Areas */}
+        {d.opportunity_areas.length > 0 && (
+          <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: 'var(--color-info)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Opportunity Areas</h4>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {d.opportunity_areas.map((oa: string, i: number) => (
+                <span key={i} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(6,182,212,0.1)', color: 'var(--color-info)', fontWeight: 500 }}>{oa}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Innovation Opportunities */}
+        {d.innovation_opportunities.length > 0 && (
+          <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: 'var(--color-accent-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Innovation Opportunities</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {d.innovation_opportunities.map((io: { area: string; description: string }, i: number) => (
+                <div key={i} style={{ padding: '8px 10px', borderRadius: '6px', background: 'rgba(124,58,237,0.04)' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-400)', marginBottom: '2px' }}>{io.area}</h6>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{io.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Risk Areas */}
+      {d.risk_areas.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <Section title="Risk Areas" icon={<Star size={14} />} color="var(--color-error)">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+              {d.risk_areas.map((r: { area: string; severity: string; description: string }, i: number) => {
+                const sevColor = r.severity === 'high' ? 'var(--color-error)' : r.severity === 'medium' ? 'var(--color-warning)' : 'var(--color-info)';
+                return (
+                  <div key={i} style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--color-surface-1)', border: '1px solid var(--color-border-default)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <h5 style={{ fontSize: '13px', fontWeight: 600 }}>{r.area}</h5>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px', background: `${sevColor}20`, color: sevColor, textTransform: 'uppercase' }}>{r.severity}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{r.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Recommended Strategy */}
+      {d.recommended_strategy && (
+        <div style={{ padding: '20px 24px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(6,182,212,0.06) 0%, rgba(124,58,237,0.04) 100%)', border: '1px solid rgba(6,182,212,0.12)', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-info)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recommended Strategy</h3>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', lineHeight: 1.7, fontStyle: 'italic' }}>{d.recommended_strategy}</p>
+        </div>
       )}
     </div>
   );

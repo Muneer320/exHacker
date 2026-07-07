@@ -56,13 +56,41 @@ async def create_project(
     idea: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    challenge_statement: Optional[str] = None,
+    theme: Optional[str] = None,
+    organizer: Optional[str] = None,
+    evaluation_criteria: Optional[str] = None,
+    rules: Optional[str] = None,
+    available_hours: Optional[str] = None,
+    team_size: Optional[str] = None,
+    team_experience: Optional[str] = None,
+    preferred_languages: Optional[str] = None,
+    preferred_frameworks: Optional[str] = None,
+    target_platform: Optional[str] = None,
+    skills: Optional[str] = None,
+    excluded_technologies: Optional[str] = None,
+    constraints: Optional[str] = None,
 ) -> ProjectModel:
-    """Create a new project in DRAFT state."""
+    """Create a new project in DRAFT state with all Bible §8.1 fields."""
     project = ProjectModel(
         idea=idea,
         name=name or _generate_name(idea),
         description=description,
         status=ProjectStatus.DRAFT.value,
+        challenge_statement=challenge_statement,
+        theme=theme,
+        organizer=organizer,
+        evaluation_criteria=evaluation_criteria,
+        rules=rules,
+        available_hours=available_hours,
+        team_size=team_size,
+        team_experience=team_experience,
+        preferred_languages=preferred_languages,
+        preferred_frameworks=preferred_frameworks,
+        target_platform=target_platform,
+        skills=skills,
+        excluded_technologies=excluded_technologies,
+        constraints=constraints,
     )
     db.add(project)
     await db.commit()
@@ -94,6 +122,7 @@ async def update_project(
     name: Optional[str] = None,
     description: Optional[str] = None,
     idea: Optional[str] = None,
+    **kwargs,
 ) -> ProjectModel:
     """Update project metadata fields. Does not change state."""
     project = await get_project(db, project_id)
@@ -104,6 +133,11 @@ async def update_project(
         project.description = description
     if idea is not None:
         project.idea = idea
+
+    # Update any additional fields passed (challenge context, team context, etc.)
+    for key, value in kwargs.items():
+        if value is not None and hasattr(project, key):
+            setattr(project, key, value)
 
     await db.commit()
     await db.refresh(project)

@@ -254,6 +254,86 @@ export async function getResearch(
   return { success: true, data: getMockResearchData() };
 }
 
+// ── Challenge Intelligence (Bible §8.2, §6.2 S1) ────────────────────────────
+
+export interface ChallengeData {
+  executive_summary: string;
+  core_problem: { problem: string; who_experiences: string; why_important: string };
+  hidden_problems: string[];
+  stakeholders: { role: string; description: string }[];
+  constraints: { type: string; description: string }[];
+  success_criteria: { criterion: string; weight: number; description: string }[];
+  opportunity_areas: string[];
+  innovation_opportunities: { area: string; description: string }[];
+  risk_areas: { area: string; severity: string; description: string }[];
+  difficulty: { technical: number | null; research: number | null; demo: number | null; judge: number | null; overall: number | null };
+  recommended_strategy: string;
+  themes: string[];
+  keywords: string[];
+  confidence: number;
+  model_used: string;
+}
+
+function getMockChallengeData(): ChallengeData {
+  return {
+    executive_summary: "This challenge asks teams to build a financial literacy tool for college students. The organizers are looking for something that goes beyond basic budgeting—they want behavioral change. The emphasis on 'AI-powered' in the prompt suggests they value intelligent features that adapt to individual user behavior, not just tracking dashboards.",
+    core_problem: { problem: "College students lack financial literacy and struggle with budgeting, leading to debt and poor financial decisions that compound over time.", who_experiences: "College students aged 18-24, particularly those managing their own finances for the first time.", why_important: "Financial habits formed in college persist into adulthood. Poor financial literacy contributes to the $1.7 trillion student debt crisis." },
+    hidden_problems: ["Students are embarrassed to ask for financial help", "Existing budgeting apps feel judgmental and punitive", "Financial literacy education is boring and theoretical", "Students need immediate gratification, not long-term planning"],
+    stakeholders: [
+      { role: "Primary users", description: "College students who need to manage limited budgets" },
+      { role: "Secondary users", description: "Parents who want visibility into their children's finances" },
+      { role: "Beneficiaries", description: "Universities that want to reduce student financial stress" },
+      { role: "Decision makers", description: "Student affairs departments evaluating financial wellness tools" },
+      { role: "Judges", description: "Looking for innovation in behavioral finance + AI application" },
+      { role: "Potential customers", description: "Fintech companies targeting Gen Z consumers" }
+    ],
+    constraints: [
+      { type: "time", description: "48 hours to build a working prototype" },
+      { type: "platform", description: "Web/mobile app with real-time features" },
+      { type: "data_privacy", description: "Must handle financial data securely" },
+      { type: "team", description: "Team of 4 with mixed frontend/backend skills" }
+    ],
+    success_criteria: [
+      { criterion: "Problem relevance", weight: 25, description: "Does it actually address student financial struggles?" },
+      { criterion: "Technical execution", weight: 20, description: "Is the implementation solid and well-architected?" },
+      { criterion: "AI innovation", weight: 20, description: "How intelligently does it use AI features?" },
+      { criterion: "UX quality", weight: 20, description: "Is the interface intuitive and engaging?" },
+      { criterion: "Presentation", weight: 15, description: "Can the team demo it effectively?" }
+    ],
+    opportunity_areas: ["Behavioral economics", "Gamification", "Social accountability", "AI coaching", "Real-time insights", "Community challenges"],
+    innovation_opportunities: [
+      { area: "Behavioral AI", description: "AI that detects spending patterns and delivers personalized nudges at the moment of decision" },
+      { area: "Social accountability", description: "Peer accountability groups with shared savings goals and gentle competition" },
+      { area: "Anticipatory budgeting", description: "Predictive budgeting that forecasts future spending based on past behavior and upcoming events" },
+      { area: "Emotional tracking", description: "Connecting spending to emotional states to build mindfulness around money" }
+    ],
+    risk_areas: [
+      { area: "Scope creep", severity: "high", description: "Teams try to build a full fintech platform instead of a focused tool" },
+      { area: "Data privacy", severity: "high", description: "Financial data requires careful handling—teams may underestimate this" },
+      { area: "AI superficiality", severity: "medium", description: "Adding AI features that don't actually solve real user problems" },
+      { area: "Demo complexity", severity: "medium", description: "A budgeting app is hard to demo effectively in 5 minutes" }
+    ],
+    difficulty: { technical: 65, research: 40, demo: 55, judge: 60, overall: 55 },
+    recommended_strategy: "With 48 hours and a team of 4, focus on a single compelling user journey rather than a full-featured app. Build the core loop first: user connects spending data → AI analyzes patterns → user receives actionable insight. Make the demo script the priority—plan exactly what you'll show in 3 minutes. For AI, use a simple classification model or LLM for natural language insights. Don't try to build real bank integrations; use mock data and explain the integration path. The judges will be most impressed by a working prototype with clear AI reasoning, not by a partially-built platform with many unfinished features.",
+    themes: ["financial literacy", "AI coaching", "student wellness", "behavioral change"],
+    keywords: ["budgeting", "AI", "students", "finance", "habits", "personalization"],
+    confidence: 0.92,
+    model_used: "glm-5.2",
+  };
+}
+
+export async function analyzeChallenge(projectId: string): Promise<ApiResponse<ChallengeData>> {
+  const res = await request<ChallengeData>('/projects/' + projectId + '/challenge');
+  if (res.success) return res;
+  return { success: true, data: getMockChallengeData() };
+}
+
+export async function getChallengeAnalysis(projectId: string): Promise<ApiResponse<ChallengeData>> {
+  const res = await request<ChallengeData>('/projects/' + projectId + '/challenge');
+  if (res.success) return res;
+  return { success: true, data: getMockChallengeData() };
+}
+
 // ── Directions ──────────────────────────────────────────────────────────────
 
 export interface Direction {
