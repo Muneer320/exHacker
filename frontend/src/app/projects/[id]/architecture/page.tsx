@@ -4,18 +4,12 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Card, Section, Pill, SeverityBadge, Grid, LoadingState } from "@/components/shared/ui";
 
+import MermaidViewer from "@/components/diagrams/MermaidViewer";
+
 // Simple Mermaid viewer component
 function MermaidBlock({ code }: { code: string }) {
   if (!code || code === "") return null;
-  return (
-    <div className="card" style={{ marginBottom: "12px", fontFamily: "var(--font-mono)", fontSize: "11px", lineHeight: 1.6, overflow: "auto" }}>
-      <div className="term-bar" style={{ padding: "6px 12px" }}>
-        <span className="term-dot term-dot-r" /><span className="term-dot term-dot-y" /><span className="term-dot term-dot-g" />
-        <span style={{ marginLeft: "auto", fontSize: "9px", color: "var(--text-3)" }}>mermaid</span>
-      </div>
-      <pre style={{ padding: "16px", whiteSpace: "pre", color: "var(--text-2)" }}>{code}</pre>
-    </div>
-  );
+  return <MermaidViewer code={code} />;
 }
 
 export default function ArchitecturePage() {

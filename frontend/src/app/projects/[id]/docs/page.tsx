@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Pill, LoadingState } from "@/components/shared/ui";
+import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
 
 const FILE_ORDER = [
   { file: "README.md", label: "README", icon: "📖" },
@@ -104,114 +105,4 @@ export default function DocsPage() {
       </div>
     </div>
   );
-}
-
-// ─── Simple Markdown Renderer ─────────────────────────────────────────────────
-
-function MarkdownRenderer({ content }: { content: string }) {
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
-  let inCodeBlock = false;
-  let codeLines: string[] = [];
-  let codeLang = "";
-
-  const flushCode = () => {
-    if (codeLines.length > 0) {
-      elements.push(
-        <div key={`code-${elements.length}`} style={{ background: "var(--surface-0)", borderRadius: "var(--r-sm)", margin: "12px 0", overflow: "auto", fontFamily: "var(--font-mono)", fontSize: "12px", lineHeight: 1.6 }}>
-          <div className="term-bar" style={{ padding: "4px 10px" }}><span className="term-dot term-dot-r" /><span className="term-dot term-dot-y" /><span className="term-dot term-dot-g" /><span style={{ marginLeft: "auto", fontSize: "9px", color: "var(--text-3)" }}>{codeLang || "code"}</span></div>
-          <pre style={{ padding: "14px", whiteSpace: "pre" }}>{codeLines.map((l, i) => <div key={i} style={{ color: "var(--text-2)" }}>{l}</div>)}</pre>
-        </div>
-      );
-      codeLines = [];
-      codeLang = "";
-    }
-  };
-
-  lines.forEach((line, idx) => {
-    // Code blocks
-    if (line.startsWith("```")) {
-      if (inCodeBlock) { inCodeBlock = false; flushCode(); return; }
-      inCodeBlock = true;
-      codeLang = line.slice(3).trim();
-      return;
-    }
-    if (inCodeBlock) { codeLines.push(line); return; }
-
-    const key = `l-${idx}`;
-
-    // Headings
-    if (line.startsWith("# ")) { elements.push(<h1 key={key} style={{ fontSize: "22px", fontWeight: 700, color: "var(--text-1)", margin: "16px 0 8px", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{line.slice(2)}</h1>); return; }
-    if (line.startsWith("## ")) { elements.push(<h2 key={key} style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-1)", margin: "14px 0 6px", fontFamily: "var(--font-display)", letterSpacing: "-0.01em" }}>{line.slice(3)}</h2>); return; }
-    if (line.startsWith("### ")) { elements.push(<h3 key={key} style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-1)", margin: "12px 0 4px" }}>{line.slice(4)}</h3>); return; }
-
-    // Table
-    if (line.startsWith("|")) {
-      if (line.includes("---")) return; // Skip separator rows
-      const cells = line.split("|").filter(c => c.trim());
-      const isHeader = lines[idx + 1]?.includes("---");
-      if (isHeader) {
-        elements.push(
-          <div key={key} style={{ display: "flex", gap: "16px", padding: "6px 0", borderBottom: "2px solid var(--blue)", marginTop: "8px" }}>
-            {cells.map((c, i) => <div key={i} style={{ flex: 1, fontSize: "11px", fontWeight: 700, color: "var(--blue-light)" }}>{c.trim()}</div>)}
-          </div>
-        );
-      } else {
-        elements.push(
-          <div key={key} style={{ display: "flex", gap: "16px", padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
-            {cells.map((c, i) => <div key={i} style={{ flex: 1, fontSize: "11px", color: "var(--text-2)" }}>{c.trim()}</div>)}
-          </div>
-        );
-      }
-      return;
-    }
-
-    // Blockquote
-    if (line.startsWith("> ")) {
-      elements.push(<blockquote key={key} style={{ borderLeft: "2px solid var(--blue)", padding: "8px 14px", margin: "8px 0", background: "var(--surface-1)", fontSize: "12px", color: "var(--text-2)", lineHeight: 1.6 }}>{renderInline(line.slice(2))}</blockquote>);
-      return;
-    }
-
-    // List items
-    if (line.startsWith("- ") || line.startsWith("* ")) {
-      elements.push(<div key={key} style={{ display: "flex", gap: "8px", padding: "1px 0", fontSize: "12px", color: "var(--text-2)", lineHeight: 1.6 }}><span style={{ color: "var(--blue-light)" }}>·</span><span>{renderInline(line.slice(2))}</span></div>);
-      return;
-    }
-    if (/^\d+\. /.test(line)) {
-      const match = line.match(/^(\d+)\. (.+)/);
-      if (match) {
-        elements.push(<div key={key} style={{ display: "flex", gap: "8px", padding: "1px 0", fontSize: "12px", color: "var(--text-2)", lineHeight: 1.6 }}><span style={{ color: "var(--blue-light)", minWidth: "16px", fontFamily: "var(--font-mono)" }}>{match[1]}.</span><span>{renderInline(match[2])}</span></div>);
-        return;
-      }
-    }
-
-    // Horizontal rule
-    if (line.startsWith("---") || line.startsWith("***")) {
-      elements.push(<hr key={key} style={{ border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" }} />);
-      return;
-    }
-
-    // Empty line
-    if (line.trim() === "") { elements.push(<div key={key} style={{ height: "8px" }} />); return; }
-
-    // Paragraph
-    elements.push(<p key={key} style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.7, margin: "4px 0" }}>{renderInline(line)}</p>);
-  });
-
-  // Flush remaining code block
-  if (inCodeBlock) flushCode();
-
-  return <div>{elements}</div>;
-}
-
-// ─── Inline Markdown ─────────────────────────────────────────────────────────
-
-function renderInline(text: string): React.ReactNode {
-  // Bold + inline code
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i} style={{ fontWeight: 700, color: "var(--text-1)" }}>{part.slice(2, -2)}</strong>;
-    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} style={{ fontFamily: "var(--font-mono)", fontSize: "11px", background: "var(--surface-2)", padding: "1px 4px", borderRadius: "2px", color: "var(--lime)" }}>{part.slice(1, -1)}</code>;
-    return part;
-  });
 }
