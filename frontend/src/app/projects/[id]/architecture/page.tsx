@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Card, Section, Pill, SeverityBadge, Grid, LoadingState } from "@/components/shared/ui";
-
 import MermaidViewer from "@/components/diagrams/MermaidViewer";
+import GuidedSection from "@/components/shared/GuidedSection";
 
 // Simple Mermaid viewer component
 function MermaidBlock({ code }: { code: string }) {
