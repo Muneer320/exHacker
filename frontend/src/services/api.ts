@@ -4,7 +4,10 @@
  * Gracefully falls back to mock data when backend is offline.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
+    ? 'https://exhacker-backend.vercel.app/api/v1' 
+    : 'http://localhost:8000/api/v1');
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

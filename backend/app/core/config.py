@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     COST_LIMIT_PER_PROJECT: float = 0.50        # $0.50 max AI spend per project
 
     # Mock modes — no API keys needed for development
-    MOCK_AI: bool = False                       # Use fake AI responses (no cost)
+    MOCK_AI: bool = True                       # Use fake AI responses (no cost)
     MOCK_RESEARCH: bool = True                  # Use fake research data (no API calls)
 
     # Research
