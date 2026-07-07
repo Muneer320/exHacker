@@ -4,18 +4,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
+  Star,
   Zap,
+  History,
   ExternalLink,
   Download,
-  Star,
   Compass,
   Database,
   GitFork,
   Lightbulb,
 } from 'lucide-react';
-import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, downloadExport, analyzeChallenge, getChallengeAnalysis, Project, ResearchData, Direction, BlueprintData, ChallengeData } from '@/services/api';
+import { getProject, startResearch, getResearch, generateDirections, getDirections, selectDirection, generateBlueprint, downloadExport, analyzeChallenge, getChallengeAnalysis, analyzeCompetitors, getCompetitorAnalysis, getSharedMemory, getDecisions, Project, ResearchData, Direction, BlueprintData, ChallengeData, CompetitorData, SharedMemoryEntry, DecisionEntry } from '@/services/api';
 
-type Tab = 'overview' | 'research' | 'directions' | 'blueprint' | 'challenge';
+type Tab = 'overview' | 'research' | 'directions' | 'blueprint' | 'challenge' | 'competitors' | 'timeline';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -35,6 +36,11 @@ export default function ProjectDetailPage() {
   const [blueprintLoading, setBlueprintLoading] = useState(false);
   const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
   const [challengeLoading, setChallengeLoading] = useState(false);
+  const [competitorData, setCompetitorData] = useState<CompetitorData | null>(null);
+  const [competitorLoading, setCompetitorLoading] = useState(false);
+  const [decisions, setDecisions] = useState<DecisionEntry[]>([]);
+  const [decisionsLoading, setDecisionsLoading] = useState(false);
+  const [decisionFilter, setDecisionFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -44,6 +50,7 @@ export default function ProjectDetailPage() {
         loadResearch();
         loadDirections();
         loadChallenge();
+        loadDecisions();
       } else {
         setError(res.error?.message || 'Project not found.');
       }
@@ -121,6 +128,15 @@ export default function ProjectDetailPage() {
     }
   }, [projectId]);
 
+  const loadDecisions = useCallback(async () => {
+    setDecisionsLoading(true);
+    const res = await getDecisions(projectId, decisionFilter ?? undefined);
+    if (res.success) {
+      setDecisions(res.data.entries);
+    }
+    setDecisionsLoading(false);
+  }, [projectId, decisionFilter]);
+
   if (loading) {
     return (
       <div style={{ background: 'var(--color-app-bg)', minHeight: '100vh', color: 'var(--color-text-primary)', padding: '80px 24px' }}>
@@ -163,6 +179,8 @@ export default function ProjectDetailPage() {
     { id: 'directions', label: 'Directions', icon: <Zap size={14} /> },
     { id: 'blueprint', label: 'Blueprint', icon: <Compass size={14} /> },
     { id: 'challenge', label: 'Intelligence', icon: <Star size={14} /> },
+    { id: 'competitors', label: 'Competitors', icon: <GitFork size={14} /> },
+    { id: 'timeline', label: 'Timeline', icon: <History size={14} /> },
   ];
 
   return (

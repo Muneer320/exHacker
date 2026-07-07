@@ -455,6 +455,128 @@ export async function getCompetitorAnalysis(projectId: string): Promise<ApiRespo
   return { success: true, data: getMockCompetitorData() };
 }
 
+// ── Shared Intelligence (Bible §7) ──────────────────────────────────────────
+
+export interface SharedMemoryEntry {
+  id: string;
+  project_id: string;
+  specialist: string;
+  memory_type: string;
+  version: number;
+  content: Record<string, unknown>;
+  confidence: number | null;
+  references: string[];
+  model_used: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DecisionEntry {
+  id: string;
+  project_id: string;
+  entry_number: number;
+  title: string;
+  category: string;
+  description: string;
+  rationale: string | null;
+  alternatives_considered: { title: string; pros: string[]; cons: string[] }[];
+  confidence: number | null;
+  originating_specialist: string;
+  references: string[];
+  status: 'proposed' | 'accepted' | 'rejected' | 'superseded' | 'needs_review';
+  superseded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  opportunity_selected: '🎯 Opportunity Selected',
+  direction_rejected: '❌ Direction Rejected',
+  tech_chosen: '⚙️ Technology Chosen',
+  architecture_tradeoff: '🏗️ Architecture Tradeoff',
+  research_finding: '🔬 Research Finding',
+  risk_accepted: '⚠️ Risk Accepted',
+  feature_scoped: '📐 Feature Scoped',
+  specialist_review: '🧠 Specialist Review',
+  direction_generated: '💡 Direction Generated',
+};
+
+function getMockSharedData(): { memory: SharedMemoryEntry[]; decisions: DecisionEntry[] } {
+  return {
+    memory: [
+      {
+        id: 'mem-1', project_id: '', specialist: 'challenge_analyst', memory_type: 'challenge_intelligence',
+        version: 1, content: { executive_summary: 'Build a financial literacy tool for students' },
+        confidence: 0.92, references: [], model_used: 'glm-5.2', is_active: true, created_at: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 'mem-2', project_id: '', specialist: 'research_specialist', memory_type: 'research_report',
+        version: 1, content: { summary: 'Found 12 relevant results across 7 categories' },
+        confidence: 0.85, references: ['mem-1'], model_used: 'deepseek-v4-flash', is_active: true, created_at: new Date(Date.now() - 1800000).toISOString(),
+      },
+      {
+        id: 'mem-3', project_id: '', specialist: 'competitor_analyst', memory_type: 'competitor_intelligence',
+        version: 1, content: { landscape_summary: '3 direct competitors identified' },
+        confidence: 0.88, references: ['mem-1', 'mem-2'], model_used: 'glm-5.2', is_active: true, created_at: new Date(Date.now() - 600000).toISOString(),
+      },
+    ],
+    decisions: [
+      {
+        id: 'dec-1', project_id: '', entry_number: 1, title: 'Challenge analyzed', category: 'specialist_review',
+        description: 'Challenge Intelligence completed for the project.',
+        rationale: null, alternatives_considered: [], confidence: 0.92, originating_specialist: 'challenge_analyst',
+        references: ['mem-1'], status: 'accepted', superseded_by: null,
+        created_at: new Date(Date.now() - 3500000).toISOString(),
+        updated_at: new Date(Date.now() - 3500000).toISOString(),
+      },
+      {
+        id: 'dec-2', project_id: '', entry_number: 2, title: 'Research completed', category: 'research_finding',
+        description: 'Found 12 results: 3 competitors, 3 APIs, 2 hackathon winners, 2 trends, 1 OSS, 1 startup.',
+        rationale: 'Research used Plaid as the primary search term across categories.',
+        alternatives_considered: [], confidence: 0.85, originating_specialist: 'research_specialist',
+        references: ['mem-2'], status: 'accepted', superseded_by: null,
+        created_at: new Date(Date.now() - 1700000).toISOString(),
+        updated_at: new Date(Date.now() - 1700000).toISOString(),
+      },
+      {
+        id: 'dec-3', project_id: '', entry_number: 3, title: 'Competitor landscape analyzed', category: 'specialist_review',
+        description: 'YNAB, Mint, PocketGuard identified as primary competitors. AI coaching identified as key white space.',
+        rationale: 'All competitors track but none coach. Social accountability is absent across the board.',
+        alternatives_considered: [
+          { title: 'Build another general tracker', pros: ['Familiar pattern'], cons: ['No differentiation', 'Oversaturated'] },
+          { title: 'Focus on AI coaching', pros: ['Unique angle', 'Strong judge appeal', 'Feasible in 48h'], cons: ['Less proven market'] },
+        ],
+        confidence: 0.88, originating_specialist: 'competitor_analyst',
+        references: ['mem-3'], status: 'accepted', superseded_by: null,
+        created_at: new Date(Date.now() - 500000).toISOString(),
+        updated_at: new Date(Date.now() - 500000).toISOString(),
+      },
+    ],
+  };
+}
+
+export async function getSharedMemory(projectId: string): Promise<ApiResponse<{ entries: SharedMemoryEntry[] }>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/shared/memory`);
+    if (res.ok) { const d = await res.json(); if (d?.data?.entries) return { success: true, data: d.data }; }
+  } catch { /* fallback */ }
+  return { success: true, data: { entries: getMockSharedData().memory } };
+}
+
+export async function getDecisions(
+  projectId: string, category?: string,
+): Promise<ApiResponse<{ entries: DecisionEntry[]; count: number }>> {
+  try {
+    let url = `${API_BASE_URL}/projects/${projectId}/shared/decisions`;
+    if (category) url += `?category=${category}`;
+    const res = await fetch(url);
+    if (res.ok) { const d = await res.json(); if (d?.data?.entries) return { success: true, data: d.data }; }
+  } catch { /* fallback */ }
+  const mock = getMockSharedData();
+  const filtered = category ? mock.decisions.filter(d => d.category === category) : mock.decisions;
+  return { success: true, data: { entries: filtered, count: filtered.length } };
+}
+
 // ── Directions ──────────────────────────────────────────────────────────
 
 export interface Direction {
