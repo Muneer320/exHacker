@@ -68,7 +68,11 @@ export async function createProject(idea: string): Promise<ApiResponse<ProjectDa
     method: 'POST',
     body: JSON.stringify({ idea }),
   });
-  if (res.success) return res;
+  if (res.success && (res.data as any).project) return res;
+  // Backend returns data directly, wrap in { project }
+  if (res.success && (res.data as any).id) {
+    return { success: true, data: { project: res.data as unknown as Project } };
+  }
   return {
     success: true,
     data: {
@@ -87,7 +91,10 @@ export async function createProject(idea: string): Promise<ApiResponse<ProjectDa
 
 export async function getProject(id: string): Promise<ApiResponse<ProjectData>> {
   const res = await request<ProjectData>(`/projects/${id}`);
-  if (res.success) return res;
+  if (res.success && (res.data as any).project) return res;
+  if (res.success && (res.data as any).id) {
+    return { success: true, data: { project: res.data as unknown as Project } };
+  }
   return {
     success: true,
     data: {

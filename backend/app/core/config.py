@@ -25,7 +25,12 @@ class Settings(BaseSettings):
     # API
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "exHacker"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "https://exhacker-frontend.vercel.app",
+        "https://exhacker-backend.vercel.app",
+    ]
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./exhacker.db"
