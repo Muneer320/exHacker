@@ -6,6 +6,7 @@ import { getProject, Project } from "@/services/api";
 import { PipelineProvider } from "@/components/pipeline/PipelineContext";
 import PipelineSidebar from "@/components/pipeline/PipelineSidebar";
 import WorkspaceNavigation from "./WorkspaceNavigation";
+import { ToastProvider } from "@/components/shared/Toast";
 
 // ─── Navigation sections ──────────────────────────────────────────────────────
 
@@ -63,7 +64,8 @@ export default function ProjectWorkspaceLayout({ children }: { children: React.R
 
   return (
     <PipelineProvider projectName={project.name}>
-      <div style={{ display: "flex", minHeight: "100vh", background: "var(--black)" }}>
+      <ToastProvider>
+        <div style={{ display: "flex", minHeight: "100vh", background: "var(--black)" }}>
         {/* Pipeline sidebar */}
         <PipelineSidebar />
 
@@ -94,7 +96,7 @@ export default function ProjectWorkspaceLayout({ children }: { children: React.R
             {children}
           </div>
         </div>
-      </div>
+      </div></ToastProvider>
     </PipelineProvider>
   );
 }

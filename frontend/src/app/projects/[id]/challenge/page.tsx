@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { analyzeChallenge, getChallengeAnalysis, ChallengeData } from "@/services/api";
 import { Card, Section, ScoreRow, Grid, Pill, SeverityBadge, LoadingState, EmptyState, ScoreBar } from "@/components/shared/ui";
+import GuidedSection from "@/components/shared/GuidedSection";
 
 export default function ChallengePage() {
   const params = useParams();
@@ -23,12 +24,28 @@ export default function ChallengePage() {
   if (loading) return <LoadingState label="Analyzing challenge..." />;
 
   if (!data || !data.executive_summary) return (
-    <EmptyState icon="🧠" title="Challenge Intelligence" description="Analyze the challenge to get structured intelligence: core problems, hidden opportunities, and a recommended strategy."
-      action={<button onClick={handleAnalyze} className="btn btn-primary">Analyze Challenge</button>} />
+    <GuidedSection
+      title="Challenge Intelligence"
+      whyMatters="Understand the hackathon challenge deeply before making decisions."
+      status="idle"
+      actionLabel="Analyze Challenge"
+      onAction={handleAnalyze}
+      estimatedTime="~10 seconds"
+      whatProduced="Executive summary, core problem, stakeholders, success criteria, risk areas, and recommended strategy"
+      unlocks="Research and competitor analysis"
+    />
   );
 
   return (
-    <div>
+      <GuidedSection
+        title="Challenge Intelligence"
+        whyMatters="Understand the hackathon challenge deeply before making decisions."
+        status="done"
+        actionLabel="Re-analyze"
+        onAction={handleAnalyze}
+        whatProduced="Complete challenge intelligence report"
+        unlocks="Research and competitor analysis"
+      >
       <div className="anim-fade-up" style={{ marginBottom: "20px" }}>
         <span className="sec-num">[ CHALLENGE ]</span>
         <h2 className="d4" style={{ color: "var(--text-1)", marginBottom: "4px" }}>Challenge Intelligence</h2>
@@ -171,7 +188,6 @@ export default function ChallengePage() {
           <span className="label" style={{ color: "var(--info)", marginBottom: "8px", display: "block" }}>Recommended Strategy</span>
           <p style={{ fontSize: "14px", color: "var(--text-1)", lineHeight: 1.7, fontStyle: "italic" }}>{data.recommended_strategy}</p>
         </div>
-      )}
-    </div>
+      )}</GuidedSection>
   );
 }
