@@ -1,0 +1,1 @@
+"use client"; export default function Page() { return <div className="anim-fade-up"><span className="sec-num">[ IDEAS ]</span><h2 className="d4" style={{color:"var(--text-1)",marginTop:"8px"}}>Idea Selection</h2><p className="body-md" style={{marginTop:"12px"}}>Five differentiated product ideas with 8-dimension scoring. Select the direction for your project.</p></div>; }
