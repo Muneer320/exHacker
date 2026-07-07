@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Disable Turbopack — use Webpack instead
-  webpack: (config) => {
-    return config;
-  },
+  // Use Turbopack (default in Next.js 16 — faster builds)
+  turbopack: {},
 };
 
 export default nextConfig;

@@ -18,12 +18,20 @@ from app.core.logging import setup_logging
 async def lifespan(app: FastAPI):
     """Application lifecycle."""
     setup_logging()
-    # Auto-create database tables on startup
-    from app.db.session import engine
-    from app.models.base import Base
+    logger.info("Starting exHacker in %s environment", settings.ENV)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Auto-create database tables on startup (PostgreSQL only in production)
+    try:
+        from app.db.session import engine
+        from app.models.base import Base
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified")
+    except Exception as e:
+        logger.warning("Could not initialize database tables: %s", e)
+        # In serverless environments, tables may already exist
+
     yield
     await engine.dispose()
 
