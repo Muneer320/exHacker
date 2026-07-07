@@ -33,7 +33,7 @@ export default function LandingPage() {
     setError(null);
 
     try {
-      const res = await createProject({ idea: input.trim() });
+      const res = await createProject(input.trim());
       if (res.success) {
         router.push('/projects');
       } else {

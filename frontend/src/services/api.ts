@@ -1,7 +1,7 @@
 /**
  * exHacker API Service Client
  * Thin layer over the FastAPI backend.
- * G racefully falls back to mock data when backend is offline.
+ * Gracefully falls back to mock data when backend is offline.
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -18,186 +18,97 @@ export interface Project {
   updated_at: string;
 }
 
-export interface CreateProjectPayload {
-  idea: string;
-  name?: string;
-  description?: string;
-}
-
-export interface UpdateProjectPayload {
-  name?: string;
-  description?: string;
-  idea?: string;
+interface ApiError {
+  code?: string;
+  message?: string;
+  detail?: Record<string, unknown>;
+  suggestion?: string;
 }
 
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
-  message?: string;
-  error?: {
-    code: string;
-    message: string;
-    detail?: Record<string, unknown>;
-    suggestion?: string;
-  };
+  error?: ApiError;
 }
 
-// ── Client ─────────────────────────────────────────────────────────────────
+// ── Base Request ──────────────────────────────────────────────────────────
 
-async function request<T>(
-  endpoint: string,
-  options?: RequestInit,
-): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
+async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${path}`;
   try {
     const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers as Record<string, string> },
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options?.headers || {}),
-      },
     });
+    const json = await res.json();
+    if (res.ok) return json as ApiResponse<T>;
 
-    const body = await res.json();
-
-    if (!res.ok) {
-      console.error(`[exHacker API] ${endpoint} failed:`, body);
+    const mock = sessionStorage.getItem('exhacker_mock');
+    if (mock === 'true') {
+      return { success: true, data: {} as T };
     }
+    return { success: false, data: {} as T, error: json };
+  } catch {
+    return { success: true, data: {} as T };
+  }
+}
 
-    return body as ApiResponse<T>;
-  } catch (err) {
-    console.error(`[exHacker API] Network error on ${endpoint}:`, err);
-    return {
-      success: false,
-      data: null as unknown as T,
-      error: {
-        code: 'NETWORK_ERROR',
-        message: 'Could not reach the backend.',
-        suggestion: 'Make sure the backend is running on port 8000.',
+// ── Projects ──────────────────────────────────────────────────────────────
+
+export interface ProjectData {
+  project: Project;
+}
+
+export interface ProjectListData {
+  projects: Project[];
+}
+
+export async function createProject(idea: string): Promise<ApiResponse<ProjectData>> {
+  const res = await request<ProjectData>('/projects', {
+    method: 'POST',
+    body: JSON.stringify({ idea }),
+  });
+  if (res.success) return res;
+  return {
+    success: true,
+    data: {
+      project: {
+        id: 'mock-' + Date.now(),
+        name: idea.slice(0, 40),
+        description: null,
+        idea,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
-    };
-  }
-}
-
-// ── Mock Data (for development without backend) ───────────────────────────
-
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: 'mock-001',
-    name: 'Student Budget AI',
-    description: null,
-    idea: 'A mobile app that helps students budget their money using AI',
-    status: 'draft',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-let mockIdCounter = 1;
-
-function createMockProject(payload: CreateProjectPayload): Project {
-  const project: Project = {
-    id: `mock-${String(++mockIdCounter).padStart(3, '0')}`,
-    name: payload.name || payload.idea.slice(0, 60) + (payload.idea.length > 60 ? '...' : ''),
-    description: payload.description || null,
-    idea: payload.idea,
-    status: 'draft',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    },
   };
-  MOCK_PROJECTS.unshift(project);
-  return project;
 }
 
-// ── Endpoints ──────────────────────────────────────────────────────────────
-
-export async function createProject(
-  payload: CreateProjectPayload,
-): Promise<ApiResponse<{ project: Project }>> {
-  const res = await request<{ id: string; name: string; description: string | null; idea: string; status: string; created_at: string; updated_at: string }>(
-    '/projects',
-    { method: 'POST', body: JSON.stringify(payload) },
-  );
-
-  if (res.success) {
-    return {
-      ...res,
-      data: { project: res.data as unknown as Project },
-    };
-  }
-
-  // Fallback to mock
-  console.warn('[exHacker API] Using mock project creation');
-  const mockProject = createMockProject(payload);
+export async function getProject(id: string): Promise<ApiResponse<ProjectData>> {
+  const res = await request<ProjectData>(`/projects/${id}`);
+  if (res.success) return res;
   return {
     success: true,
-    data: { project: mockProject },
-    message: 'Mock project created.',
+    data: {
+      project: {
+        id, name: 'Demo Project', description: null,
+        idea: 'A sample project idea for demo purposes',
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    },
   };
 }
 
-export async function listProjects(): Promise<ApiResponse<{ projects: Project[] }>> {
-  const res = await request<{ projects: Project[] }>('/projects');
-
-  if (res.success) {
-    return res;
-  }
-
-  // Fallback to mock
-  console.warn('[exHacker API] Using mock project list');
-  return {
-    success: true,
-    data: { projects: MOCK_PROJECTS },
-    message: 'Mock projects (backend offline).',
-  };
+export async function listProjects(): Promise<ApiResponse<ProjectListData>> {
+  const res = await request<ProjectListData>('/projects');
+  if (res.success) return res;
+  return { success: true, data: { projects: [] } };
 }
 
-export async function getProject(
-  id: string,
-): Promise<ApiResponse<{ project: Project }>> {
-  const res = await request<Project>('/projects/' + id);
-
-  if (res.success) {
-    return { ...res, data: { project: res.data as unknown as Project } };
-  }
-
-  // Fallback to mock
-  const mock = MOCK_PROJECTS.find((p) => p.id === id);
-  if (mock) {
-    return { success: true, data: { project: mock } };
-  }
-
-  return {
-    success: false,
-    data: null as unknown as { project: Project },
-    error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' },
-  };
-}
-
-export async function deleteProject(id: string): Promise<ApiResponse<null>> {
-  return request<null>('/projects/' + id, { method: 'DELETE' });
-}
-
-export async function transitionProject(
-  id: string,
-  transition: string,
-): Promise<ApiResponse<{ id: string; status: string; message: string }>> {
-  return request<{ id: string; status: string; message: string }>(
-    '/projects/' + id + '/transition',
-    { method: 'POST', body: JSON.stringify({ transition }) },
-  );
-}
-
-// ── Research ────────────────────────────────────────────────────────────────
-
-export interface ResearchResult {
-  title: string;
-  url: string | null;
-  snippet: string | null;
-  relevance_score: number | null;
-  result_type: string;
-}
+// ── Research (legacy 4-category) ──────────────────────────────────────────
 
 export interface ResearchData {
   summary: {
@@ -208,53 +119,158 @@ export interface ResearchData {
     insights_found: number;
     cached: boolean;
   };
-  competitors: ResearchResult[];
-  apis: ResearchResult[];
-  oss_projects: ResearchResult[];
-  insights: ResearchResult[];
+  competitors: ResearchItemLegacy[];
+  apis: ResearchItemLegacy[];
+  oss_projects: ResearchItemLegacy[];
+  insights: ResearchItemLegacy[];
+}
+
+export interface ResearchItemLegacy {
+  title: string;
+  url: string | null;
+  snippet: string | null;
+  relevance_score: number | null;
+  result_type: string;
 }
 
 function getMockResearchData(): ResearchData {
   return {
-    summary: { total_results: 5, competitors_found: 3, apis_found: 1, oss_found: 1, insights_found: 0, cached: false },
+    summary: { total_results: 3, competitors_found: 3, apis_found: 0, oss_found: 0, insights_found: 0, cached: false },
     competitors: [
-      { title: 'YNAB (You Need A Budget)', url: 'https://www.ynab.com', snippet: 'Popular budgeting app with envelope-based system. Premium subscription model.', relevance_score: 0.92, result_type: 'competitor' },
-      { title: 'Mint / Credit Karma', url: 'https://mint.intuit.com', snippet: 'Free personal finance tracking app. Connects to bank accounts automatically.', relevance_score: 0.88, result_type: 'competitor' },
-      { title: 'PocketGuard', url: 'https://pocketguard.com', snippet: 'Budgeting app focused on how much spendable money you have left.', relevance_score: 0.75, result_type: 'competitor' },
+      { title: 'YNAB', url: 'https://ynab.com', snippet: 'Popular budgeting app for students', relevance_score: 0.9, result_type: 'competitor' },
+      { title: 'Mint', url: 'https://mint.intuit.com', snippet: 'Free personal finance tracking', relevance_score: 0.85, result_type: 'competitor' },
+      { title: 'PocketGuard', url: 'https://pocketguard.com', snippet: 'Simplified budgeting for beginners', relevance_score: 0.7, result_type: 'competitor' },
     ],
-    apis: [
-      { title: 'Plaid API', url: 'https://plaid.com', snippet: 'Financial institution data aggregation API. Connects to 12,000+ institutions.', relevance_score: 0.95, result_type: 'api' },
-    ],
-    oss_projects: [
-      { title: 'Firefly III', url: 'https://github.com/firefly-iii/firefly-iii', snippet: 'Self-hosted personal finance manager. PHP/Laravel, REST API.', relevance_score: 0.7, result_type: 'oss' },
-    ],
-    insights: [],
+    apis: [], oss_projects: [], insights: [],
   };
 }
 
-export async function startResearch(
-  projectId: string,
-): Promise<ApiResponse<ResearchData>> {
-  const res = await request<ResearchData>(
-    '/projects/' + projectId + '/research',
-    { method: 'POST' },
-  );
-  if (res.success) return res;
-  console.warn('[exHacker API] Using mock research data');
-  return { success: true, data: getMockResearchData() };
-}
-
-export async function getResearch(
-  projectId: string,
-): Promise<ApiResponse<ResearchData>> {
-  const res = await request<ResearchData>(
-    '/projects/' + projectId + '/research',
-  );
+export async function startResearch(projectId: string): Promise<ApiResponse<ResearchData>> {
+  const res = await request<ResearchData>('/projects/' + projectId + '/research', { method: 'POST' });
   if (res.success) return res;
   return { success: true, data: getMockResearchData() };
 }
 
-// ── Challenge Intelligence (Bible §8.2, §6.2 S1) ────────────────────────────
+export async function getResearch(projectId: string): Promise<ApiResponse<ResearchData>> {
+  const res = await request<ResearchData>('/projects/' + projectId + '/research');
+  if (res.success) return res;
+  return { success: true, data: getMockResearchData() };
+}
+
+// ── S2 Research (10-category format) ─────────────────────────────────────────
+
+export interface ResearchCategory {
+  id: string;
+  label: string;
+  count: number;
+  items: ResearchItem2[];
+}
+
+export interface ResearchItem2 {
+  id: string;
+  title: string;
+  url: string | null;
+  snippet: string | null;
+  result_type: string;
+  category: string;
+  confidence: number | null;
+  freshness: string | null;
+  relevance: string | null;
+  relevance_score: number | null;
+  source: string | null;
+}
+
+export interface ResearchSynthesis {
+  synthesis: {
+    summary: string;
+    key_opportunities: string[];
+    critical_gaps: string[];
+    competitor_landscape: string;
+  } | null;
+  categories: { category: string; summary: string; actionable_insight: string; gap_identified: string }[] | null;
+  technology_recommendations: { technology: string; why: string; confidence: string; appears_in_results: number }[] | null;
+  differentiation_opportunities: { area: string; current_state: string; opportunity: string }[] | null;
+  risks_from_research: { risk: string; evidence: string }[] | null;
+  recommended_priorities: string[] | null;
+}
+
+export interface ResearchData2 {
+  summary: {
+    total_results: number;
+    categories_found: number;
+    categories: ResearchCategory[];
+    cached: boolean;
+  };
+  synthesis: ResearchSynthesis | null;
+}
+
+function getMockS2ResearchData(): ResearchData2 {
+  const items = (cats: { id: string; label: string; items: { title: string; snippet: string; confidence: number }[] }) => ({
+    id: cats.id, label: cats.label, count: cats.items.length,
+    items: cats.items.map((item, i) => ({
+      id: `${cats.id}-${i}`, title: item.title, url: null, snippet: item.snippet,
+      result_type: cats.id, category: cats.id, confidence: item.confidence,
+      freshness: 'weeks', relevance: item.confidence >= 0.8 ? 'high' : 'medium',
+      relevance_score: item.confidence, source: 'mock',
+    })),
+  });
+
+  const allCats = [
+    items({ id: 'product', label: 'Existing Products', items: [
+      { title: 'YNAB', snippet: 'Leading personal budgeting app with envelope methodology', confidence: 0.92 },
+      { title: 'Mint', snippet: 'Free personal finance app with bank integration', confidence: 0.88 },
+      { title: 'PocketGuard', snippet: 'Simplified budgeting for younger users', confidence: 0.75 },
+    ]}),
+    items({ id: 'api', label: 'APIs & SDKs', items: [
+      { title: 'Plaid API', snippet: 'Banking API connecting to 12k+ financial institutions', confidence: 0.95 },
+      { title: 'Finicity', snippet: 'Open banking platform with account aggregation', confidence: 0.82 },
+      { title: 'Teller API', snippet: 'Modern banking API with read/write access', confidence: 0.78 },
+    ]}),
+    items({ id: 'hackathon_winner', label: 'Hackathon Winners', items: [
+      { title: 'Penny AI (TreeHacks 2024)', snippet: 'AI-powered budgeting coach', confidence: 0.85 },
+      { title: 'SaveMate (HackMIT 2025)', snippet: 'Social savings with accountability groups', confidence: 0.80 },
+    ]}),
+    items({ id: 'trend', label: 'Industry Trends', items: [
+      { title: 'Gen Z Finance Preferences', snippet: '73% of Gen Z prefer AI-powered budgeting', confidence: 0.70 },
+    ]}),
+    items({ id: 'oss', label: 'Open Source', items: [
+      { title: 'Actual Budget', snippet: 'Open-source finance tool with 15k+ GitHub stars', confidence: 0.88 },
+    ]}),
+  ];
+
+  return {
+    summary: { total_results: 11, categories_found: 5, categories: allCats, cached: false },
+    synthesis: {
+      synthesis: {
+        summary: 'The student budgeting space is competitive but fragmented. Major players target older demographics, leaving Gen Z underserved.',
+        key_opportunities: ['AI-powered coaching (not just tracking)', 'Social accountability groups', 'Gamification mechanics', 'Simplified student-focused UX'],
+        critical_gaps: ['No app combines AI coaching with social accountability', 'Existing apps feel judgmental', 'Student-specific features underserved'],
+        competitor_landscape: 'Fragmented market with incumbents losing relevance with Gen Z.',
+      },
+      categories: [{ category: 'existing_products', summary: 'Products focus on tracking not coaching', actionable_insight: 'Differentiate through AI coaching', gap_identified: 'No personalized coaching for students' }],
+      technology_recommendations: [{ technology: 'Plaid API', why: 'Industry standard for bank connectivity', confidence: 'high', appears_in_results: 5 }],
+      differentiation_opportunities: [{ area: 'AI Coaching', current_state: 'Apps show data but dont advise', opportunity: 'Build an AI coach for personalized advice' }],
+      risks_from_research: [{ risk: 'Plaid API dependency', evidence: '3 of 3 APIs found are Plaid' }],
+      recommended_priorities: ['Build AI coaching loop', 'Integrate Plaid', 'Add social accountability', 'Target Gen Z UX'],
+    },
+  };
+}
+
+export async function startResearchV2(projectId: string): Promise<ApiResponse<ResearchData2>> {
+  try {
+    const url = `${API_BASE_URL}/projects/${projectId}/research`;
+    const res = await fetch(url, { method: 'POST' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.data?.summary?.categories) {
+        return { success: true, data: data.data };
+      }
+    }
+  } catch { /* fallback to mock */ }
+  return { success: true, data: getMockS2ResearchData() };
+}
+
+// ── Challenge Intelligence ────────────────────────────────────────────────
 
 export interface ChallengeData {
   executive_summary: string;
@@ -276,54 +292,29 @@ export interface ChallengeData {
 
 function getMockChallengeData(): ChallengeData {
   return {
-    executive_summary: "This challenge asks teams to build a financial literacy tool for college students. The organizers are looking for something that goes beyond basic budgeting—they want behavioral change. The emphasis on 'AI-powered' in the prompt suggests they value intelligent features that adapt to individual user behavior, not just tracking dashboards.",
-    core_problem: { problem: "College students lack financial literacy and struggle with budgeting, leading to debt and poor financial decisions that compound over time.", who_experiences: "College students aged 18-24, particularly those managing their own finances for the first time.", why_important: "Financial habits formed in college persist into adulthood. Poor financial literacy contributes to the $1.7 trillion student debt crisis." },
-    hidden_problems: ["Students are embarrassed to ask for financial help", "Existing budgeting apps feel judgmental and punitive", "Financial literacy education is boring and theoretical", "Students need immediate gratification, not long-term planning"],
+    executive_summary: 'This challenge asks teams to build a financial literacy tool. The organizers want behavioral change, not just tracking.',
+    core_problem: { problem: 'College students lack financial literacy skills leading to long-term debt.', who_experiences: 'Students aged 18-24', why_important: 'Financial habits formed in college persist into adulthood.' },
+    hidden_problems: ['Students are embarrassed to ask for financial help', 'Existing apps feel judgmental'],
     stakeholders: [
-      { role: "Primary users", description: "College students who need to manage limited budgets" },
-      { role: "Secondary users", description: "Parents who want visibility into their children's finances" },
-      { role: "Beneficiaries", description: "Universities that want to reduce student financial stress" },
-      { role: "Decision makers", description: "Student affairs departments evaluating financial wellness tools" },
-      { role: "Judges", description: "Looking for innovation in behavioral finance + AI application" },
-      { role: "Potential customers", description: "Fintech companies targeting Gen Z consumers" }
+      { role: 'Primary users', description: 'College students managing limited budgets' },
+      { role: 'Judges', description: 'Looking for innovation + AI application' },
     ],
-    constraints: [
-      { type: "time", description: "48 hours to build a working prototype" },
-      { type: "platform", description: "Web/mobile app with real-time features" },
-      { type: "data_privacy", description: "Must handle financial data securely" },
-      { type: "team", description: "Team of 4 with mixed frontend/backend skills" }
-    ],
-    success_criteria: [
-      { criterion: "Problem relevance", weight: 25, description: "Does it actually address student financial struggles?" },
-      { criterion: "Technical execution", weight: 20, description: "Is the implementation solid and well-architected?" },
-      { criterion: "AI innovation", weight: 20, description: "How intelligently does it use AI features?" },
-      { criterion: "UX quality", weight: 20, description: "Is the interface intuitive and engaging?" },
-      { criterion: "Presentation", weight: 15, description: "Can the team demo it effectively?" }
-    ],
-    opportunity_areas: ["Behavioral economics", "Gamification", "Social accountability", "AI coaching", "Real-time insights", "Community challenges"],
-    innovation_opportunities: [
-      { area: "Behavioral AI", description: "AI that detects spending patterns and delivers personalized nudges at the moment of decision" },
-      { area: "Social accountability", description: "Peer accountability groups with shared savings goals and gentle competition" },
-      { area: "Anticipatory budgeting", description: "Predictive budgeting that forecasts future spending based on past behavior and upcoming events" },
-      { area: "Emotional tracking", description: "Connecting spending to emotional states to build mindfulness around money" }
-    ],
-    risk_areas: [
-      { area: "Scope creep", severity: "high", description: "Teams try to build a full fintech platform instead of a focused tool" },
-      { area: "Data privacy", severity: "high", description: "Financial data requires careful handling—teams may underestimate this" },
-      { area: "AI superficiality", severity: "medium", description: "Adding AI features that don't actually solve real user problems" },
-      { area: "Demo complexity", severity: "medium", description: "A budgeting app is hard to demo effectively in 5 minutes" }
-    ],
+    constraints: [{ type: 'time', description: '48 hours for a working prototype' }],
+    success_criteria: [{ criterion: 'Problem relevance', weight: 25, description: 'Does it actually address student struggles?' }],
+    opportunity_areas: ['Behavioral economics', 'Gamification', 'AI coaching'],
+    innovation_opportunities: [{ area: 'Behavioral AI', description: 'AI that detects patterns and delivers personalized nudges' }],
+    risk_areas: [{ area: 'Scope creep', severity: 'high', description: 'Teams try to build too much' }],
     difficulty: { technical: 65, research: 40, demo: 55, judge: 60, overall: 55 },
-    recommended_strategy: "With 48 hours and a team of 4, focus on a single compelling user journey rather than a full-featured app. Build the core loop first: user connects spending data → AI analyzes patterns → user receives actionable insight. Make the demo script the priority—plan exactly what you'll show in 3 minutes. For AI, use a simple classification model or LLM for natural language insights. Don't try to build real bank integrations; use mock data and explain the integration path. The judges will be most impressed by a working prototype with clear AI reasoning, not by a partially-built platform with many unfinished features.",
-    themes: ["financial literacy", "AI coaching", "student wellness", "behavioral change"],
-    keywords: ["budgeting", "AI", "students", "finance", "habits", "personalization"],
+    recommended_strategy: 'Focus on a single user journey. Build the core loop: data → AI analysis → actionable insight.',
+    themes: ['financial literacy', 'AI coaching', 'student wellness'],
+    keywords: ['budgeting', 'AI', 'students', 'finance'],
     confidence: 0.92,
-    model_used: "glm-5.2",
+    model_used: 'glm-5.2',
   };
 }
 
 export async function analyzeChallenge(projectId: string): Promise<ApiResponse<ChallengeData>> {
-  const res = await request<ChallengeData>('/projects/' + projectId + '/challenge');
+  const res = await request<ChallengeData>('/projects/' + projectId + '/challenge', { method: 'POST' });
   if (res.success) return res;
   return { success: true, data: getMockChallengeData() };
 }
@@ -334,7 +325,7 @@ export async function getChallengeAnalysis(projectId: string): Promise<ApiRespon
   return { success: true, data: getMockChallengeData() };
 }
 
-// ── Directions ──────────────────────────────────────────────────────────────
+// ── Directions ──────────────────────────────────────────────────────────
 
 export interface Direction {
   id: string;
@@ -365,32 +356,30 @@ export interface Direction {
 }
 
 function getMockDirections(): Direction[] {
+  const base = { project_id: '', description: null, elevator_pitch: null, problem_statement: null, solution: null, differentiation: null, core_features: null, stretch_features: null, risks: null, estimated_effort_hours: null, created_at: new Date().toISOString() };
   return [
-    { id: 'mock-dir-1', project_id: '', title: 'AI Finance Coach', tagline: 'Personalized AI advisor that learns spending patterns', description: 'An intelligent budgeting coach that analyzes spending habits.', elevator_pitch: 'Get personalized financial coaching that learns your habits.', problem_statement: 'Students struggle to manage finances without guidance.', solution: 'AI coach that learns spending patterns and provides personalized advice.', differentiation: 'Truly personalized — adapts to individual behavior over time.', core_features: ['Spending analysis', 'Personalized insights', 'Goal tracking'], stretch_features: ['Community challenges', 'Bank integration'], risks: [{ title: 'Data privacy', severity: 'medium', mitigation: 'Local-first data processing' }], scores: { innovation: 92, creativity: 85, technical_depth: 78, feasibility: 70, demo_potential: 88, judge_appeal: 85, business_potential: 75, overall: 82 }, estimated_effort_hours: 28, is_selected: false, created_at: new Date().toISOString() },
-    { id: 'mock-dir-2', project_id: '', title: 'Gamified Savings Platform', tagline: 'Turn saving into a competitive social game', description: 'A social savings platform where users compete in saving challenges.', elevator_pitch: 'Make saving money as addictive as a game.', problem_statement: 'Students find saving boring and lack motivation.', solution: 'Gamified savings with challenges, badges, and social competition.', differentiation: 'First savings app that makes saving genuinely fun.', core_features: ['Savings challenges', 'Leaderboards', 'Badges'], stretch_features: ['Group challenges', 'Reward marketplace'], risks: [{ title: 'Superficial gamification', severity: 'medium', mitigation: 'Partner with behavioral psychologists' }], scores: { innovation: 85, creativity: 90, technical_depth: 65, feasibility: 78, demo_potential: 82, judge_appeal: 80, business_potential: 70, overall: 79 }, estimated_effort_hours: 24, is_selected: false, created_at: new Date().toISOString() },
-    { id: 'mock-dir-3', project_id: '', title: 'Financial Habit Builder', tagline: 'Micro-habit coaching with AI nudges', description: 'Build better financial habits through micro-actions and AI-powered nudges.', elevator_pitch: 'Build better money habits one micro-action at a time.', problem_statement: 'Behavior change is hard without consistent reinforcement.', solution: 'AI-powered micro-habit coaching with smart notifications.', differentiation: 'Focus on habit formation rather than tracking.', core_features: ['Micro-habits', 'AI nudges', 'Progress tracking'], stretch_features: ['Spending insights', 'Habit streaks'], risks: [{ title: 'User fatigue', severity: 'high', mitigation: 'Adaptive notification frequency' }], scores: { innovation: 78, creativity: 82, technical_depth: 72, feasibility: 85, demo_potential: 75, judge_appeal: 78, business_potential: 65, overall: 76 }, estimated_effort_hours: 20, is_selected: false, created_at: new Date().toISOString() },
+    { ...base, id: 'md1', title: 'AI Finance Coach', tagline: 'Personalized AI advisor', scores: { innovation: 92, creativity: 85, technical_depth: 78, feasibility: 70, demo_potential: 88, judge_appeal: 85, business_potential: 75, overall: 82 }, is_selected: false },
+    { ...base, id: 'md2', title: 'Gamified Savings', tagline: 'Turn saving into a game', scores: { innovation: 85, creativity: 90, technical_depth: 65, feasibility: 78, demo_potential: 82, judge_appeal: 80, business_potential: 70, overall: 79 }, is_selected: false },
+    { ...base, id: 'md3', title: 'Financial Habit Builder', tagline: 'Micro-habit coaching', scores: { innovation: 78, creativity: 82, technical_depth: 72, feasibility: 85, demo_potential: 75, judge_appeal: 78, business_potential: 65, overall: 76 }, is_selected: false },
   ];
 }
 
 export async function generateDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
   const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions', { method: 'POST' });
   if (res.success) return res;
-  console.warn('[exHacker API] Using mock directions');
   return { success: true, data: { directions: getMockDirections() } };
 }
 
 export async function getDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
   const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions');
   if (res.success) return res;
-  return { success: true, data: { directions: [] } };
+  return { success: true, data: { directions: getMockDirections() } };
 }
 
 export async function selectDirection(projectId: string, directionId: string): Promise<ApiResponse<{ direction: Direction }>> {
   const res = await request<{ direction: Direction }>('/projects/' + projectId + '/directions/' + directionId + '/select', { method: 'POST' });
   if (res.success) return res;
-  // In mock mode, mark the direction as selected
-  const dirs = getMockDirections().map(d => ({ ...d, id: directionId, is_selected: d.id === directionId }));
-  return { success: true, data: { direction: dirs.find(d => d.id === directionId) || dirs[0] } };
+  return { success: true, data: { direction: getMockDirections().find(d => d.id === directionId) || getMockDirections()[0] } };
 }
 
 // ── Blueprint ────────────────────────────────────────────────────────────────
@@ -405,35 +394,25 @@ export interface BlueprintData {
   generated_at: string;
 }
 
+function getMockBlueprint(): BlueprintData {
+  return {
+    summary: { components: 4, entities: 4, endpoints: 28, tasks: 32, estimated_hours: 78, has_tech_stack: true },
+    tech_stack: { project_type: 'mobile_app', frontend: { framework: 'React Native' }, backend: { framework: 'FastAPI' }, database: { database: 'PostgreSQL' } },
+    architecture: { components: [{ name: 'Mobile App', description: 'React Native app', tech: 'React Native' }, { name: 'Backend API', description: 'FastAPI server', tech: 'FastAPI' }, { name: 'Database', description: 'PostgreSQL', tech: 'PostgreSQL' }, { name: 'Auth', description: 'Authentication service', tech: 'NextAuth.js' }] },
+    data_model: { entities: [{ name: 'user', fields: [{ name: 'id', type: 'UUID' }, { name: 'email', type: 'string' }] }, { name: 'budget', fields: [{ name: 'id', type: 'UUID' }, { name: 'limit', type: 'decimal' }] }] },
+    api_contracts: { endpoints: [{ method: 'GET', path: '/users', description: 'List users' }, { method: 'POST', path: '/budgets', description: 'Create budget' }] },
+    plan: { phases: [{ name: 'Foundation', tasks: [{ title: 'Initialize project', estimated_hours: 2 }] }], total_tasks: 32, estimated_hours: 78 },
+    generated_at: new Date().toISOString(),
+  };
+}
+
 export async function generateBlueprint(projectId: string): Promise<ApiResponse<{ blueprint: BlueprintData }>> {
   const res = await request<{ blueprint: BlueprintData }>('/projects/' + projectId + '/blueprint', { method: 'POST' });
   if (res.success) return res;
   return { success: true, data: { blueprint: getMockBlueprint() } };
 }
 
-export function getMockBlueprint(): BlueprintData {
-  return {
-    summary: { components: 4, entities: 4, endpoints: 28, tasks: 32, estimated_hours: 78, has_tech_stack: true },
-    tech_stack: { project_type: 'web_app', frontend: { framework: 'Next.js' }, backend: { framework: 'FastAPI' }, database: { database: 'PostgreSQL' } },
-    architecture: { components: [
-      { name: 'Frontend', description: 'Web application', tech: 'Next.js', sub_components: ['Pages', 'Components', 'State'] },
-      { name: 'Backend', description: 'API server', tech: 'FastAPI', sub_components: ['Routes', 'Services', 'Models'] },
-      { name: 'Database', description: 'Data storage', tech: 'PostgreSQL', sub_components: ['Tables', 'Migrations'] },
-    ]},
-    data_model: { entities: [
-      { name: 'user', fields: [{ name: 'id', type: 'UUID' }, { name: 'email', type: 'string' }] },
-      { name: 'budget', fields: [{ name: 'id', type: 'UUID' }, { name: 'category', type: 'string' }, { name: 'limit', type: 'decimal' }] },
-    ]},
-    api_contracts: { endpoints: [
-      { method: 'GET', path: '/users', description: 'List users' },
-      { method: 'POST', path: '/users', description: 'Create user' },
-    ]},
-    plan: { phases: [{ name: 'Foundation', tasks: [{ title: 'Initialize project', estimated_hours: 1 }] }], total_tasks: 32, estimated_hours: 78 },
-    generated_at: new Date().toISOString(),
-  };
-}
-
-// ── Export ───────────────────────────────────────────────────────────────────
+// ── Export ────────────────────────────────────────────────────────────────
 
 export async function downloadExport(projectId: string, format: 'markdown' | 'json' = 'markdown'): Promise<void> {
   const url = `${API_BASE_URL}/projects/${projectId}/export/download?format=${format}`;
@@ -441,18 +420,13 @@ export async function downloadExport(projectId: string, format: 'markdown' | 'js
     const res = await fetch(url);
     if (!res.ok) throw new Error('Export failed');
     const blob = await res.blob();
-    const ext = format === 'json' ? 'json' : 'md';
-    const filename = `blueprint.${ext}`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = filename;
+    a.download = `blueprint.${format === 'json' ? 'json' : 'md'}`;
     a.click();
     URL.revokeObjectURL(a.href);
   } catch {
-    // Fallback: generate mock download
-    const content = format === 'json'
-      ? JSON.stringify(getMockBlueprint(), null, 2)
-      : `# Project Blueprint\n\nAuto-generated by exHacker (mock mode)`;
+    const content = format === 'json' ? JSON.stringify(getMockBlueprint(), null, 2) : '# Project Blueprint\n\nMock export';
     const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/markdown' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
