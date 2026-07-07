@@ -1,13 +1,11 @@
-"""Research API endpoints — thin HTTP layer over ResearchService."""
-
-from __future__ import annotations
-# pyright: reportArgumentType=false
+"""Research API endpoints — S2 Research Specialist (Bible §6.2 S2)."""
+# pyright: reportArgumentType=false, reportGeneralTypeIssues=false
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.services import research as research_service
+from app.services.specialists import research_specialist
 
 router = APIRouter(prefix="/projects/{project_id}/research", tags=["research"])
 
@@ -17,15 +15,15 @@ async def start_research(
     project_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Start or retrieve research for a project.
+    """Run the S2 Research Specialist pipeline.
 
-    Returns cached results if available (24h freshness).
-    Runs full research pipeline if cache is stale or empty.
+    Consumes Challenge Intelligence Report (S1) and produces structured
+    research across 10 categories with synthesis, patterns, and recommendations.
     """
-    results = await research_service.run_research(db, project_id)
+    result = await research_specialist.run_research(db, project_id)
     return {
         "success": True,
-        "data": results,
+        "data": result,
         "message": "Research complete.",
     }
 
@@ -35,11 +33,12 @@ async def get_research(
     project_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get cached research results without triggering a new search."""
-    results = await research_service.get_research(db, project_id)
+    """Get cached research report without triggering new research."""
+    from app.services.research import get_research as get_legacy
+    result = await get_legacy(db, project_id)
     return {
         "success": True,
-        "data": results,
+        "data": result,
         "message": "Operation successful",
     }
 
@@ -50,9 +49,10 @@ async def refresh_research(
     db: AsyncSession = Depends(get_db),
 ):
     """Force-refresh research, clearing any cached results."""
-    results = await research_service.refresh_research(db, project_id)
+    from app.services.research import refresh_research as refresh_legacy
+    result = await refresh_legacy(db, project_id)
     return {
         "success": True,
-        "data": results,
+        "data": result,
         "message": "Research refreshed.",
     }
