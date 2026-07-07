@@ -27,7 +27,16 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency for database sessions."""
+    """FastAPI dependency for database sessions.
+
+    Lazily creates tables on first access (important for serverless environments
+    where startup lifespan may not run).
+    """
+    # Ensure tables exist (idempotent — safe to call every time)
+    from app.models.base import Base
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     async with AsyncSessionLocal() as session:
         try:
             yield session
