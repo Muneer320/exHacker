@@ -330,6 +330,18 @@ textarea.field { line-height: 1.6; }
 /* ─── Selection ───────────────────────────────────────────────────────── */
 ::selection { background: var(--blue-mid); color: var(--text-1); }
 
+/* ─── Focus ring (accessibility) ─────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* ─── Step sidebar ────────────────────────────────────────────────────── */
 .step-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-left: 2px solid transparent; cursor: default; transition: all 0.15s; }
 .step-item.done   { border-left-color: var(--blue); }

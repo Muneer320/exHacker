@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { getIdeas, selectIdea, IdeaData } from "@/services/api";
 import { Card, Pill, ScoreBar, Grid, SeverityBadge, LoadingState, EmptyState } from "@/components/shared/ui";
+import IdeaComparison from "@/components/comparison/IdeaComparison";
 
 const SCORE_DEFS = [
   { key: "innovation", label: "Innovation", color: "var(--blue)" },
@@ -147,6 +148,7 @@ export default function IdeasPage() {
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [compareMode, setCompareMode] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -177,7 +179,18 @@ export default function IdeasPage() {
         <span className="sec-num">[ IDEAS ]</span>
         <h2 className="d4" style={{ color: "var(--text-1)", marginBottom: "4px" }}>Choose Your Direction</h2>
         <p className="body-sm">{ideas.length} ideas · Select the one that best fits your team</p>
+        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+          <button onClick={() => setCompareMode(!compareMode)} className={`btn ${compareMode ? "btn-primary" : "btn-ghost"}`} style={{ fontSize: "11px", padding: "6px 14px" }}>
+            {compareMode ? "✓ Done Comparing" : "⇄ Compare Ideas"}
+          </button>
+        </div>
       </div>
+
+      {compareMode && ideas.length >= 2 && (
+        <div className="anim-fade-up" style={{ marginBottom: "24px" }}>
+          <IdeaComparison ideas={ideas} />
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {ideas.map(idea => (
