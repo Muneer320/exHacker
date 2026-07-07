@@ -1,4 +1,4 @@
-"""Export API endpoints."""
+"""Export API endpoints — uses documentation package (Bible §6.2 S13)."""
 
 from __future__ import annotations
 
@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.services.export import export_markdown, export_json, get_export_filename
-from app.services.blueprint.coordinator import generate_blueprint
-from app.services.project import get_project
+from app.services.specialists.documentation_writer import get_documentation
 
 router = APIRouter(prefix="/projects/{project_id}/export", tags=["export"])
 
@@ -24,8 +23,8 @@ async def list_exports(
         "success": True,
         "data": {
             "formats": [
-                {"format": "markdown", "label": "README.md", "description": "Complete project blueprint as Markdown", "content_type": "text/markdown"},
-                {"format": "json", "label": "blueprint.json", "description": "Raw blueprint data as JSON", "content_type": "application/json"},
+                {"format": "markdown", "label": "Documentation", "description": "Complete documentation package as Markdown", "content_type": "text/markdown"},
+                {"format": "json", "label": "Blueprint JSON", "description": "Project data as JSON", "content_type": "application/json"},
             ],
         },
         "message": "Operation successful",
@@ -38,19 +37,23 @@ async def download_export(
     format: str = Query("markdown", pattern="^(markdown|json)$"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Download project blueprint in the specified format."""
-    project = await get_project(db, project_id)
-    blueprint = await generate_blueprint(idea=project.idea, enrich_architecture=False)
-
-    content_type = "text/markdown"
-    filename = get_export_filename(project.name, "md")
+    """Download project in the specified format."""
+    docs = await get_documentation(db, project_id)
 
     if format == "json":
-        content = export_json(blueprint)
+        content = export_json(docs)
         content_type = "application/json"
-        filename = get_export_filename(project.name, "json")
+        filename = get_export_filename(project_id[:8], "json")
     else:
-        content = export_markdown(project.idea, blueprint, project.name)
+        # Combine all docs into a single markdown file
+        parts = []
+        for doc in docs.get("documents", []):
+            parts.append(f"# {doc.get('title', '')}\n\n")
+            parts.append(doc.get("content", ""))
+            parts.append("\n\n---\n\n")
+        content = "".join(parts)
+        content_type = "text/markdown"
+        filename = get_export_filename(project_id[:8], "md")
 
     return PlainTextResponse(
         content=content,

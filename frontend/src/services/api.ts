@@ -661,54 +661,6 @@ function getMockDirections(): Direction[] {
   ];
 }
 
-export async function generateDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
-  const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions', { method: 'POST' });
-  if (res.success) return res;
-  return { success: true, data: { directions: getMockDirections() } };
-}
-
-export async function getDirections(projectId: string): Promise<ApiResponse<{ directions: Direction[] }>> {
-  const res = await request<{ directions: Direction[] }>('/projects/' + projectId + '/directions');
-  if (res.success) return res;
-  return { success: true, data: { directions: getMockDirections() } };
-}
-
-export async function selectDirection(projectId: string, directionId: string): Promise<ApiResponse<{ direction: Direction }>> {
-  const res = await request<{ direction: Direction }>('/projects/' + projectId + '/directions/' + directionId + '/select', { method: 'POST' });
-  if (res.success) return res;
-  return { success: true, data: { direction: getMockDirections().find(d => d.id === directionId) || getMockDirections()[0] } };
-}
-
-// ── Blueprint ────────────────────────────────────────────────────────────────
-
-export interface BlueprintData {
-  summary: { components: number; entities: number; endpoints: number; tasks: number; estimated_hours: number; has_tech_stack: boolean };
-  tech_stack: Record<string, unknown> | null;
-  architecture: Record<string, unknown> | null;
-  data_model: Record<string, unknown> | null;
-  api_contracts: Record<string, unknown> | null;
-  plan: Record<string, unknown> | null;
-  generated_at: string;
-}
-
-function getMockBlueprint(): BlueprintData {
-  return {
-    summary: { components: 4, entities: 4, endpoints: 28, tasks: 32, estimated_hours: 78, has_tech_stack: true },
-    tech_stack: { project_type: 'mobile_app', frontend: { framework: 'React Native' }, backend: { framework: 'FastAPI' }, database: { database: 'PostgreSQL' } },
-    architecture: { components: [{ name: 'Mobile App', description: 'React Native app', tech: 'React Native' }, { name: 'Backend API', description: 'FastAPI server', tech: 'FastAPI' }, { name: 'Database', description: 'PostgreSQL', tech: 'PostgreSQL' }, { name: 'Auth', description: 'Authentication service', tech: 'NextAuth.js' }] },
-    data_model: { entities: [{ name: 'user', fields: [{ name: 'id', type: 'UUID' }, { name: 'email', type: 'string' }] }, { name: 'budget', fields: [{ name: 'id', type: 'UUID' }, { name: 'limit', type: 'decimal' }] }] },
-    api_contracts: { endpoints: [{ method: 'GET', path: '/users', description: 'List users' }, { method: 'POST', path: '/budgets', description: 'Create budget' }] },
-    plan: { phases: [{ name: 'Foundation', tasks: [{ title: 'Initialize project', estimated_hours: 2 }] }], total_tasks: 32, estimated_hours: 78 },
-    generated_at: new Date().toISOString(),
-  };
-}
-
-export async function generateBlueprint(projectId: string): Promise<ApiResponse<{ blueprint: BlueprintData }>> {
-  const res = await request<{ blueprint: BlueprintData }>('/projects/' + projectId + '/blueprint', { method: 'POST' });
-  if (res.success) return res;
-  return { success: true, data: { blueprint: getMockBlueprint() } };
-}
-
 // ── Export ────────────────────────────────────────────────────────────────
 
 export async function downloadExport(projectId: string, format: 'markdown' | 'json' = 'markdown'): Promise<void> {
@@ -723,7 +675,7 @@ export async function downloadExport(projectId: string, format: 'markdown' | 'js
     a.click();
     URL.revokeObjectURL(a.href);
   } catch {
-    const content = format === 'json' ? JSON.stringify(getMockBlueprint(), null, 2) : '# Project Blueprint\n\nMock export';
+    const content = format === 'json' ? '{"message": "Export unavailable"}' : '# Project Export\n\nExport not available.';
     const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/markdown' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

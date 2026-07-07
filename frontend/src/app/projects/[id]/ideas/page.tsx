@@ -6,6 +6,7 @@ import { getIdeas, selectIdea, IdeaData } from "@/services/api";
 import { Card, Pill, ScoreBar, Grid, SeverityBadge, LoadingState, EmptyState } from "@/components/shared/ui";
 import IdeaComparison from "@/components/comparison/IdeaComparison";
 import GuidedSection from "@/components/shared/GuidedSection";
+import { useToast } from "@/components/shared/Toast";
 
 const SCORE_DEFS = [
   { key: "innovation", label: "Innovation", color: "var(--blue)" },
@@ -150,6 +151,7 @@ export default function IdeasPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [compareMode, setCompareMode] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (!projectId) return;
@@ -168,6 +170,7 @@ export default function IdeasPage() {
     if (res.success) {
       setSelectedId(ideaId);
       setIdeas(prev => prev.map(i => ({ ...i, is_selected: i.id === ideaId })));
+      toast.addToast({ type: "success", title: "Direction selected", message: "This idea will guide your architecture and implementation." });
     }
   };
 

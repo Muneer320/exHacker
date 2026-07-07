@@ -186,9 +186,10 @@ export default function PipelineSidebar() {
 
       {/* Bottom actions */}
       <div style={{ borderTop: "1px solid var(--border)", padding: "12px 16px" }}>
-        <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "center", fontSize: "11px", padding: "8px" }}>
-          📦 Export Package
-        </button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--text-3)" }}>⌘K</span>
+          <span style={{ fontSize: "9px", color: "var(--text-3)" }}>v{/* version would go here */}</span>
+        </div>
       </div>
     </aside>
   );

@@ -51,12 +51,10 @@ async def health_check():
 
 
 # API routers
-from app.api.v1 import projects, research, directions, blueprint, export, challenge, competitor, shared, ideas, architecture, documentation
+from app.api.v1 import projects, research, export, challenge, competitor, shared, ideas, architecture, documentation
 
 app.include_router(projects.router, prefix=settings.API_V1_STR)
 app.include_router(research.router, prefix=settings.API_V1_STR)
-app.include_router(directions.router, prefix=settings.API_V1_STR)
-app.include_router(blueprint.router, prefix=settings.API_V1_STR)
 app.include_router(export.router, prefix=settings.API_V1_STR)
 app.include_router(challenge.router, prefix=settings.API_V1_STR)
 app.include_router(competitor.router, prefix=settings.API_V1_STR)
