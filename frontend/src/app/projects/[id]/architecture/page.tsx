@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Card, Section, Pill, SeverityBadge, Grid, LoadingState } from "@/components/shared/ui";
 import MermaidViewer from "@/components/diagrams/MermaidViewer";
+import LiveArchitecture from "@/components/diagrams/LiveArchitecture";
 import GuidedSection from "@/components/shared/GuidedSection";
 
 // Simple Mermaid viewer component
@@ -35,6 +36,10 @@ export default function ArchitecturePage() {
       </div>
 
       {/* System Overview */}
+      <div style={{ marginBottom: "20px" }}>
+        <LiveArchitecture arch={arch} />
+      </div>
+
       {arch.system_overview && (
         <div className="anim-fade-up-1 card" style={{ marginBottom: "20px", borderLeft: "2px solid var(--blue)", background: "linear-gradient(135deg, rgba(61,124,246,0.04) 0%, transparent 100%)" }}>
           <span className="label" style={{ color: "var(--blue-light)", marginBottom: "8px", display: "block" }}>System Overview</span>

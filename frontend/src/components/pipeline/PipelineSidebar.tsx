@@ -2,6 +2,7 @@
 
 import { usePipeline } from "./PipelineContext";
 import { PIPELINE_STAGES, type StageStatus } from "./types";
+import ReadinessScore from "./ReadinessScore";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -179,6 +180,9 @@ export default function PipelineSidebar() {
           );
         })}
       </div>
+
+      {/* Readiness score */}
+      <ReadinessScore />
 
       {/* Bottom actions */}
       <div style={{ borderTop: "1px solid var(--border)", padding: "12px 16px" }}>
