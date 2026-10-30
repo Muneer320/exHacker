@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.db import session
 from app.main import app
 from app.studio import ai, jobs, pipeline, research
+from app.studio.credentials import leases
 from app.studio.models import StudioBase
 
 
@@ -78,12 +79,15 @@ async def isolated_database(tmp_path, monkeypatch):
     monkeypatch.setattr(session, "AsyncSessionLocal", factory)
     for module in (ai, jobs, pipeline, research):
         monkeypatch.setattr(module, "AsyncSessionLocal", factory)
+    leases.clear()
+    monkeypatch.setattr(settings, "AI_ACCESS_MODE", "operator")
     monkeypatch.setattr(settings, "STUDIO_DEMO_MODE", True)
     monkeypatch.setattr(settings, "STUDIO_WORKER_ENABLED", False)
     monkeypatch.setattr(settings, "FREE_TIER_PROJECTS_PER_DAY", 50)
     async with engine.begin() as connection:
         await connection.run_sync(StudioBase.metadata.create_all)
     yield factory
+    leases.clear()
     await engine.dispose()
     if admin:
         async with admin.begin() as connection:

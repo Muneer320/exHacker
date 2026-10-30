@@ -43,7 +43,7 @@ def test_initial_migration_preserves_existing_data_and_matches_models(tmp_path):
         )
         assert (
             connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-            == "0001_studio"
+            == "0002_job_inference"
         )
     engine = create_engine(f"sqlite:///{path.as_posix()}")
     with engine.connect() as connection:

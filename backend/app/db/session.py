@@ -21,13 +21,22 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def initialize_database():
-    from app.studio.models import StudioBase
-
     if settings.is_production:
-        # Production schema changes are explicit, reviewable Alembic migrations.
         return
-    async with engine.begin() as connection:
-        await connection.run_sync(StudioBase.metadata.create_all)
+    import asyncio
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    def migrate():
+        config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+        config.set_main_option(
+            "script_location", str(Path(__file__).resolve().parents[2] / "migrations")
+        )
+        command.upgrade(config, "head")
+
+    await asyncio.to_thread(migrate)
 
 
 async def get_db():

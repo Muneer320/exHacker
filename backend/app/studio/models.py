@@ -44,6 +44,7 @@ class Job(StudioBase):
     kind: Mapped[str] = mapped_column(String(40))
     status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    inference: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     input_revision: Mapped[int] = mapped_column(Integer)
     events: Mapped[list] = mapped_column(JSON, default=list)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

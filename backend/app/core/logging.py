@@ -6,10 +6,38 @@ Human-readable in development.
 
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 
 from app.core.config import settings
+
+
+def redact(text):
+    from app.studio.credentials import leases
+
+    for entry in tuple(leases._entries.values()):
+        secret = entry.secret.get_secret_value()
+        if secret:
+            text = text.replace(secret, "[REDACTED]")
+    for secret in (
+        settings.AI_API_KEY,
+        settings.OPENAI_API_KEY,
+        settings.ANTHROPIC_API_KEY,
+        settings.TAVILY_API_KEY,
+    ):
+        if secret:
+            text = text.replace(secret, "[REDACTED]")
+    return re.sub(
+        r"\b(?:sk-[A-Za-z0-9_-]{12,}|gsk_[A-Za-z0-9_-]{12,}|xai-[A-Za-z0-9_-]{12,}|AIza[A-Za-z0-9_-]{20,})",
+        "[REDACTED]",
+        text,
+    )
+
+
+class PrivateFormatter(logging.Formatter):
+    def format(self, record):
+        return redact(super().format(record))
 
 
 class StructuredFormatter(logging.Formatter):
@@ -29,7 +57,7 @@ class StructuredFormatter(logging.Formatter):
         if record.exc_info and record.exc_info[0]:
             log_entry["exception"] = self.formatException(record.exc_info)
 
-        return json.dumps(log_entry, default=str)
+        return redact(json.dumps(log_entry, default=str))
 
 
 def setup_logging() -> None:
@@ -40,7 +68,7 @@ def setup_logging() -> None:
         handler.setFormatter(StructuredFormatter())
     else:
         handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+            PrivateFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
         )
 
     root_logger = logging.getLogger()

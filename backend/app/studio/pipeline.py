@@ -6,7 +6,7 @@ import uuid
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
-from app.studio import ai, demo, research
+from app.studio import ai, demo, inference, research
 from app.studio.documents import compile_documents
 from app.studio.models import Artifact, now
 from app.studio.schemas import CandidateBatch, Idea, RefinedIdea, Specification, Stack
@@ -62,6 +62,7 @@ def rank_idea(idea: Idea, sources: list[dict], intake: dict, *, idea_id=None):
 
 
 async def checkpoint(project_id, revision, kind, content):
+    inference.reject_secrets(content)
     async with AsyncSessionLocal() as db:
         db.add(
             Artifact(

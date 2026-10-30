@@ -9,7 +9,8 @@ from sqlalchemy import or_, select, update
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
-from app.studio.ai import StudioError
+from app.studio import inference
+from app.studio.errors import CredentialsRequiredError, StudioError
 from app.studio.models import Artifact, Job, Message, Project, now
 
 logger = logging.getLogger(__name__)
@@ -23,12 +24,14 @@ def serialize_job(job):
         "events": job.events,
         "error": job.error,
         "attempts": job.attempts,
+        "inference": inference.public(job.inference or {"source": "operator"}),
         "created_at": job.created_at.isoformat() + "Z",
         "updated_at": job.updated_at.isoformat() + "Z",
     }
 
 
-async def enqueue(db, project, kind, payload, revision):
+async def enqueue(db, project, kind, payload, revision, *, inference_spec=None):
+    inference.reject_secrets(payload)
     if revision != project.revision:
         raise StudioError(
             "This project changed in another tab. Reload before submitting.", 409
@@ -42,6 +45,7 @@ async def enqueue(db, project, kind, payload, revision):
         kind=kind,
         payload={**payload, "kind": kind},
         input_revision=revision,
+        inference=inference_spec,
     )
     db.add(job)
     await db.flush()
@@ -115,7 +119,12 @@ async def heartbeat(job):
 async def run_job(job):
     from app.studio.pipeline import execute
 
+    token = None
+    owner = ""
+    spec = job.inference or {}
+
     async def emit(message):
+        inference.ensure(owner, spec)
         async with AsyncSessionLocal() as db:
             current = await db.get(Job, job.id)
             if (
@@ -135,6 +144,7 @@ async def run_job(job):
 
     beat = asyncio.create_task(heartbeat(job))
     try:
+        spec = spec or inference.operator_spec()
         async with AsyncSessionLocal() as db:
             project = await db.get(Project, job.project_id)
             if (
@@ -145,6 +155,9 @@ async def run_job(job):
                 raise StudioError(
                     "The job belongs to an outdated project revision.", 409
                 )
+        owner = project.owner
+        inference.ensure(owner, spec)
+        token = inference.current.set((owner, spec))
         if job.attempts > 3:
             raise StudioError(
                 "This operation was interrupted repeatedly. Review the saved project and retry manually.",
@@ -156,6 +169,8 @@ async def run_job(job):
             else "Recovering an interrupted operation from its saved inputs."
         )
         result = await execute(project, job.payload, emit)
+        inference.ensure(owner, spec)
+        inference.reject_secrets(result)
         context, state = result[:2]
         async with AsyncSessionLocal() as db:
             owned = await db.execute(
@@ -192,7 +207,11 @@ async def run_job(job):
                     project_id=project.id,
                     revision=project.revision + 1,
                     kind=job.kind,
-                    content={"context": context, "input": job.payload},
+                    content={
+                        "context": context,
+                        "input": job.payload,
+                        "inference": inference.public(spec),
+                    },
                 )
             )
             if job.kind == "chat":
@@ -213,6 +232,23 @@ async def run_job(job):
                     )
                 )
             await db.commit()
+    except CredentialsRequiredError as exc:
+        async with AsyncSessionLocal() as db:
+            await db.execute(
+                update(Job)
+                .where(
+                    Job.id == job.id,
+                    Job.attempts == job.attempts,
+                    Job.status == "running",
+                )
+                .values(
+                    status="credentials_required",
+                    error=str(exc),
+                    lease_until=None,
+                    updated_at=now(),
+                )
+            )
+            await db.commit()
     except asyncio.CancelledError:
         async with AsyncSessionLocal() as db:
             await db.execute(
@@ -227,7 +263,7 @@ async def run_job(job):
             await db.commit()
         raise
     except Exception as exc:
-        logger.exception("Studio job %s failed", job.id)
+        logger.warning("Studio job %s failed (%s)", job.id, type(exc).__name__)
         message = (
             str(exc)
             if isinstance(exc, StudioError)
@@ -253,6 +289,8 @@ async def run_job(job):
                 )
             await db.commit()
     finally:
+        if token is not None:
+            inference.current.reset(token)
         beat.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await beat
@@ -268,6 +306,6 @@ async def worker():
                 await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.exception("Studio worker encountered an error")
+        except Exception as exc:
+            logger.error("Studio worker encountered an error (%s)", type(exc).__name__)
             await asyncio.sleep(2)

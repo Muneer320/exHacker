@@ -16,8 +16,10 @@ from app.core.logging import setup_logging
 from app.core.middleware import RequestBodyLimit
 from app.db.session import engine, initialize_database
 from app.studio.ai import StudioError, configuration
+from app.studio.credential_routes import router as credential_router
+from app.studio.credentials import cleanup_loop, leases
 from app.studio.jobs import worker
-from app.studio.models import Project
+from app.studio.models import Job, Project
 from app.studio.routes import router
 
 setup_logging()
@@ -29,10 +31,14 @@ async def lifespan(_app):
     if settings.is_production and settings.STUDIO_DEMO_MODE:
         raise RuntimeError("Demonstration mode cannot run with ENV=production.")
     if settings.is_production and (
-        not configuration()["ai_configured"]
+        (settings.AI_ACCESS_MODE == "operator" and not configuration()["ai_configured"])
         or not configuration()["research_configured"]
     ):
-        raise RuntimeError("Production requires configured AI and Tavily credentials.")
+        raise RuntimeError(
+            "Production requires Tavily and, in operator mode, configured AI credentials."
+        )
+    leases.ttl = settings.AI_LEASE_SECONDS
+    cleanup = asyncio.create_task(cleanup_loop())
     await initialize_database()
     task = asyncio.create_task(worker()) if settings.STUDIO_WORKER_ENABLED else None
     try:
@@ -42,6 +48,10 @@ async def lifespan(_app):
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await task
+        leases.clear()
+        cleanup.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await cleanup
         await engine.dispose()
 
 
@@ -56,7 +66,7 @@ app.add_middleware(
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-AI-Lease"],
     expose_headers=["Content-Disposition", "ETag"],
 )
 app.add_middleware(RequestBodyLimit)
@@ -72,6 +82,14 @@ async def studio_error(_request, exc):
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request, exc):
+    if _request.url.path.startswith("/api/v1/ai/leases"):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "success": False,
+                "error": {"message": "Check the provider, model, and API key fields."},
+            },
+        )
     errors = [
         {
             "field": ".".join(str(v) for v in error["loc"] if v != "body"),
@@ -93,7 +111,7 @@ async def validation_error(_request, exc):
 
 @app.exception_handler(Exception)
 async def unexpected_error(_request, _exc):
-    logger.exception("Unexpected API error")
+    logger.error("Unexpected API error (%s)", type(_exc).__name__)
     return JSONResponse(
         status_code=500,
         content={
@@ -126,6 +144,7 @@ async def health():
 async def readiness():
     async with engine.connect() as connection:
         await connection.execute(select(Project.id).limit(1))
+        await connection.execute(select(Job.inference).limit(1))
     return {
         "success": True,
         "data": {"database": "ready", "worker_enabled": settings.STUDIO_WORKER_ENABLED},
@@ -133,3 +152,5 @@ async def readiness():
 
 
 app.include_router(router, prefix="/api/v1")
+
+app.include_router(credential_router, prefix="/api/v1")

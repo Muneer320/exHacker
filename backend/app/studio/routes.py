@@ -1,9 +1,7 @@
 """Private anonymous workspaces, explicit approvals, jobs, and Markdown exports."""
 
 import copy
-import hashlib
 import io
-import re
 import zipfile
 from datetime import timedelta
 
@@ -13,7 +11,10 @@ from sqlalchemy import case, delete, func, select, update
 
 from app.core.config import settings
 from app.db.session import get_db
+from app.studio import inference
 from app.studio.ai import StudioError, configuration
+from app.studio.auth import owner_key
+from app.studio.credentials import leases
 from app.studio.jobs import enqueue, serialize_job
 from app.studio.models import Artifact, Job, Message, Project, now
 from app.studio.pipeline import selected
@@ -26,16 +27,6 @@ from app.studio.schemas import (
 )
 
 router = APIRouter()
-
-
-def owner_key(authorization: str = Header(default="")):
-    match = re.fullmatch(r"Bearer ([0-9a-f]{64})", authorization)
-    if not match:
-        raise StudioError(
-            "A workspace access key is required. Open exHacker in your browser to create one.",
-            401,
-        )
-    return hashlib.sha256(match[1].encode()).hexdigest()
 
 
 async def owned(db, project_id, owner):
@@ -68,6 +59,9 @@ def ok(data):
 
 
 async def mutate(db, project, revision, values, kind, content=None, *, commit=True):
+    if content is not None:
+        inference.reject_secrets(content)
+    inference.reject_secrets(values)
     if project.active_job:
         raise StudioError(
             "Wait for the active operation before changing the project.", 409
@@ -112,7 +106,14 @@ async def get_config():
 
 
 @router.post("/projects", status_code=201)
-async def create_project(payload: Intake, owner=Depends(owner_key), db=Depends(get_db)):
+async def create_project(
+    payload: Intake,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
+):
+    routing = inference.capture(owner, ai_lease)
+    inference.reject_secrets(payload.model_dump())
     count = await db.scalar(
         select(func.count()).select_from(Project).where(Project.owner == owner)
     )
@@ -137,7 +138,7 @@ async def create_project(payload: Intake, owner=Depends(owner_key), db=Depends(g
     )
     db.add(project)
     await db.flush()
-    await enqueue(db, project, "ideas", {}, 1)
+    await enqueue(db, project, "ideas", {}, 1, inference_spec=routing)
     await db.refresh(project)
     return ok(serialize(project))
 
@@ -239,8 +240,13 @@ def check_job(project, kind, payload):
 
 @router.post("/projects/{project_id}/jobs", status_code=202)
 async def start_job(
-    project_id: str, payload: JobRequest, owner=Depends(owner_key), db=Depends(get_db)
+    project_id: str,
+    payload: JobRequest,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     check_job(project, payload.kind, payload.model_dump())
     job = await enqueue(
@@ -249,6 +255,7 @@ async def start_job(
         payload.kind,
         payload.model_dump(exclude={"revision", "kind"}),
         payload.revision,
+        inference_spec=routing,
     )
     return ok(serialize_job(job))
 
@@ -272,7 +279,9 @@ async def retry_job(
     payload: Revision,
     owner=Depends(owner_key),
     db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     job = await db.scalar(
         select(Job).where(Job.id == job_id, Job.project_id == project_id)
@@ -287,7 +296,14 @@ async def retry_job(
     check_job(project, job.kind, job.payload)
     return ok(
         serialize_job(
-            await enqueue(db, project, job.kind, job.payload, payload.revision)
+            await enqueue(
+                db,
+                project,
+                job.kind,
+                job.payload,
+                payload.revision,
+                inference_spec=routing,
+            )
         )
     )
 
@@ -299,7 +315,9 @@ async def confirm_idea(
     payload: Revision,
     owner=Depends(owner_key),
     db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     ctx = copy.deepcopy(project.context)
     if not any(i["id"] == idea_id for i in ctx.get("ideas", [])):
@@ -321,7 +339,7 @@ async def confirm_idea(
         {"idea_id": idea_id},
         commit=False,
     )
-    await enqueue(db, project, "stack", {}, project.revision)
+    await enqueue(db, project, "stack", {}, project.revision, inference_spec=routing)
     await db.refresh(project)
     return ok(serialize(project))
 
@@ -332,7 +350,9 @@ async def edit_stack(
     payload: EditStackRequest,
     owner=Depends(owner_key),
     db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     check_job(project, "stack", {})
     job = await enqueue(
@@ -341,14 +361,20 @@ async def edit_stack(
         "stack",
         {"requested_stack": payload.stack.model_dump()},
         payload.revision,
+        inference_spec=routing,
     )
     return ok(serialize_job(job))
 
 
 @router.post("/projects/{project_id}/stack/confirm")
 async def confirm_stack(
-    project_id: str, payload: Revision, owner=Depends(owner_key), db=Depends(get_db)
+    project_id: str,
+    payload: Revision,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     ctx = copy.deepcopy(project.context)
     if not selected(ctx) or not ctx.get("stack"):
@@ -365,9 +391,115 @@ async def confirm_stack(
         {"stack": ctx["stack"]},
         commit=False,
     )
-    await enqueue(db, project, "documents", {}, project.revision)
+    await enqueue(
+        db, project, "documents", {}, project.revision, inference_spec=routing
+    )
     await db.refresh(project)
     return ok(serialize(project))
+
+
+@router.post("/projects/{project_id}/jobs/{job_id}/resume", status_code=202)
+async def resume_job(
+    project_id: str,
+    job_id: str,
+    payload: Revision,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
+):
+    project = await owned(db, project_id, owner)
+    job = await db.get(Job, job_id)
+    if (
+        not job
+        or job.project_id != project_id
+        or project.active_job != job_id
+        or job.status != "credentials_required"
+        or payload.revision != project.revision
+        or job.input_revision != project.revision
+    ):
+        raise StudioError(
+            "Only the current operation waiting for credentials can be resumed.", 409
+        )
+    original = job.inference or {}
+    if original.get("source") != "byok":
+        raise StudioError("This operation does not use a user AI session.", 409)
+    entry = leases.get(owner, ai_lease)
+    if (entry.provider, entry.model) != (
+        original.get("provider"),
+        original.get("model"),
+    ):
+        raise StudioError(
+            "Reconnect the original provider and model shown on the operation, or cancel it and start a new one.",
+            409,
+        )
+    result = await db.execute(
+        update(Job)
+        .where(
+            Job.id == job_id,
+            Job.status == "credentials_required",
+            Job.attempts == job.attempts,
+        )
+        .values(
+            status="queued",
+            error=None,
+            attempts=0,
+            inference={**original, "lease": ai_lease},
+            updated_at=now(),
+            events=[
+                *job.events,
+                {
+                    "message": "Resuming from saved inputs; interrupted provider work may be billed again.",
+                    "at": now().isoformat() + "Z",
+                },
+            ][-60:],
+        )
+    )
+    if result.rowcount != 1:
+        raise StudioError("The operation changed. Reload before resuming.", 409)
+    await db.commit()
+    await db.refresh(job)
+    return ok(serialize_job(job))
+
+
+@router.post("/projects/{project_id}/jobs/{job_id}/cancel")
+async def cancel_job(
+    project_id: str,
+    job_id: str,
+    payload: Revision,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+):
+    project = await owned(db, project_id, owner)
+    if project.active_job != job_id or project.revision != payload.revision:
+        raise StudioError("The project changed. Reload before cancelling.", 409)
+    result = await db.execute(
+        update(Job)
+        .where(
+            Job.id == job_id,
+            Job.project_id == project_id,
+            Job.status.in_(["queued", "credentials_required"]),
+        )
+        .values(status="cancelled", error=None, lease_until=None, updated_at=now())
+    )
+    if result.rowcount != 1:
+        raise StudioError(
+            "Remove the active AI session first and wait for the running operation to pause.",
+            409,
+        )
+    released = await db.execute(
+        update(Project)
+        .where(
+            Project.id == project_id,
+            Project.active_job == job_id,
+            Project.revision == payload.revision,
+        )
+        .values(active_job=None, updated_at=now())
+    )
+    if released.rowcount != 1:
+        await db.rollback()
+        raise StudioError("The project changed. Reload before cancelling.", 409)
+    await db.commit()
+    return ok(None)
 
 
 @router.get("/projects/{project_id}/history")
@@ -440,14 +572,24 @@ async def get_chat(project_id: str, owner=Depends(owner_key), db=Depends(get_db)
 
 @router.post("/projects/{project_id}/chat", status_code=202)
 async def send_chat(
-    project_id: str, payload: ChatRequest, owner=Depends(owner_key), db=Depends(get_db)
+    project_id: str,
+    payload: ChatRequest,
+    owner=Depends(owner_key),
+    db=Depends(get_db),
+    ai_lease: str = Header(default="", alias="X-AI-Lease"),
 ):
+    routing = inference.capture(owner, ai_lease)
     project = await owned(db, project_id, owner)
     check_job(project, "chat", {})
     return ok(
         serialize_job(
             await enqueue(
-                db, project, "chat", {"message": payload.message}, payload.revision
+                db,
+                project,
+                "chat",
+                {"message": payload.message},
+                payload.revision,
+                inference_spec=routing,
             )
         )
     )

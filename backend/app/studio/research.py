@@ -12,6 +12,7 @@ from sqlalchemy import select, update
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.studio.ai import StudioError
+from app.studio.inference import reject_secrets
 from app.studio.models import Artifact, Project, now
 
 
@@ -127,6 +128,7 @@ async def search(project_id: str, queries: list[str]) -> dict:
         "warnings": warnings,
         "cached": False,
     }
+    reject_secrets(report)
     if not warnings:
         async with AsyncSessionLocal() as db:
             db.add(
