@@ -1,0 +1,87 @@
+# Isolated verification stack. Contains no real provider keys and reads no .env.
+# Run with: docker compose -p exhacker-verify -f compose.verify.yml up --build --wait
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: verification-only
+      POSTGRES_DB: studio_verification
+    volumes:
+      - verification-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio -d studio_verification"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: exhacker-backend:verification
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: production
+    environment: &backend-environment
+      DATABASE_URL: postgresql+asyncpg://studio:verification-only@postgres:5432/studio_verification
+      ENV: development
+      EXHACKER_DEBUG: "false"
+      STUDIO_DEMO_MODE: "true"
+      FREE_TIER_PROJECTS_PER_DAY: "50"
+      STUDIO_JOB_LEASE_SECONDS: "15"
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    image: exhacker-backend:verification
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: production
+    environment: *backend-environment
+    ports:
+      - "127.0.0.1:${VERIFY_BACKEND_PORT:-8200}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  frontend:
+    image: exhacker-frontend:verification
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "127.0.0.1:${VERIFY_FRONTEND_PORT:-3200}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  backend-tests:
+    profiles: [tests]
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: tests
+    environment:
+      TEST_DATABASE_URL: postgresql+asyncpg://studio:verification-only@postgres:5432/studio_verification
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  verification-postgres:

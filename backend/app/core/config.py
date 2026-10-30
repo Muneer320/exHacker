@@ -1,108 +1,66 @@
-"""Application configuration via Pydantic Settings.
+"""Explicit runtime settings; real providers by default, opt-in offline fixtures."""
 
-All configuration is loaded from environment variables.
-No hardcoded values. No magic numbers.
-"""
-
-import os
+from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
+        env_file=(BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
-    # Environment
     ENV: Literal["development", "staging", "production"] = "development"
-    DEBUG: bool = False
+    DEBUG: bool = Field(default=False, validation_alias="EXHACKER_DEBUG")
     LOG_LEVEL: str = "INFO"
-
-    # API
-    API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "exHacker"
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "https://exhacker-frontend.vercel.app",
-        "https://exhacker-backend.vercel.app",
-    ]
-
-    # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./exhacker.db"
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
-    # AI Providers — use litellm model names
-    AI_PROVIDER: str = "openai"
+    STUDIO_DEMO_MODE: bool = False
+    STUDIO_WORKER_ENABLED: bool = True
+    STUDIO_JOB_LEASE_SECONDS: int = Field(default=300, ge=15, le=3600)
+    STUDIO_IDEA_ROUNDS: int = Field(default=2, ge=1, le=3)
+    STUDIO_CONTEXT_CHAR_LIMIT: int = Field(default=180000, ge=10000, le=500000)
+    STUDIO_COST_LIMIT: float = Field(default=5.0, gt=0, le=100)
+    STUDIO_SEARCH_LIMIT: int = Field(default=100, ge=1, le=1000)
+    MAX_PROJECTS_PER_USER: int = Field(default=50, ge=1, le=1000)
+    FREE_TIER_PROJECTS_PER_DAY: int = Field(default=3, ge=1, le=100)
+
+    AI_MODEL: str = "openai/gpt-4o-mini"
+    AI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-
-    # SDPD model tiers (opencode-go provider — litellm-compatible API)
-    AI_DEFAULT_PROVIDER: str = "opencode-go"
-    AI_MODEL_TIER_1: str = "deepseek-v4-flash"  # Cheap tier
-    AI_MODEL_TIER_2: str = "glm-5.2"  # Medium tier
-    AI_MODEL_TIER_3: str = "glm-5.2"  # Expensive (upgrade to opus later)
-
-    # AI retry / timeout configuration
-    MAX_RETRIES: int = 2
-    RETRY_BASE_DELAY: float = 1.0
-    AI_TIMEOUT_SECONDS: int = 60
-
-    # Cost tracking
-    TRACK_COSTS: bool = True
-    COST_LIMIT_PER_PROJECT: float = 0.50        # $0.50 max AI spend per project
-
-    # Mock modes — no API keys needed for development
-    MOCK_AI: bool = True                       # Use fake AI responses (no cost)
-    MOCK_RESEARCH: bool = True                  # Use fake research data (no API calls)
-
-    # Research
+    AI_BASE_URL: str | None = None
+    LITELLM_LOCAL_MODEL_COST_MAP: bool = True
+    AI_TIMEOUT_SECONDS: int = Field(default=120, ge=10, le=300)
+    AI_MAX_OUTPUT_TOKENS: int = Field(default=12000, ge=1000, le=32000)
+    # Set these to rates for your configured provider/model. They include the
+    # conservative reservation used to enforce per-project spending limits.
+    AI_INPUT_USD_PER_MILLION: float = Field(default=3.0, gt=0)
+    AI_OUTPUT_USD_PER_MILLION: float = Field(default=15.0, gt=0)
     TAVILY_API_KEY: str = ""
-    SERPAPI_API_KEY: str = ""
-    RESEARCH_CACHE_TTL_SECONDS: int = 86400  # 24 hours
-
-    # Limits
-    FREE_TIER_PROJECTS_PER_DAY: int = 3
-    PRO_TIER_PROJECTS_PER_DAY: int = 50
-    MAX_PROJECTS_PER_USER: int = 50
-    MAX_COST_PER_PROJECT: float = 0.50  # Legacy alias
-
-    # Caching
-    CACHE_BACKEND: str = "memory"  # memory or redis
-    REDIS_URL: str = ""
-
-    # Auth (v2)
-    OAUTH_GOOGLE_CLIENT_ID: str = ""
-    OAUTH_GOOGLE_CLIENT_SECRET: str = ""
-    OAUTH_GITHUB_CLIENT_ID: str = ""
-    OAUTH_GITHUB_CLIENT_SECRET: str = ""
-    SECRET_KEY: str = "change-me-in-production"
-
-    # Feature flags
-    FEATURE_PITCH_GENERATION: bool = False
-    FEATURE_TEAM_COLLABORATION: bool = False
-    FEATURE_EXPORT_PDF: bool = False
 
     @property
-    def is_production(self) -> bool:
+    def is_production(self):
         return self.ENV == "production"
 
     @property
-    def is_development(self) -> bool:
-        return self.ENV == "development"
-
-    @property
-    def database_url_async(self) -> str:
-        """Return the async database URL.
-        For SQLite, ensures aiosqlite driver is used.
-        """
-        if self.DATABASE_URL.startswith("sqlite"):
-            return self.DATABASE_URL
-        # For PostgreSQL, swap async driver
-        return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+    def database_url_async(self):
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        if self.DATABASE_URL.startswith("postgresql://"):
+            return self.DATABASE_URL.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+        if self.DATABASE_URL.startswith("sqlite://"):
+            return self.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://", 1)
+        return self.DATABASE_URL
 
 
 settings = Settings()

@@ -1,16 +1,17 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import AnimatedBackground from '@/components/AnimatedBackground';
+import type { Metadata } from "next";
+import "./globals.css";
+import "./studio.css";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 export const metadata: Metadata = {
-  title: 'exHacker — AI-Powered Hackathon Platform',
+  title: "exHacker — AI-Powered Hackathon Platform",
   description:
-    'Turn any hackathon challenge into a winning project in minutes. AI agents analyze, research, ideate, architect, and pitch your solution.',
-  keywords: ['hackathon', 'AI', 'agents', 'ideation', 'architecture'],
+    "Research and refine hackathon ideas, confirm your technology stack, and build from a detailed PRD with your project-aware assistant.",
+  keywords: ["hackathon", "AI", "agents", "ideation", "architecture"],
   openGraph: {
-    title: 'exHacker — AI-Powered Hackathon Platform',
-    description: 'Win hackathons with your AI team.',
-    type: 'website',
+    title: "exHacker — AI-Powered Hackathon Platform",
+    description: "Win hackathons with your AI team.",
+    type: "website",
   },
 };
 
@@ -20,13 +21,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-scroll-behavior="smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-          rel="stylesheet"
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
         />
       </head>
       <body>

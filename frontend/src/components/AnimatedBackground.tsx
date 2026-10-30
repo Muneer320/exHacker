@@ -3,20 +3,22 @@
 import { useEffect, useRef } from "react";
 
 interface Particle {
-  x: number; y: number;
-  vx: number; vy: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
   r: number;
   color: string;
   alpha: number;
 }
 
 const COLOURS = [
-  "61,124,246",  // blue
+  "61,124,246", // blue
   "61,124,246",
   "61,124,246",
   "168,216,255", // sky
   "168,216,255",
-  "194,255,77",  // lime (rare)
+  "194,255,77", // lime (rare)
   "255,255,255", // white (rare)
 ];
 
@@ -28,6 +30,8 @@ export default function AnimatedBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reducedMotion.matches) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -35,12 +39,15 @@ export default function AnimatedBackground() {
     let particles: Particle[] = [];
 
     function resize() {
-      canvas!.width  = window.innerWidth;
+      canvas!.width = window.innerWidth;
       canvas!.height = window.innerHeight;
     }
 
     function spawnParticles() {
-      const count = Math.max(40, Math.floor((canvas!.width * canvas!.height) / 16000));
+      const count = Math.max(
+        40,
+        Math.floor((canvas!.width * canvas!.height) / 16000),
+      );
       particles = Array.from({ length: count }, () => ({
         x: Math.random() * canvas!.width,
         y: Math.random() * canvas!.height,
@@ -67,7 +74,7 @@ export default function AnimatedBackground() {
             const t = 1 - dist / CONNECTION_DISTANCE;
             ctx!.beginPath();
             ctx!.strokeStyle = `rgba(61,124,246,${t * 0.12})`;
-            ctx!.lineWidth   = 0.6;
+            ctx!.lineWidth = 0.6;
             ctx!.moveTo(pi.x, pi.y);
             ctx!.lineTo(pj.x, pj.y);
             ctx!.stroke();
@@ -86,16 +93,19 @@ export default function AnimatedBackground() {
         p.y += p.vy;
 
         // Wrap edges
-        if (p.x < -10)                 p.x = canvas!.width  + 10;
-        if (p.x > canvas!.width  + 10) p.x = -10;
-        if (p.y < -10)                 p.y = canvas!.height + 10;
+        if (p.x < -10) p.x = canvas!.width + 10;
+        if (p.x > canvas!.width + 10) p.x = -10;
+        if (p.y < -10) p.y = canvas!.height + 10;
         if (p.y > canvas!.height + 10) p.y = -10;
       }
 
       rafId = requestAnimationFrame(tick);
     }
 
-    function handleResize() { resize(); spawnParticles(); }
+    function handleResize() {
+      resize();
+      spawnParticles();
+    }
 
     resize();
     spawnParticles();
