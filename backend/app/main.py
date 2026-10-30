@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.logging import setup_logging
+from app.core.logging import redact, setup_logging
 from app.core.middleware import RequestBodyLimit
 from app.db.session import engine, initialize_database
 from app.studio.ai import StudioError, configuration
@@ -38,8 +38,8 @@ async def lifespan(_app):
             "Production requires Tavily and, in operator mode, configured AI credentials."
         )
     leases.ttl = settings.AI_LEASE_SECONDS
-    cleanup = asyncio.create_task(cleanup_loop())
     await initialize_database()
+    cleanup = asyncio.create_task(cleanup_loop())
     task = asyncio.create_task(worker()) if settings.STUDIO_WORKER_ENABLED else None
     try:
         yield
@@ -76,7 +76,7 @@ app.add_middleware(RequestBodyLimit)
 async def studio_error(_request, exc):
     return JSONResponse(
         status_code=exc.status,
-        content={"success": False, "error": {"message": str(exc)}},
+        content={"success": False, "error": {"message": redact(str(exc))}},
     )
 
 
@@ -92,8 +92,8 @@ async def validation_error(_request, exc):
         )
     errors = [
         {
-            "field": ".".join(str(v) for v in error["loc"] if v != "body"),
-            "message": error["msg"],
+            "field": redact(".".join(str(v) for v in error["loc"] if v != "body")),
+            "message": redact(error["msg"]),
         }
         for error in exc.errors()
     ]

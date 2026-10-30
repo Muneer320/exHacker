@@ -62,6 +62,8 @@ def rank_idea(idea: Idea, sources: list[dict], intake: dict, *, idea_id=None):
 
 
 async def checkpoint(project_id, revision, kind, content):
+    if session := inference.current.get():
+        inference.ensure(*session)
     inference.reject_secrets(content)
     async with AsyncSessionLocal() as db:
         db.add(

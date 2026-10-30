@@ -19,12 +19,13 @@ from app.studio.schemas import SCORE_WEIGHTS
 logger = logging.getLogger(__name__)
 
 
-def provider_key():
+def provider_key(provider=None):
     if settings.AI_API_KEY:
         return settings.AI_API_KEY
-    if settings.AI_MODEL.startswith("anthropic/"):
+    provider = provider or settings.AI_MODEL.split("/")[0]
+    if provider == "anthropic":
         return settings.ANTHROPIC_API_KEY
-    if settings.AI_MODEL.startswith("openai/") or "/" not in settings.AI_MODEL:
+    if provider == "openai" or "/" not in settings.AI_MODEL:
         return settings.OPENAI_API_KEY
     return ""
 
@@ -70,7 +71,7 @@ async def completion(
     if spec["source"] == "byok":
         key = None
     else:
-        key = provider_key()
+        key = provider_key(spec["provider"])
         if not key:
             raise StudioError(
                 "AI is not configured. Set AI_API_KEY and AI_MODEL on the backend.", 503
@@ -135,9 +136,7 @@ async def completion(
             return response.text
         except CredentialsRequiredError:
             if spec["source"] == "byok":
-                leases.revoke_all(owner) if not spec.get("lease") else leases._drop(
-                    spec["lease"]
-                )
+                leases._drop(spec["lease"])
             raise
         except transport.TransientProviderError:
             if attempt == 0:

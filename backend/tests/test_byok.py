@@ -70,6 +70,9 @@ async def test_lease_api_isolation_validation_and_revoke(client, monkeypatch):
     bad = await client.post("/api/v1/ai/leases", json={KEY: KEY, "key": KEY})
     assert bad.status_code == 422
     assert KEY not in bad.text
+    malformed_project = await client.post("/api/v1/projects", json={KEY: KEY})
+    assert malformed_project.status_code == 422
+    assert KEY not in malformed_project.text
     assert (await client.delete(path)).status_code == 200
     assert (await client.get(path)).status_code == 428
     assert KEY not in str(leases._entries)
