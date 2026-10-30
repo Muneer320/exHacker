@@ -2,29 +2,67 @@
 
 # exHacker
 
-### Find the idea. Challenge it. Leave with a plan you can build.
+### Think beyond the obvious. Build with a clear plan.
 
-An AI product studio for hackathon teams — from a rough challenge to researched ideas, an approved stack, and an implementation handoff.
+**A product studio for hackathon teams.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-c4ff47?style=flat-square)](LICENSE)
+Research five directions. Make the idea yours. Leave with a handoff your team can build.
+
+[![MIT](https://img.shields.io/badge/license-MIT-c4ff47?style=flat-square)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-111111?style=flat-square&logo=nextdotjs)](frontend/package.json)
 [![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)](frontend/package.json)
 [![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white)](backend/pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white)](backend/app/main.py)
 
-[Try it with Docker](#try-it-with-docker) · [The workflow](#from-what-if-to-lets-build) · [Architecture](docs/ARCHITECTURE.md) · [Verification](docs/VERIFICATION.md) · [BYOK proposal](docs/BYOK.md)
+[**Try it locally**](#try-it-in-one-command) · [**Explore the workflow**](#from-a-challenge-to-a-build-plan) · [**Read the docs**](#the-developer-desk)
 
-![exHacker: bring a challenge, leave with a direction](docs/images/hero.png)
+![exHacker's live application interface](docs/images/hero.png)
 
 </div>
 
-The first hours of a hackathon often disappear into the same questions. *What should we build? Does it already exist? Can this team finish it?* By the time the idea feels solid, the clock has moved.
+> [!NOTE]
+> **Active development, with reproducible verification.** Real Docker, PostgreSQL, browser, export, and recovery checks are recorded in [verification evidence](docs/VERIFICATION.md). Hosted deployment and live-provider quality still need release validation. There is no hosted demo to advertise yet.
 
-exHacker gives that uncertainty a working process. It starts with the people, their skills, and their deadline. It develops different directions, researches similar work, exposes the critique, and helps the team choose deliberately. Once the idea and stack are approved, it produces detailed Markdown that both humans and coding agents can work from. A project-aware assistant stays available for the build.
+## The clock starts before the code
 
-**Status:** active development. The application has reproducible local and Docker verification, including PostgreSQL and recovery scenarios. Live-provider quality, public hosting, load validation, and an [upstream Python dependency advisory constraint](docs/VERIFICATION.md#remaining-python-advisory-constraint) remain release gates. User-provided AI keys are an [assessed proposal](docs/BYOK.md), not a shipped feature. There is no hosted demo URL to advertise yet.
+*What should we build? Does it already exist? Can this team finish it?* Those questions can consume the best hours of a hackathon. exHacker gives them a working process: start with the people and constraints, challenge the ideas with evidence, then turn the chosen direction into a detailed build plan.
 
-## From “what if?” to “let’s build”
+<table>
+<tr>
+<td width="50%">
+
+### Explore with evidence
+
+Five distinct directions, competitor sources, visible critiques, risks, effort estimates, and eight explained scores.
+
+</td>
+<td width="50%">
+
+### Keep control of the idea
+
+Refine with your own prompt. Compare alternatives. Confirm the direction and technology choices yourself.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### Hand off something useful
+
+A detailed `PRD.md`, dedicated `AGENTS.md`, and eight supporting Markdown files. Preview, copy, or download them.
+
+</td>
+<td>
+
+### Keep the team moving
+
+A persistent assistant with the plan, research, documents, team skills, hackathon, and conversation context.
+
+</td>
+</tr>
+</table>
+
+## From a challenge to a build plan
 
 ```mermaid
 flowchart LR
@@ -39,59 +77,69 @@ flowchart LR
     G --> H[Contextual project assistant]
 ```
 
-| Step | What the team gets |
-| --- | --- |
-| **Brief the studio** | Required idea/theme, available hours, and teammate skills/proficiency. Optional judging criteria, rules, budget, platform, and technology constraints. |
-| **Explore five directions** | Competitor/similar-project sources, critique, revisions, risks, assumptions, effort estimates, eight explained scores, and a server-calculated overall score. |
-| **Make the idea yours** | Compare candidates, refine one with your own prompt, repeat research and scoring, then explicitly confirm a direction. |
-| **Agree on the stack** | Technology purpose, alternatives, components, data flow, and compatibility risks. Edit suggestions or request substitutions before approving. |
-| **Get the handoff** | Detailed requirements, acceptance criteria, contracts, task ownership/dependencies, test plans, and project-specific instructions for coding agents. |
-| **Keep building** | Persistent chat with the confirmed plan, all documents, research, team, hackathon context, and conversation history. Pitch help is available when asked. |
+| You bring | exHacker develops | You approve |
+| --- | --- | --- |
+| A challenge, team skills, available time, and optional rules/budget | Researched directions with critique and scoring | The idea worth pursuing |
+| Preferences and technology substitutions | Components, data flow, trade-offs, and compatibility review | The stack your team will use |
+| The confirmed plan | Requirements, acceptance criteria, contracts, named tasks, and agent instructions | A handoff to review and build from |
 
-Scores are advisory estimates. Search results cannot prove uniqueness, and no score guarantees a winning entry. The UI shows rationales and evidence rather than presenting model judgment as a fact.
+> [!IMPORTANT]
+> Scores are advisory estimates. Search results cannot prove uniqueness or guarantee a winning entry. Evidence and reasoning stay visible so the team can make its own decision.
 
-### An implementation handoff, entirely in Markdown
+## A handoff you can work from
 
-![The document workspace with Markdown preview and downloads](docs/images/workspace.png)
+![The actual Markdown workspace, including its offline demonstration notice](docs/images/workspace.png)
 
-*Actual application screenshots. The workspace image uses explicitly labeled offline fixtures; it is not evidence of live AI research or model quality.*
+*Captured from the running application. This example uses explicitly labeled offline fixtures; it does not establish live research or model quality.*
 
-Preview rendered Markdown or its source, copy a document, download individual files, or export the saved package as a ZIP:
+| Product definition | Technical decisions | Build execution |
+| --- | --- | --- |
+| `PRD.md` | `TECH_STACK.md` | `AGENTS.md` |
+| `RESEARCH.md` | `ARCHITECTURE.md` | `IMPLEMENTATION_PLAN.md` |
+| `README.md` | `DATABASE.md` · `API.md` | `SETUP.md` |
 
-| Files | Purpose |
-| --- | --- |
-| `PRD.md` | Product requirements, user journeys, behavior, acceptance criteria, edge cases, and success measures. |
-| `AGENTS.md` | Project-specific instructions, confirmed technologies, constraints, and working rules for coding agents. |
-| `TECH_STACK.md`, `ARCHITECTURE.md` | Technical choices, responsibilities, and data flow. |
-| `DATABASE.md`, `API.md` | Entities, validation, relationships, and request/response or native query/mutation contracts. |
-| `SETUP.md`, `IMPLEMENTATION_PLAN.md` | Setup requirements, named teammate assignments, effort, and dependencies. |
-| `RESEARCH.md`, `README.md` | Retrieved evidence, limitations, and the project's own introduction. |
+**Rendered preview · Markdown source · Copy · Individual downloads · Reproducible ZIP**
 
-Files come from one confirmed snapshot. Reading or downloading them does not regenerate them. Changing an upstream decision invalidates affected approvals/documents while preserving earlier snapshots in History.
+> [!TIP]
+> Documents come from one approved snapshot. Reading them never regenerates them. Changing an upstream decision invalidates affected approvals and documents while keeping earlier snapshots in History.
 
-## Try it with Docker
+## Try it in one command
 
-Install Docker with Compose v2, then run from a fresh checkout:
+From a checkout, with Docker Compose v2 running:
 
 ```sh
-git clone https://github.com/Muneer320/exHacker.git
-cd exHacker
 docker compose -p exhacker-verify -f compose.verify.yml up --build --wait
 ```
 
-Open **[localhost:3200](http://localhost:3200)**. No API key or `.env` file is needed for this deliberately offline evaluation. It runs the real frontend, API, PostgreSQL, migrations, background jobs, exports, and persistence. Generated ideas/documents are fixtures, research is absent, and the demonstration assistant is labeled. Natural-language stack revisions require live AI; manual edits work offline.
+**Open [localhost:3200](http://localhost:3200).** No `.env` or API key is needed for this explicit offline evaluation.
 
-For a first walkthrough, enter a 48-hour mentoring challenge, add a React builder and a Python builder, compare the five directions, refine one, confirm it, change a technology choice, and generate the handoff. Reload a page to inspect persistence; return to the assistant after the documents are ready.
+| Runs for real | Uses offline fixtures |
+| --- | --- |
+| Frontend, API, PostgreSQL, migrations, jobs, exports, persistence | Idea content, scores, documentation, and demonstration assistant |
 
-Stop the evaluation without deleting its database:
+<details>
+<summary><strong>Your first five-minute walkthrough</strong></summary>
+
+1. Enter a 48-hour mentoring challenge and add a React builder and a Python builder.
+2. Compare the five directions and refine one with your own prompt.
+3. Confirm it, edit a technology choice, and approve the stack.
+4. Preview `PRD.md` and `AGENTS.md`, copy a file, and download the package.
+5. Open the assistant and reload the page to see saved conversation history.
+
+Offline mode has no live research. Natural-language stack revisions require live AI; manual edits work in the demonstration.
+
+Stop without deleting the evaluation database:
 
 ```sh
 docker compose -p exhacker-verify -f compose.verify.yml down
 ```
 
-### Run with live AI and research
+</details>
 
-Copy `.env.example` to `.env` in the repository root (`cp .env.example .env` on macOS/Linux, `Copy-Item .env.example .env` in PowerShell). Configure:
+<details>
+<summary><strong>Run with live AI and web research</strong></summary>
+
+Copy `.env.example` to `.env` at the repository root. Use `cp .env.example .env` on macOS/Linux or `Copy-Item .env.example .env` in PowerShell. Configure a suitable provider-qualified text model, its API key, verified pricing, and Tavily:
 
 ```dotenv
 AI_MODEL=openai/gpt-4o-mini
@@ -100,17 +148,18 @@ TAVILY_API_KEY=your-search-api-key
 STUDIO_DEMO_MODE=false
 ```
 
-The model above is the configurable code default, not a promise of current account access or a model recommendation. Use a suitable provider-qualified text model and set input/output pricing to its actual rates. [Configuration](docs/CONFIGURATION.md) explains aliases, budgets, context/output limits, and model compatibility.
-
 ```sh
 docker compose up --build --wait
 ```
 
-Open **[localhost:3000](http://localhost:3000)**. This separate development stack uses a persistent SQLite volume. Missing or invalid providers produce visible errors and preserve saved work; no sample success is substituted. Provider credentials are currently configured by the operator. AI BYOK does not exist in the UI yet.
+Open [localhost:3000](http://localhost:3000). This development stack persists SQLite in its own volume. Missing providers produce visible errors and preserve saved work. Model account access and quality need validation. User BYOK is being implemented under the approved [credential design](docs/BYOK.md).
 
-### Develop without Docker
+</details>
 
-Use Python 3.12 (supported minimum 3.11), [uv](https://docs.astral.sh/uv/), and Node.js 22+. After configuring the root `.env`, start two terminals:
+<details>
+<summary><strong>Develop without Docker</strong></summary>
+
+Use Python 3.12 (minimum 3.11), [uv](https://docs.astral.sh/uv/), and Node.js 22+. Configure the root `.env`, then start two terminals:
 
 ```sh
 # Terminal 1
@@ -126,9 +175,11 @@ npm ci
 npm run dev
 ```
 
-The default frontend proxy points to `http://127.0.0.1:8000`. Change it with server-side `BACKEND_URL` in the frontend process environment or `frontend/.env.local`. Python's root `.env` is not automatically a Next.js environment file.
+The frontend proxy defaults to `http://127.0.0.1:8000`. Set server-side `BACKEND_URL` in the frontend process or `frontend/.env.local` to change it. Python's root `.env` is not automatically a Next.js environment file.
 
-## Built to preserve decisions
+</details>
+
+## Decisions survive the page
 
 ```mermaid
 flowchart LR
@@ -136,40 +187,34 @@ flowchart LR
     Proxy --> API[FastAPI]
     API --> DB[(Projects / jobs / artifacts / chat)]
     Worker[Database-backed worker] <--> DB
-    Worker --> LLM[LiteLLM / configured provider]
+    Worker --> LLM[Configured text provider]
     Worker --> Web[Tavily research]
     Worker --> MD[Validated specification / Markdown compiler]
     MD --> DB
 ```
 
-| Layer | Technology and responsibility |
+| Interface | Application | Reliability |
+| --- | --- | --- |
+| Next.js 16.4 · React 19 · TypeScript | FastAPI · Pydantic · SQLAlchemy · Alembic | Durable jobs · optimistic revisions · explicit approval gates |
+| Responsive black/blue/lime workspace | SQLite locally · PostgreSQL verified in Docker | Atomic publication · leases · bounded recovery |
+
+Failed jobs retain the previous successful context. Stale tabs cannot overwrite newer revisions. Recovery can repeat paid provider work; external billing is not exactly once. The [architecture guide](docs/ARCHITECTURE.md) describes the actual guarantees.
+
+## The developer desk
+
+| Start here | Go deeper |
 | --- | --- |
-| Frontend | Next.js 16.4, React 19, TypeScript, responsive black/blue/lime workspace. |
-| API | FastAPI, Pydantic contracts, owner scoping, optimistic revisions, bounded requests. |
-| Persistence | SQLAlchemy async; SQLite for local development, PostgreSQL verified in Docker; Alembic migrations. |
-| Workflow | Durable jobs, atomic claims and publication, leases/heartbeat, bounded recovery, explicit approval gates. |
-| Intelligence | LiteLLM text completions; Tavily source retrieval; schema validation and repair. |
-| Handoff | Deterministic Markdown compiler, React Markdown, strict Mermaid rendering, stable exports. |
-| Verification | pytest, Ruff, TypeScript, ESLint, Playwright/Chromium, Compose integration and restart checks. |
+| [Configuration and environment variables](docs/CONFIGURATION.md) | [Architecture and directory map](docs/ARCHITECTURE.md) |
+| [Testing and browser workflows](docs/TESTING.md) | [Observed verification results](docs/VERIFICATION.md) |
+| [Deployment and operations](docs/DEPLOYMENT.md) | [Security and privacy](SECURITY.md) |
+| [Contributing](CONTRIBUTING.md) | [Approved BYOK architecture](docs/BYOK.md) |
 
-A failed job keeps the last successful context. A stale tab cannot overwrite a newer revision. Accepted jobs survive a browser closing under today's operator-key configuration. Interrupted jobs can be reclaimed after lease expiry; recovery can repeat provider work, so external billing is **not** exactly once. See [architecture](docs/ARCHITECTURE.md) for the actual guarantees.
-
-```text
-backend/app/studio/      Workflow, contracts, models, AI/research, Markdown
-backend/migrations/      Explicit additive database migrations
-backend/tests/           Isolated SQLite and PostgreSQL regression tests
-frontend/src/            Application routes, studio panels, typed API client
-frontend/tests/          Real browser workflows and trust-boundary checks
-scripts/verify_docker.py HTTP, export, outage, restart and queued recovery checks
-compose.verify.yml       Disposable PostgreSQL verification stack
-docs/                    Configuration, architecture, deployment and evidence
-```
-
-## Test what the user does
+<details>
+<summary><strong>Run the checks</strong></summary>
 
 ```sh
 cd backend
-uv run ruff check app tests migrations
+uv run ruff check app tests migrations ../scripts
 uv run pytest -q
 cd ../frontend
 npm run lint
@@ -179,33 +224,27 @@ npx playwright install chromium
 npm test
 ```
 
-The container verification path also runs the backend suite against PostgreSQL and checks an accepted queue surviving an API process kill:
+With the verification stack already running, check PostgreSQL and actual process recovery from the repository root:
 
 ```sh
 docker compose -p exhacker-verify -f compose.verify.yml run --rm --build backend-tests
 python scripts/verify_docker.py --restart
 ```
 
-Browser tests can target the already-running container frontend using `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3200`. See [testing](docs/TESTING.md) for shell-specific commands, isolation, screenshots, and CI. [Verification evidence](docs/VERIFICATION.md) separates deterministic provider fixtures from genuinely exercised container behavior and lists remaining release checks.
+See [testing](docs/TESTING.md) for container browser targeting, screenshots, isolation, and CI.
 
-## Deploy deliberately
+</details>
 
-Use a persistent Python host/container with one worker initially, PostgreSQL, explicit `alembic upgrade head`, protected provider secrets, and HTTPS. Deploy the frontend independently with `BACKEND_URL` pointing to that backend. The embedded worker needs to keep running; the backend is not packaged as a request-only serverless function.
+> [!WARNING]
+> **Review the release gates before public hosting.** The backend needs a persistent process, PostgreSQL, HTTPS, backups, and abuse controls. Live-provider evaluation and the [upstream dependency advisory review](docs/VERIFICATION.md#remaining-python-advisory-constraint) remain open. The default Compose file is a local SQLite setup.
 
-The default Compose file uses SQLite and overrides `DATABASE_URL`; it is a local development setup. Follow the [deployment guide](docs/DEPLOYMENT.md) for production configuration, health checks, migrations, backups, and recovery limits.
+> [!CAUTION]
+> **Save your workspace key privately.** Anyone holding it can access the workspace; losing it loses access. Project text and chat persist and may be sent to the configured AI/search providers. Never paste credentials into those fields. Read [SECURITY.md](SECURITY.md) before using sensitive data.
 
-## Privacy, access, and BYOK
+<div align="center">
 
-Projects belong to a random browser workspace key. Save it privately through **Projects → Workspace access & recovery** to restore the workspace elsewhere. Anyone holding that key can access the workspace; losing it loses access. This is not an account system or shared-team authorization model.
+**Built for teams who want to spend their hackathon building.**
 
-Live operations send relevant project/team data to the AI provider and search service. Chat and project history persist in the database. Never paste secrets into those fields. Public hosting also needs perimeter abuse controls: anonymous workspace quotas are not sufficient protection for owner-funded APIs.
+Created by [Muneer Alam](https://github.com/Muneer320) · [MIT license](LICENSE) · [Contributions welcome](CONTRIBUTING.md)
 
-**BYOK is awaiting a design decision.** All five requested providers are feasible through the existing abstraction, but browser-only secrets conflict with unattended durable jobs. The [assessment and recommended RAM-lease design](docs/BYOK.md) explains the options, security boundary, restart behavior, and separate research credential requirement. No user-key collection or storage has been implemented.
-
-Read [SECURITY.md](SECURITY.md) before exposing an installation publicly.
-
-## Help build it
-
-Contributions that improve real workflows, evidence quality, failure handling, accessibility, and documentation are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and describe substantial product or architecture changes before implementing them.
-
-Created by [Muneer Alam](https://github.com/Muneer320). Released under the [MIT license](LICENSE).
+</div>

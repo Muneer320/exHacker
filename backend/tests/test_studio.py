@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import hashlib
 import io
 import json
 import zipfile
@@ -11,9 +12,24 @@ from sqlalchemy import func, select
 
 from app.core.config import settings
 from app.studio import ai, demo, jobs, pipeline, research
+from app.studio.documents import compile_documents
 from app.studio.models import Artifact, Job, Message, Project, now
 from app.studio.schemas import Intake, Scores
 from tests.conftest import create, drain, ready
+
+
+def test_generated_markdown_punctuation_and_hashes(intake):
+    data = Intake.model_validate(intake).model_dump()
+    idea = demo.ideas(data)[0].model_dump()
+    idea["title"] = "Mentoring\u2014without reliable internet"
+    specification = demo.specification(data, idea)
+    package = compile_documents(
+        data, idea, demo.stack(data), specification, 1, "2026-10-31T00:00:00Z", {}, True
+    )
+    assert "\u2014" in idea["title"]
+    for file in package["files"]:
+        assert "\u2014" not in file["content"]
+        assert hashlib.sha256(file["content"].encode()).hexdigest() == file["sha256"]
 
 
 async def test_complete_workflow_uses_selected_idea_and_persists_chat(client, intake):

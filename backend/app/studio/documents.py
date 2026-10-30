@@ -17,7 +17,7 @@ def section(title, text):
 def team_text(intake):
     return bullets(
         [
-            f"{m['name']} — {m.get('role') or 'Builder'}; "
+            f"{m['name']}: {m.get('role') or 'Builder'}; "
             + ", ".join(f"{s['technology']} ({s['proficiency']})" for s in m["skills"])
             + f"; capacity: {m.get('hours_available') or intake['available_hours']}h"
             for m in intake["teammates"]
@@ -91,18 +91,18 @@ def compile_documents(
         for c in stack.components
     )
     risks = "\n".join(
-        f"- **{r['severity'].upper()}: {r['risk']}** — {r['mitigation']}"
+        f"- **{r['severity'].upper()}: {r['risk']}**: {r['mitigation']}"
         for r in idea["risks"]
     )
     sources = "\n".join(
-        f"- [{s['id']}] [{s['title']}]({s['url']}) — retrieved {s['retrieved_at']}\n  {s['snippet']}"
+        f"- [{s['id']}] [{s['title']}]({s['url']}): retrieved {s['retrieved_at']}\n  {s['snippet']}"
         for s in research.get("sources", [])
     )
     sources = (
         sources
         or "No live evidence is available. Treat novelty and market claims as unverified."
     )
-    prd = f"# {title} — Product Requirements Document\n\n{header}"
+    prd = f"# {title}: Product Requirements Document\n\n{header}"
     for heading, text in [
         ("1. Executive summary", spec.executive_summary),
         (
@@ -152,7 +152,7 @@ def compile_documents(
         prd += section(heading, text)
 
     agents = (
-        f"# Agent instructions — {title}\n\n{header}"
+        f"# Agent instructions: {title}\n\n{header}"
         + section(
             "Read first",
             (
@@ -204,7 +204,7 @@ def compile_documents(
         + section("Core features", bullets(idea["core_features"])),
         "TECH_STACK.md": f"# Confirmed technology stack\n\n{header}\n{stack.summary}\n\n{stack_text}"
         + section("Compatibility review", bullets(stack.compatibility_notes)),
-        "ARCHITECTURE.md": f"# Architecture — {title}\n\n{header}\n{stack.summary}\n\n{components}"
+        "ARCHITECTURE.md": f"# Architecture: {title}\n\n{header}\n{stack.summary}\n\n{components}"
         + section("Data flow", bullets(stack.data_flow))
         + section(
             "Compatibility and risks",
@@ -232,6 +232,9 @@ def compile_documents(
         + section("Idea critique", bullets(idea["critique"]))
         + section("Revisions made", bullets(idea["changes_made"])),
     }
+    # Keep generated Markdown consistent with the repository's punctuation style,
+    # including prose supplied by a model or entered in the original brief.
+    docs = {name: content.replace("\u2014", " - ") for name, content in docs.items()}
     return {
         "revision": revision,
         "generated_at": generated_at,
