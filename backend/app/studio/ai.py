@@ -3,29 +3,20 @@
 import asyncio
 import json
 import logging
-import os
 
 from pydantic import ValidationError
 from sqlalchemy import update
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
+from app.studio import inference, transport
+from app.studio.credentials import leases
+from app.studio.errors import CredentialsRequiredError, StudioError
 from app.studio.models import Project
+from app.studio.providers import catalog
 from app.studio.schemas import SCORE_WEIGHTS
 
 logger = logging.getLogger(__name__)
-
-# This is public library metadata, not a credential. Honor .env settings before
-# LiteLLM's first import so a plain local launch does not require a metadata fetch.
-os.environ.setdefault(
-    "LITELLM_LOCAL_MODEL_COST_MAP", str(settings.LITELLM_LOCAL_MODEL_COST_MAP)
-)
-
-
-class StudioError(Exception):
-    def __init__(self, message: str, status: int = 400):
-        super().__init__(message)
-        self.status = status
 
 
 def provider_key():
@@ -47,6 +38,9 @@ def configuration():
         "worker_enabled": settings.STUDIO_WORKER_ENABLED,
         "cost_limit": settings.STUDIO_COST_LIMIT,
         "score_weights": SCORE_WEIGHTS,
+        "access_mode": settings.AI_ACCESS_MODE,
+        "providers": catalog(),
+        "lease_seconds": settings.AI_LEASE_SECONDS,
     }
 
 
@@ -71,48 +65,54 @@ async def reserve_cost(project_id: str, amount: float):
 async def completion(
     project_id: str, messages: list[dict], *, max_tokens: int = 6000
 ) -> str:
-    key = provider_key()
-    if not key:
-        raise StudioError(
-            "AI is not configured. Set AI_API_KEY and AI_MODEL on the backend.", 503
-        )
+    owner, spec = inference.current.get() or ("", inference.operator_spec())
+    inference.ensure(owner, spec)
+    if spec["source"] == "byok":
+        key = None
+    else:
+        key = provider_key()
+        if not key:
+            raise StudioError(
+                "AI is not configured. Set AI_API_KEY and AI_MODEL on the backend.", 503
+            )
+    inference.reject_secrets(messages)
     chars = sum(len(m["content"]) for m in messages)
     if chars > settings.STUDIO_CONTEXT_CHAR_LIMIT:
         raise StudioError(
-            "Project context exceeds the configured model context budget. Increase STUDIO_CONTEXT_CHAR_LIMIT for a larger-context model.",
+            "Project context exceeds the configured model context budget.", 413
+        )
+    input_bound = sum(len(m["content"].encode("utf-8")) + 32 for m in messages)
+    max_tokens = min(max_tokens, settings.AI_MAX_OUTPUT_TOKENS, spec["output"])
+    if input_bound + max_tokens > spec["context"]:
+        raise StudioError(
+            "The saved project exceeds this model's conservative context budget. Choose a larger-context model for a new operation.",
             413,
         )
-    # Reserve a conservative bound; failed calls can still be provider-billable.
-    input_bound = sum(len(m["content"].encode("utf-8")) + 32 for m in messages)
-    max_tokens = min(max_tokens, settings.AI_MAX_OUTPUT_TOKENS)
     estimate = (
-        input_bound * settings.AI_INPUT_USD_PER_MILLION
-        + max_tokens * settings.AI_OUTPUT_USD_PER_MILLION
+        input_bound * spec["input_rate"] + max_tokens * spec["output_rate"]
     ) / 1_000_000
-    import litellm
-
     for attempt in range(2):
+        inference.ensure(owner, spec)
         await reserve_cost(project_id, estimate)
         try:
-            response = await litellm.acompletion(
-                model=settings.AI_MODEL,
-                api_key=key,
-                api_base=settings.AI_BASE_URL,
-                messages=messages,
-                max_tokens=max_tokens,
-                timeout=settings.AI_TIMEOUT_SECONDS,
-                num_retries=0,
-            )
-            usage = response.usage
+            if spec["source"] == "byok":
+                response = await leases.run(
+                    owner,
+                    spec["lease"],
+                    lambda secret: transport.invoke(spec, secret, messages, max_tokens),
+                )
+            else:
+                response = await transport.invoke(spec, key, messages, max_tokens)
             actual = estimate
             if (
-                usage
-                and usage.prompt_tokens is not None
-                and usage.completion_tokens is not None
+                isinstance(response.input_tokens, int)
+                and isinstance(response.output_tokens, int)
+                and response.input_tokens >= 0
+                and response.output_tokens >= 0
             ):
                 actual = (
-                    usage.prompt_tokens * settings.AI_INPUT_USD_PER_MILLION
-                    + usage.completion_tokens * settings.AI_OUTPUT_USD_PER_MILLION
+                    response.input_tokens * spec["input_rate"]
+                    + response.output_tokens * spec["output_rate"]
                 ) / 1_000_000
             async with AsyncSessionLocal() as db:
                 await db.execute(
@@ -121,33 +121,29 @@ async def completion(
                     .values(ai_cost=Project.ai_cost - estimate + actual)
                 )
                 await db.commit()
-            if response.choices[0].finish_reason == "length":
+            if response.truncated:
                 raise StudioError(
                     "The model hit its output limit. Increase AI_MAX_OUTPUT_TOKENS or choose a model with a larger output window.",
                     502,
                 )
-            content = response.choices[0].message.content
-            if not content:
+            if not response.text:
                 raise StudioError(
-                    "The AI provider returned an empty response. Retry this step.", 502
+                    "The AI provider returned an empty or refused response. Retry this step.",
+                    502,
                 )
-            return content
-        except StudioError:
+            inference.reject_secrets(response.text)
+            return response.text
+        except CredentialsRequiredError:
+            if spec["source"] == "byok":
+                leases.revoke_all(owner) if not spec.get("lease") else leases._drop(
+                    spec["lease"]
+                )
             raise
-        except Exception as exc:
-            status = getattr(exc, "status_code", 500)
-            logger.warning(
-                "Provider call failed: %s (status %s)", type(exc).__name__, status
-            )
-            if attempt == 0 and (
-                status in (429, 500, 502, 503, 504) or isinstance(exc, TimeoutError)
-            ):
+        except transport.TransientProviderError:
+            if attempt == 0:
                 await asyncio.sleep(1)
                 continue
-            raise StudioError(
-                "The AI provider could not complete this request. Check server credentials, model access, and provider availability, then retry.",
-                502,
-            ) from None
+            raise
     raise StudioError("AI request failed.", 502)
 
 

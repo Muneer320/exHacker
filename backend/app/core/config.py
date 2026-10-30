@@ -32,12 +32,13 @@ class Settings(BaseSettings):
     MAX_PROJECTS_PER_USER: int = Field(default=50, ge=1, le=1000)
     FREE_TIER_PROJECTS_PER_DAY: int = Field(default=3, ge=1, le=100)
 
-    AI_MODEL: str = "openai/gpt-4o-mini"
+    AI_ACCESS_MODE: Literal["byok", "operator"] = "operator"
+    AI_LEASE_SECONDS: int = Field(default=1800, ge=60, le=3600)
+    AI_MODEL: str = "openai/gpt-6-luna"
     AI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     AI_BASE_URL: str | None = None
-    LITELLM_LOCAL_MODEL_COST_MAP: bool = True
     AI_TIMEOUT_SECONDS: int = Field(default=120, ge=10, le=300)
     AI_MAX_OUTPUT_TOKENS: int = Field(default=12000, ge=1000, le=32000)
     # Set these to rates for your configured provider/model. They include the

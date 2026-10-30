@@ -1,10 +1,12 @@
 """Exercise the real provider adapter while keeping paid inference offline."""
 
-import litellm
+import json
+
+import httpx
 import pytest
 
 from app.core.config import settings
-from app.studio import ai
+from app.studio import ai, transport
 from app.studio.models import Project
 from tests.conftest import create
 
@@ -19,19 +21,32 @@ async def test_provider_adapter_reconciles_usage_and_rejects_truncation(
     monkeypatch.setattr(settings, "AI_BASE_URL", "https://inference.invalid/v1")
     calls = []
 
-    async def respond(**kwargs):
-        calls.append(kwargs)
-        return litellm.ModelResponse(
-            choices=[
-                {
-                    "message": {"role": "assistant", "content": "A grounded response."},
-                    "finish_reason": finish_reason,
-                }
-            ],
-            usage={"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120},
+    def respond(request):
+        calls.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "status": "incomplete" if finish_reason == "length" else "completed",
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {"type": "output_text", "text": "A grounded response."}
+                        ],
+                    }
+                ],
+                "usage": {"input_tokens": 100, "output_tokens": 20},
+            },
         )
 
-    monkeypatch.setattr(litellm, "acompletion", respond)
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        transport.httpx,
+        "AsyncClient",
+        lambda **kwargs: original_client(
+            transport=httpx.MockTransport(respond), **kwargs
+        ),
+    )
     messages = [
         {"role": "user", "content": "Help our team decide what to build first."}
     ]
@@ -44,11 +59,12 @@ async def test_provider_adapter_reconciles_usage_and_rejects_truncation(
             == "A grounded response."
         )
     assert len(calls) == 1
-    assert calls[0]["api_key"] == "adapter-test-key"
-    assert calls[0]["model"] == "openai/test-model"
-    assert calls[0]["api_base"] == "https://inference.invalid/v1"
-    assert calls[0]["messages"] == messages
-    assert calls[0]["num_retries"] == 0
+    assert calls[0].headers["Authorization"] == "Bearer adapter-test-key"
+    assert str(calls[0].url) == "https://inference.invalid/v1/responses"
+    body = json.loads(calls[0].content)
+    assert body["model"] == "test-model"
+    assert body["input"] == messages
+    assert body["store"] is False
     expected = (
         100 * settings.AI_INPUT_USD_PER_MILLION
         + 20 * settings.AI_OUTPUT_USD_PER_MILLION
