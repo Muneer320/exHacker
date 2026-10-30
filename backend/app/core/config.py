@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     MAX_PROJECTS_PER_USER: int = Field(default=50, ge=1, le=1000)
     FREE_TIER_PROJECTS_PER_DAY: int = Field(default=3, ge=1, le=100)
 
-    AI_ACCESS_MODE: Literal["byok", "operator"] = "operator"
+    AI_ACCESS_MODE: Literal["byok", "operator"] = "byok"
     AI_LEASE_SECONDS: int = Field(default=1800, ge=60, le=3600)
     AI_MODEL: str = "openai/gpt-6-luna"
     AI_API_KEY: str = ""

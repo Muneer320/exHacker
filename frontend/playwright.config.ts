@@ -8,9 +8,11 @@ const database = join(
   `exhacker-browser-${randomUUID()}.db`,
 ).replaceAll("\\", "/");
 const externalBase = process.env.PLAYWRIGHT_BASE_URL;
+const byok = process.env.PLAYWRIGHT_BYOK === "true";
 
 export default defineConfig({
   testDir: "./tests",
+  testMatch: byok ? "byok.spec.ts" : "studio.spec.ts",
   timeout: 120000,
   expect: { timeout: 30000 },
   workers: 1,
@@ -27,7 +29,7 @@ export default defineConfig({
     ? undefined
     : [
         {
-          command: "uv run uvicorn app.main:app --host 127.0.0.1 --port 8101",
+          command: `uv run uvicorn ${byok ? "tests.byok_server" : "app.main"}:app --host 127.0.0.1 --port 8101`,
           cwd: "../backend",
           url: "http://127.0.0.1:8101/ready",
           reuseExistingServer: false,
@@ -35,7 +37,9 @@ export default defineConfig({
             DATABASE_URL: `sqlite+aiosqlite:///${database}`,
             ENV: "development",
             EXHACKER_DEBUG: "false",
-            STUDIO_DEMO_MODE: "true",
+            STUDIO_DEMO_MODE: byok ? "false" : "true",
+            AI_ACCESS_MODE: "byok",
+            TAVILY_API_KEY: byok ? "synthetic-test-search-key" : "",
             STUDIO_WORKER_ENABLED: "true",
             FREE_TIER_PROJECTS_PER_DAY: "50",
           },

@@ -17,6 +17,7 @@ import {
   type Project,
 } from "@/services/api";
 import CommandPalette from "@/components/shared/CommandPalette";
+import { useAI } from "./AIProvider";
 
 type Studio = {
   project: Project;
@@ -49,6 +50,7 @@ export default function StudioProvider({
   children: React.ReactNode;
 }) {
   const { id } = useParams<{ id: string }>();
+  const ai = useAI();
   const pathname = usePathname();
   const [project, setProject] = useState<Project | null>(null);
   const [config, setConfig] = useState<Configuration | null>(null);
@@ -240,10 +242,14 @@ export default function StudioProvider({
               )}
               {config &&
                 !config.demo &&
-                (!config.ai_configured || !config.research_configured) && (
+                ((config.access_mode === "operator" && !config.ai_configured) ||
+                  !config.research_configured) && (
                   <div className="notice warning">
                     Live generation needs{" "}
-                    {(!config.ai_configured ? ["an AI provider"] : [])
+                    {(config.access_mode === "operator" && !config.ai_configured
+                      ? ["an AI provider"]
+                      : []
+                    )
                       .concat(
                         !config.research_configured ? ["Tavily search"] : [],
                       )
@@ -292,12 +298,75 @@ export default function StudioProvider({
                     <strong>
                       <span className="working-dot" />{" "}
                       {active?.kind.replaceAll("_", " ") || "Operation"}{" "}
-                      {active?.status === "running" ? "in progress" : "queued"}
+                      {active?.status === "credentials_required"
+                        ? "needs an API key"
+                        : active?.status === "running"
+                          ? "in progress"
+                          : "queued"}
                     </strong>
                     <span className="small muted">
-                      Safe to navigate or return later
+                      {active?.inference.provider} · {active?.inference.model}
                     </span>
                   </div>
+                  {active?.status === "credentials_required" && (
+                    <div className="notice warning">
+                      <p>
+                        {active.error} Resuming repeats this operation from
+                        saved inputs; provider charges may repeat. Saved
+                        artifacts remain available.
+                      </p>
+                      <div className="button-row">
+                        <button
+                          className="btn btn-lime"
+                          onClick={() => ai.open(active.inference)}
+                        >
+                          Reconnect API key
+                        </button>
+                        <button
+                          className="btn btn-ghost"
+                          disabled={
+                            saving ||
+                            ai.session?.provider !==
+                              active.inference.provider ||
+                            ai.session?.model !== active.inference.model
+                          }
+                          onClick={() =>
+                            void act(
+                              `/projects/${id}/jobs/${active.id}/resume`,
+                              { revision: project.revision },
+                            )
+                          }
+                        >
+                          Resume operation
+                        </button>
+                        <button
+                          className="text-button"
+                          disabled={saving}
+                          onClick={() =>
+                            void act(
+                              `/projects/${id}/jobs/${active.id}/cancel`,
+                              { revision: project.revision },
+                            )
+                          }
+                        >
+                          Cancel operation
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {active?.status === "queued" && (
+                    <button
+                      className="text-button"
+                      disabled={saving}
+                      onClick={() =>
+                        void act(`/projects/${id}/jobs/${active.id}/cancel`, {
+                          revision: project.revision,
+                        })
+                      }
+                    >
+                      Cancel queued operation
+                    </button>
+                  )}
                   {active?.events.slice(-5).map((event, index) => (
                     <p key={`${event.at}-${index}`} className="small">
                       {event.message}

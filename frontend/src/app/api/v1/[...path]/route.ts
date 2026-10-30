@@ -58,6 +58,7 @@ async function proxy(
         headers: {
           "Content-Type": "application/json",
           Authorization: request.headers.get("authorization") || "",
+          "X-AI-Lease": request.headers.get("x-ai-lease") || "",
         },
         cache: "no-store",
         signal: AbortSignal.timeout(18000),

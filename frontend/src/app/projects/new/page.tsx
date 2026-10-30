@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { api, emptyIntake, type Project } from "@/services/api";
+import { useAI } from "@/components/studio/AIProvider";
 
 const IntakeForm = dynamic(() => import("@/components/studio/IntakeForm"), {
   ssr: false,
@@ -13,6 +14,7 @@ const IntakeForm = dynamic(() => import("@/components/studio/IntakeForm"), {
 
 function NewProject() {
   const router = useRouter();
+  const ai = useAI();
   const params = useSearchParams();
   return (
     <main className="studio-container intake-container">
@@ -36,6 +38,24 @@ function NewProject() {
           much time you have. We&apos;ll take it from there.
         </p>
       </header>
+      {ai.config && !ai.config.demo && ai.config.access_mode === "byok" && (
+        <div className="notice">
+          <div>
+            <strong>
+              {ai.session
+                ? `Ready with ${ai.session.provider} · ${ai.session.model}`
+                : "Connect your AI before generating ideas."}
+            </strong>
+            <p className="small muted">
+              Your project brief is saved as a draft on this device. API keys
+              belong only in AI session settings.
+            </p>
+          </div>
+          <button className="btn btn-ghost" onClick={() => ai.open()}>
+            {ai.session ? "Manage AI session" : "Connect API key"}
+          </button>
+        </div>
+      )}
       <IntakeForm
         initial={{
           ...structuredClone(emptyIntake),

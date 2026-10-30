@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./studio.css";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import AIProvider from "@/components/studio/AIProvider";
 
 export const metadata: Metadata = {
   title: "exHacker — AI-Powered Hackathon Platform",
@@ -42,7 +43,9 @@ export default function RootLayout({
         <div className="bg-grid" aria-hidden="true" />
 
         {/* Page content sits above background layers */}
-        <div className="page-content">{children}</div>
+        <AIProvider>
+          <div className="page-content">{children}</div>
+        </AIProvider>
       </body>
     </html>
   );

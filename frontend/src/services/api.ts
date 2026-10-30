@@ -122,6 +122,7 @@ export type Job = {
   events: { message: string; at: string }[];
   error: string | null;
   attempts: number;
+  inference: { source?: string; provider?: string; model?: string };
   created_at: string;
   updated_at: string;
 };
@@ -146,7 +147,33 @@ export type Configuration = {
   worker_enabled: boolean;
   cost_limit: number;
   score_weights: Record<string, number>;
+  access_mode: "byok" | "operator";
+  providers: {
+    id: string;
+    name: string;
+    models: {
+      id: string;
+      name: string;
+      context: number;
+      output: number;
+      input_rate: number;
+      output_rate: number;
+    }[];
+  }[];
+  lease_seconds: number;
 };
+
+export type AISession = {
+  id: string;
+  provider: string;
+  model: string;
+  expires_at: string;
+};
+// Opaque routing metadata only. Never store provider credentials here.
+let activeLease: { id: string; owner: string } | null = null;
+export function selectLease(id: string | null) {
+  activeLease = id ? { id, owner: accessKey() } : null;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -175,7 +202,11 @@ export function accessKey(): string {
 export function restoreAccessKey(key: string) {
   if (!/^[0-9a-f]{64}$/.test(key.trim()))
     throw new Error("Enter a valid 64-character workspace key.");
+  // Best effort revocation is sent using the old workspace authorization.
+  void api("/ai/leases", "DELETE").catch(() => undefined);
+  selectLease(null);
   localStorage.setItem(ACCESS_KEY, key.trim());
+  window.dispatchEvent(new Event("exhacker-workspace-changed"));
 }
 
 async function fetchApi(path: string, options: RequestInit = {}) {
@@ -189,6 +220,13 @@ async function fetchApi(path: string, options: RequestInit = {}) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessKey()}`,
+        ...(activeLease &&
+        activeLease.owner === accessKey() &&
+        path.startsWith("/projects") &&
+        options.method &&
+        options.method !== "GET"
+          ? { "X-AI-Lease": activeLease.id }
+          : {}),
         ...options.headers,
       },
     });
