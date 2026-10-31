@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">exHacker: Five directions. One clear plan.</title>
+  <desc id="description">A product studio for hackathon teams. Research ideas, review the stack, export a Markdown handoff, and ask a project-aware assistant.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#0b1224"/><stop offset="1" stop-color="#050609"/>
+    </linearGradient>
+    <linearGradient id="line" gradientUnits="userSpaceOnUse" x1="64" y1="432" x2="1216" y2="432"><stop stop-color="#528bff"/><stop offset="1" stop-color="#c4ff47"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#7b9dd4" stroke-opacity=".07"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="640" fill="url(#background)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="64" y="60" width="46" height="46" rx="12" fill="#c4ff47"/>
+    <text x="87" y="91" text-anchor="middle" font-size="26" font-weight="700" fill="#080b12">ex</text>
+    <text x="124" y="93" font-size="32" font-weight="700" fill="#f5f7fc">exHacker</text>
+    <text x="1216" y="90" text-anchor="end" font-size="15" letter-spacing="2" fill="#9caac3">HACKATHON PRODUCT STUDIO</text>
+    <text x="64" y="217" font-size="64" font-weight="700" letter-spacing="-2" fill="#f5f7fc">Five directions.</text>
+    <text x="64" y="292" font-size="64" font-weight="700" letter-spacing="-2" fill="#c4ff47">One clear plan.</text>
+    <text x="66" y="347" font-size="23" fill="#aab8cf">Challenge the idea. Choose the stack. Build from the handoff.</text>
+    <path d="M89 432H1187" stroke="url(#line)" stroke-width="2"/>
+    <g fill="#0b1220" stroke="#466a9f"><circle cx="89" cy="432" r="9"/><circle cx="365" cy="432" r="9"/><circle cx="641" cy="432" r="9"/><circle cx="917" cy="432" r="9"/><circle cx="1187" cy="432" r="9" fill="#c4ff47" stroke="#c4ff47"/></g>
+    <g font-size="18" fill="#d6e0f1"><text x="64" y="476">Your brief</text><text x="309" y="476">Research + rank</text><text x="596" y="476">Review stack</text><text x="849" y="476">Markdown handoff</text><text x="1142" y="476">Assistant</text></g>
+    <path d="M64 526H1216" stroke="#26334b"/>
+    <text x="64" y="575" font-size="18" fill="#aab8cf">5 ranked ideas <tspan fill="#536581"> / </tspan> 8 scoring factors <tspan fill="#536581"> / </tspan> 10 Markdown files <tspan fill="#536581"> / </tspan> 5 AI providers</text>
+    <text x="1216" y="575" text-anchor="end" font-size="16" fill="#8da4c8">github.com/Muneer320/exHacker</text>
+  </g>
+</svg>

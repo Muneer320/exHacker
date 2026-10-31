@@ -36,3 +36,7 @@ For changes affecting persistence, containers, or the server proxy, also run the
 Pull requests should explain the concrete problem, resulting behavior, validation performed, and remaining limits. Include screenshots for visible changes, and identify fixtures or mocked provider boundaries honestly. Do not claim a live-provider test if no actual provider request was made.
 
 Never commit `.env`, real API/workspace keys, local databases, private exports, or generated test traces containing user data. See [SECURITY.md](SECURITY.md) for private vulnerability reporting. Contributions are covered by the repository's [MIT license](LICENSE).
+
+## Repository visuals
+
+Screenshots are captured from the running application using the [documented browser workflow](docs/TESTING.md#screenshots-and-audits). Keep demonstration notices visible and never enter real keys for screenshots. The README banner is editable SVG; the same capture workflow exports [social-preview.png](docs/images/social-preview.png) at 1280 by 640 pixels. A repository admin can upload that PNG under **Settings → General → Social preview** using [GitHub's social preview instructions](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview). Committing the asset does not automatically change GitHub's social preview.

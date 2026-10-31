@@ -185,7 +185,7 @@ Stop without deleting data with `docker compose -p exhacker-verify -f compose.ve
 
 ## Screenshots and audits
 
-Set `CAPTURE_README=true` alongside the external base URL when running the browser suite. The demo suite writes actual screenshots to `docs/images/hero.png` and `docs/images/workspace.png`. Running the BYOK suite with the same flag captures `docs/images/ai-session.png` before a key is entered. Review them visually before committing. The displayed workspace must keep its offline-mode notice; screenshots are not live-provider evaluation evidence.
+Set `CAPTURE_README=true` alongside the external base URL when running the browser suite. The demo suite captures the real comparison and document views to `docs/images/ideas.png` and `docs/images/workspace.png`. It also exports the editable `docs/images/social-preview.svg` artwork as a 1280 by 640 PNG for the repository's social preview. Running the BYOK suite with the same flag captures `docs/images/ai-session.png` before a key is entered. Review them visually before committing. The displayed workspace must keep its offline-mode notice; screenshots are not live-provider evaluation evidence.
 
 `npm audit` checks the frontend dependency tree against current advisories. A clean result is time-specific. Python dependency audits can run with `uvx pip-audit`; use an isolated tool environment and inspect results rather than adding audit tools to runtime dependencies. Container OS advisories and hosted infrastructure require their own release review.
 

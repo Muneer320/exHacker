@@ -5,13 +5,14 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import AIProvider from "@/components/studio/AIProvider";
 
 export const metadata: Metadata = {
-  title: "exHacker — AI-Powered Hackathon Platform",
+  title: "exHacker | Hackathon Product Studio",
   description:
     "Research and refine hackathon ideas, confirm your technology stack, and build from a detailed PRD with your project-aware assistant.",
   keywords: ["hackathon", "AI", "agents", "ideation", "architecture"],
   openGraph: {
-    title: "exHacker — AI-Powered Hackathon Platform",
-    description: "Win hackathons with your AI team.",
+    title: "exHacker | Hackathon Product Studio",
+    description:
+      "Research five directions, review your stack, and build from a detailed Markdown handoff with a project-aware assistant.",
     type: "website",
   },
 };

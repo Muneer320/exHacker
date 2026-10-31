@@ -31,6 +31,13 @@ test("complete a real persisted browser workflow, refine, export, and ask the as
   ).toBeVisible();
   await page.getByRole("button", { name: "Compare all five" }).click();
   await expect(page.locator(".comparison-table")).toBeVisible();
+  if (process.env.CAPTURE_README === "true") {
+    await mkdir(resolve("../docs/images"), { recursive: true });
+    await page.setViewportSize({ width: 1440, height: 1120 });
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({ path: resolve("../docs/images/ideas.png") });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+  }
   const first = page.locator(".idea-card").first();
   await first
     .getByRole("button", { name: "Refine with my own prompt" })
@@ -116,9 +123,15 @@ test("complete a real persisted browser workflow, refine, export, and ask the as
   await expect(page.locator(".chat-message.assistant")).toContainText("Asha");
   expect(errors).toEqual([]);
   if (process.env.CAPTURE_README === "true") {
-    await page.goto("/");
-    await page.evaluate(() => document.fonts.ready);
-    await page.screenshot({ path: resolve("../docs/images/hero.png") });
+    const artwork = await context.newPage();
+    await artwork.setViewportSize({ width: 1280, height: 640 });
+    await artwork.setContent(
+      await readFile(resolve("../docs/images/social-preview.svg"), "utf8"),
+    );
+    await artwork.locator("svg").screenshot({
+      path: resolve("../docs/images/social-preview.png"),
+    });
+    await artwork.close();
   }
 });
 

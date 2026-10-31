@@ -1,96 +1,55 @@
 <div align="center">
 
-# exHacker
-
-### Think beyond the obvious. Build with a clear plan.
+![exHacker: Five directions. One clear plan.](docs/images/social-preview.svg)
 
 **A product studio for hackathon teams.**
 
-Research five directions. Make the idea yours. Leave with a handoff your team can build.
+Research the possibilities. Make the decisions. Leave with a plan your team can build.
 
+[![CI](https://github.com/Muneer320/exHacker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Muneer320/exHacker/actions/workflows/ci.yml)
 [![MIT](https://img.shields.io/badge/license-MIT-c4ff47?style=flat-square)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-111111?style=flat-square&logo=nextdotjs)](frontend/package.json)
-[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)](frontend/package.json)
 [![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white)](backend/pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white)](backend/app/main.py)
 
-[**Try it locally**](#try-it-in-one-command) · [**Explore the workflow**](#from-a-challenge-to-a-build-plan) · [**Read the docs**](#the-developer-desk)
+[**Try locally**](#try-it-locally) · [**The workflow**](#from-brief-to-build-plan) · [**Developer guides**](#the-developer-desk)
 
-![exHacker's live application interface](docs/images/hero.png)
+| 5 ranked directions | 8 explained scores | 10 Markdown files | 5 AI providers |
+| :---: | :---: | :---: | :---: |
+| Compare before committing | See reasoning and trade-offs | PRD, AGENTS, and a build handoff | Bring your own key |
 
 </div>
 
-> [!NOTE]
-> **Active development, with reproducible checks.** [Testing instructions](docs/TESTING.md) cover SQLite, PostgreSQL, browser workflows, exports, BYOK and process recovery. Hosted deployment and live-provider quality still need release validation.
+## From brief to build plan
 
-## The clock starts before the code
+![Five researched directions and their comparison in the running application](docs/images/ideas.png)
 
-*What should we build? Does it already exist? Can this team finish it?* Those questions can consume the best hours of a hackathon. exHacker gives them a working process: start with the people and constraints, challenge the ideas with evidence, then turn the chosen direction into a detailed build plan.
-
-<table>
-<tr>
-<td width="50%">
-
-### Explore with evidence
-
-Five distinct directions, competitor sources, visible critiques, risks, effort estimates, and eight explained scores.
-
-</td>
-<td width="50%">
-
-### Keep control of the idea
-
-Refine with your own prompt. Compare alternatives. Confirm the direction and technology choices yourself.
-
-</td>
-</tr>
-<tr>
-<td>
-
-### Hand off something useful
-
-A detailed `PRD.md`, dedicated `AGENTS.md`, and eight supporting Markdown files. Preview, copy, or download them.
-
-</td>
-<td>
-
-### Keep the team moving
-
-A persistent assistant with the plan, research, documents, team skills, hackathon, and conversation context.
-
-</td>
-</tr>
-</table>
-
-## From a challenge to a build plan
+*Real application captures use explicitly labeled offline fixtures. They demonstrate the workflow, not live model or research quality.*
 
 ```mermaid
 flowchart LR
-    A[Challenge + team + time] --> B[Generate unconventional ideas]
+    A[Challenge + team + time] --> B[Generate ideas]
     B --> C[Research + critique + revise]
-    C --> D[Rank the top five]
+    C --> D[Rank top five]
     D --> E{Your decision}
-    E -->|Refine with a prompt| C
-    E -->|Confirm idea| F[Suggest and review stack]
-    F -->|Edit choices or feedback| F
-    F -->|Confirm stack| G[PRD + AGENTS + Markdown handoff]
-    G --> H[Contextual project assistant]
+    E -->|Refine| C
+    E -->|Select| F[Review stack]
+    F -->|Edit| F
+    F -->|Confirm| G[Markdown handoff]
+    G --> H[Project assistant]
 ```
 
-| You bring | exHacker develops | You approve |
+| Explore with evidence | Keep creative control | Build from a shared plan |
 | --- | --- | --- |
-| A challenge, team skills, available time, and optional rules/budget | Researched directions with critique and scoring | The idea worth pursuing |
-| Preferences and technology substitutions | Components, data flow, trade-offs, and compatibility review | The stack your team will use |
-| The confirmed plan | Requirements, acceptance criteria, contracts, named tasks, and agent instructions | A handoff to review and build from |
+| Competitors, source links, critiques, risks, effort estimates | Refine ideas with a prompt; edit and approve the stack | Human-readable requirements and dedicated agent instructions |
+| Team skills, deadline, budget, and judging criteria shape the result | Decisions stay with the team at each approval gate | Persistent assistant uses the plan, research, team, and chat |
 
 > [!IMPORTANT]
-> Scores are advisory estimates. Search results cannot prove uniqueness or guarantee a winning entry. Evidence and reasoning stay visible so the team can make its own decision.
+> Scores are advisory estimates. Search cannot prove uniqueness or guarantee a winning entry. Evidence and reasoning stay visible for your review.
 
-## A handoff you can work from
+## Your next commit starts here
 
-![The actual Markdown workspace, including its offline demonstration notice](docs/images/workspace.png)
-
-*Captured from the running application. This example uses explicitly labeled offline fixtures; it does not establish live research or model quality.*
+![Markdown documents, source preview, and export controls in the running application](docs/images/workspace.png)
 
 | Product definition | Technical decisions | Build execution |
 | --- | --- | --- |
@@ -98,37 +57,37 @@ flowchart LR
 | `RESEARCH.md` | `ARCHITECTURE.md` | `IMPLEMENTATION_PLAN.md` |
 | `README.md` | `DATABASE.md` · `API.md` | `SETUP.md` |
 
-**Rendered preview · Markdown source · Copy · Individual downloads · Reproducible ZIP**
+**Preview · Markdown source · Copy · Individual downloads · Reproducible ZIP**
 
 > [!TIP]
-> Documents come from one approved snapshot. Reading them never regenerates them. Changing an upstream decision invalidates affected approvals and documents while keeping earlier snapshots in History.
+> Documents come from one approved snapshot. Reading never regenerates them. Upstream changes invalidate affected approvals and documents; earlier snapshots remain in History.
 
-## Try it in one command
+## Try it locally
 
-From a checkout, with Docker Compose v2 running:
+Clone the repository, then start the explicit offline evaluation with Docker Compose v2:
 
 ```sh
+git clone https://github.com/Muneer320/exHacker.git
+cd exHacker
 docker compose -p exhacker-verify -f compose.verify.yml up --build --wait
 ```
 
-**Open [localhost:3200](http://localhost:3200).** No `.env` or API key is needed for this explicit offline evaluation.
+**Open [localhost:3200](http://localhost:3200). No `.env` or API keys needed.**
 
 | Runs for real | Uses offline fixtures |
 | --- | --- |
-| Frontend, API, PostgreSQL, migrations, jobs, exports, persistence | Idea content, scores, documentation, and demonstration assistant |
+| Frontend, API, PostgreSQL, migrations, jobs, persistence, exports | Idea content, scores, documents, demonstration assistant |
 
 <details>
-<summary><strong>Your first five-minute walkthrough</strong></summary>
+<summary><strong>A five-minute walkthrough</strong></summary>
 
-1. Enter a 48-hour mentoring challenge and add a React builder and a Python builder.
-2. Compare the five directions and refine one with your own prompt.
-3. Confirm it, edit a technology choice, and approve the stack.
-4. Preview `PRD.md` and `AGENTS.md`, copy a file, and download the package.
-5. Open the assistant and reload the page to see saved conversation history.
+1. Enter a challenge, deadline, and teammates with their skills.
+2. Compare five directions and refine one with your own prompt.
+3. Select it, edit a technology choice, and confirm the stack.
+4. Preview `PRD.md` and `AGENTS.md`; copy or download the handoff.
+5. Ask the assistant how to split the work. Reload to see saved history.
 
-Offline mode has no live research. Natural-language stack revisions require live AI; manual edits work in the demonstration.
-
-Stop without deleting the evaluation database:
+Natural-language stack revisions need live AI; manual edits work offline. Stop while retaining evaluation data:
 
 ```sh
 docker compose -p exhacker-verify -f compose.verify.yml down
@@ -137,9 +96,9 @@ docker compose -p exhacker-verify -f compose.verify.yml down
 </details>
 
 <details>
-<summary><strong>Run with live AI and web research</strong></summary>
+<summary><strong>Connect live AI and web research</strong></summary>
 
-Copy `.env.example` to `.env` at the repository root. Use `cp .env.example .env` on macOS/Linux or `Copy-Item .env.example .env` in PowerShell. Configure Tavily for web research. Users supply their AI keys through the app:
+Copy the root `.env.example` to `.env`: `cp .env.example .env` on macOS/Linux or `Copy-Item .env.example .env` in PowerShell. Configure your Tavily key for search:
 
 ```dotenv
 AI_ACCESS_MODE=byok
@@ -152,9 +111,9 @@ STUDIO_DEMO_MODE=false
 docker compose up --build --wait
 ```
 
-Open [localhost:3000](http://localhost:3000). This development stack persists SQLite in its own volume. Missing providers produce visible errors and preserve saved work. Click **Connect AI**, choose a provider/model, and start a temporary session with your key. OpenAI, Claude, Gemini, Grok, and Groq are supported through fixed provider endpoints. Keys stay in backend RAM for the lease; project data and generated artifacts persist. Read the [credential design and limits](docs/BYOK.md).
+Open [localhost:3000](http://localhost:3000), click **Connect AI**, and enter your provider key in the dedicated form. This development stack persists SQLite in its own volume. The separate app on port **3200** always uses verification fixtures.
 
-Follow the [live API-key testing walkthrough](docs/TESTING.md#live-testing-with-your-api-keys) for the full workflow, provider switching, expiry and restart checks. Port **3000** uses your live configuration; the separate verification app on port **3200** uses offline fixtures.
+Use the [API-key testing walkthrough](docs/TESTING.md#live-testing-with-your-api-keys) to check the full workflow, switching, expiry, and recovery. Missing credentials produce visible errors and preserve saved work.
 
 </details>
 
@@ -177,7 +136,7 @@ npm ci
 npm run dev
 ```
 
-The frontend proxy defaults to `http://127.0.0.1:8000`. Set server-side `BACKEND_URL` in the frontend process or `frontend/.env.local` to change it. Python's root `.env` is not automatically a Next.js environment file.
+The frontend proxy defaults to `http://127.0.0.1:8000`. Override server-side `BACKEND_URL` in the frontend process or `frontend/.env.local`. The root `.env` is not automatically a Next.js environment file. See [configuration](docs/CONFIGURATION.md).
 
 </details>
 
@@ -187,85 +146,61 @@ The frontend proxy defaults to `http://127.0.0.1:8000`. Set server-side `BACKEND
 | --- | --- | --- | --- | --- |
 | GPT-6 Luna | Claude Haiku 5.5 | Gemini 3.8 Flash | Grok 4.7 | GPT OSS 120B / 20B |
 
-**Choose a model · Connect a temporary key · Switch future operations · Keep your artifacts**
+**Choose a model → Connect a temporary key → Switch future operations → Keep your artifacts**
 
 <details>
-<summary><strong>See the AI session controls</strong></summary>
+<summary><strong>See the temporary AI session controls</strong></summary>
 
-![The actual AI session settings, captured before any key is entered](docs/images/ai-session.png)
+![AI session controls before any key is entered](docs/images/ai-session.png)
 
-*Real application interface. This capture contains no entered API key and does not establish paid-provider access.*
+*Real interface; no entered API key. This capture does not establish paid-provider access.*
 
 </details>
 
-> [!IMPORTANT]
-> AI keys are never intentionally saved to browser storage, project records, files, or job payloads. A default 30-minute backend RAM lease supports background work while valid. Expiry, removal, or a server restart pauses affected jobs for credential reentry. Reloading clears this tab's session references; saved projects remain available. [Security boundaries and provider limitations](docs/BYOK.md).
+> [!NOTE]
+> AI keys live in backend RAM under a default 30-minute lease. Expiry, removal, or restart pauses affected jobs for reentry. Reloading clears this tab's lease references; saved projects remain. Tavily stays operator-managed. Account quotas can be smaller than model context limits. [BYOK design and limitations](docs/BYOK.md).
 
-## Decisions survive the page
+## Under the workspace
 
 ```mermaid
 flowchart LR
-    Browser[Next.js / React workspace] --> Proxy[Same-origin server proxy]
-    Proxy --> API[FastAPI]
-    API --> DB[(Projects / jobs / artifacts / chat)]
-    Worker[Database-backed worker] <--> DB
-    Worker --> LLM[Request-scoped HTTPX / five AI providers]
-    Worker --> Web[Tavily research]
-    Worker --> MD[Validated specification / Markdown compiler]
+    UI[Next.js + React] --> Proxy[Same-origin proxy]
+    Proxy --> API[FastAPI + embedded worker]
+    API <--> DB[(Projects / jobs / artifacts / chat)]
+    API --> AI[Request-scoped HTTPX / five providers]
+    API --> Web[Tavily research]
+    API --> MD[Validated specification / Markdown compiler]
     MD --> DB
 ```
 
-| Interface | Application | Reliability |
+| Interface | Application | Recovery |
 | --- | --- | --- |
-| Next.js 16.4 · React 19 · TypeScript | FastAPI · Pydantic · SQLAlchemy · Alembic | Durable jobs · optimistic revisions · explicit approval gates |
-| Responsive black/blue/lime workspace | SQLite locally · PostgreSQL verified in Docker | Atomic publication · leases · bounded recovery |
-
-Failed jobs retain the previous successful context. Stale tabs cannot overwrite newer revisions. Recovery can repeat paid provider work; external billing is not exactly once. The [architecture guide](docs/ARCHITECTURE.md) describes the actual guarantees.
-
-## The developer desk
-
-| Start here | Go deeper |
-| --- | --- |
-| [Configuration and environment variables](docs/CONFIGURATION.md) | [Architecture and directory map](docs/ARCHITECTURE.md) |
-| [Testing and browser workflows](docs/TESTING.md) | [BYOK sessions and recovery](docs/BYOK.md) |
-| [Deployment and operations](docs/DEPLOYMENT.md) | [Security and privacy](SECURITY.md) |
-| [Contributing](CONTRIBUTING.md) | [MIT license](LICENSE) |
+| Next.js 16.4 · React 19 · TypeScript | FastAPI · Pydantic · SQLAlchemy · Alembic | Durable jobs · revision checks · approval gates |
+| Responsive black, blue, and lime workspace | SQLite locally · PostgreSQL verified in Docker | Atomic publication · leases · saved research checkpoints |
 
 <details>
-<summary><strong>Run the checks</strong></summary>
+<summary><strong>What survives a failure?</strong></summary>
 
-```sh
-cd backend
-uv run ruff check app tests migrations ../scripts
-uv run pytest -q
-cd ../frontend
-npm run lint
-npm run typecheck
-npm run build
-npx playwright install chromium
-npm test
-```
-
-With the verification stack already running, check PostgreSQL and actual process recovery from the repository root:
-
-```sh
-docker compose -p exhacker-verify -f compose.verify.yml run --rm --build backend-tests
-python scripts/verify_docker.py --restart
-```
-
-See [testing](docs/TESTING.md) for container browser targeting, screenshots, isolation, and CI.
+Failed operations retain the previous successful context. Stale tabs cannot overwrite newer revisions. Saved candidate/research checkpoints let unchanged idea jobs resume within their reuse window. AI leases never enter the database; restarts require credential reentry. Recovery can repeat paid work; external billing is not exactly once. See the [architecture](docs/ARCHITECTURE.md).
 
 </details>
 
+## The developer desk
+
+| Run and contribute | Understand and operate |
+| --- | --- |
+| [Configuration and environment variables](docs/CONFIGURATION.md) | [Architecture and directory map](docs/ARCHITECTURE.md) |
+| [Tests, browser checks, and live-key walkthrough](docs/TESTING.md) | [BYOK sessions and recovery](docs/BYOK.md) |
+| [Contributing](CONTRIBUTING.md) | [Deployment and operations](docs/DEPLOYMENT.md) |
+| [MIT license](LICENSE) | [Security and privacy](SECURITY.md) |
+
 > [!WARNING]
-> **Review the release gates before public hosting.** The backend needs a persistent process, PostgreSQL, HTTPS, backups, and abuse controls. Live-provider evaluation, hosted security review, and load checks remain open. BYOK requires exactly one API process with its embedded worker. The default Compose file is a local SQLite setup.
+> **Active development; public-hosting validation remains open.** BYOK needs one persistent API process with its embedded worker. Review HTTPS, PostgreSQL, backups, abuse controls, live-provider quality, dependency advisories, and load testing before hosting. Start with the [deployment guide](docs/DEPLOYMENT.md).
 
 > [!CAUTION]
-> **Save your workspace key privately.** Anyone holding it can access the workspace; losing it loses access. Project text and chat persist and may be sent to the configured AI/search providers. Never paste credentials into those fields. Read [SECURITY.md](SECURITY.md) before using sensitive data.
+> **Save your workspace key privately.** Anyone holding it can access the workspace; losing it loses access. Project text and chat persist and may be sent to selected providers. Enter credentials only in the dedicated AI session form. [Security boundaries](SECURITY.md).
 
 <div align="center">
-
-**Built for teams who want to spend their hackathon building.**
 
 Created by [Muneer Alam](https://github.com/Muneer320) · [MIT license](LICENSE) · [Contributions welcome](CONTRIBUTING.md)
 
