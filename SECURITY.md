@@ -33,6 +33,6 @@ No third-party analytics or session-replay integration is configured by this rep
 
 Run `npm audit` and audit Python/container dependencies regularly. A clean advisory report is time-specific and does not rule out unknown vulnerabilities. Test upgrades rather than suppressing findings or blindly forcing incompatible versions.
 
-The approved scoped-transport replacement removes LiteLLM and its vulnerable transitive filelock dependency. The latest locked-runtime Python and frontend audits report no known advisories; consult [verification evidence](docs/VERIFICATION.md) for the date and scope. This does not establish container OS or hosted-infrastructure safety.
+Inference uses request-scoped HTTPX clients without an authenticated-client SDK cache. Repeat dependency audits and runtime OS scans before releases; package scans do not establish hosted-infrastructure safety. See [testing](docs/TESTING.md) for the reproducible checks.
 
 BYOK requires one persistent API process with its embedded worker. No separate-process credential broker, multi-replica sharing or durable user secret store exists. Enforce HTTPS on public connections, protect private backend links, disable credential body/header capture and crash dumps, and review swap/hibernation policies. Memory-only means no intentional application persistence; Python/HTTP buffers and a trusted host cannot promise physical byte zeroization. Provider data policies still apply.

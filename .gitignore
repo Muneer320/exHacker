@@ -38,11 +38,25 @@ Thumbs.db
 .ruff_cache/
 .mypy_cache/
 .coverage
+.coverage.*
 htmlcov/
+coverage/
+test-results/
+playwright-report/
 
 # Database
 *.db
 *.sqlite
+*.sqlite3
+*.db-*
+*.sqlite-*
+*.sqlite3-*
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Project specific
 exports/
@@ -50,8 +64,15 @@ artifacts/
 generated/
 tmp/
 *.log
+*.log.*
+.codex-audit-*
+
+# Generated TypeScript metadata
+*.tsbuildinfo
+next-env.d.ts
 
 # Docker
 docker-data/
 .vercel
 .env*
+!/.env.example

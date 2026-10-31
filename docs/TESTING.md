@@ -1,6 +1,6 @@
 # Testing and verification
 
-[Back to the project](../README.md) · [Latest local evidence](VERIFICATION.md)
+[Back to the project](../README.md)
 
 Tests use disposable projects/databases and explicit offline fixtures. They never need paid API credentials. Provider adapters and research boundaries have controlled responses; these do not establish real-model quality. Container and browser tests exercise the actual API, database, worker, proxy, UI, and exports.
 
@@ -96,7 +96,7 @@ The BYOK-specific process-death check is:
 python scripts/verify_byok_restart.py
 ```
 
-It only targets the default loopback ports and the `exhacker-verify` project. It queues a job with a synthetic key in a worker-disabled API, kills that process, and checks that an empty-registry worker pauses it before any external call. Matching reentry/resubmission is tested with the worker disabled and cancelled before inference. Prior saved artifacts must remain unchanged. Both Docker recovery scripts passed locally; see [verification evidence](VERIFICATION.md) for scope and limits.
+It only targets the default loopback ports and the `exhacker-verify` project. It queues a job with a synthetic key in a worker-disabled API, kills that process, and checks that an empty-registry worker pauses it before any external call. Matching reentry/resubmission is tested with the worker disabled and cancelled before inference. Prior saved artifacts must remain unchanged. These checks verify recovery behavior with synthetic credentials; they do not establish paid-provider access or model quality.
 
 Only this verification API/container is deliberately interrupted. Do not run recovery and browser tests simultaneously. The script uses Python's standard library and requires the Docker CLI on PATH.
 

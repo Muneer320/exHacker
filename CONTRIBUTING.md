@@ -2,7 +2,7 @@
 
 Thanks for helping turn a promising challenge into a plan a team can actually build. Start with the [README](README.md), [architecture](docs/ARCHITECTURE.md), and [configuration](docs/CONFIGURATION.md).
 
-For a substantial workflow, persistence, authentication, or credential-handling change, open an issue describing the user problem and proposed behavior first. In particular, [BYOK](docs/BYOK.md) is an unapproved design proposal; a generic API-key field is not a safe implementation of it.
+For a substantial workflow, persistence, authentication, or credential-handling change, open an issue describing the user problem and proposed behavior first. Preserve the implemented [BYOK lifecycle](docs/BYOK.md): owner-bound expiring RAM leases, no credential persistence, safe job recovery, and explicit provider selection.
 
 ## Local checks
 

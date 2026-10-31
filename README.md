@@ -21,7 +21,7 @@ Research five directions. Make the idea yours. Leave with a handoff your team ca
 </div>
 
 > [!NOTE]
-> **Active development, with reproducible verification.** Real Docker, PostgreSQL, browser, export, and recovery checks are recorded in [verification evidence](docs/VERIFICATION.md). Hosted deployment and live-provider quality still need release validation. There is no hosted demo to advertise yet.
+> **Active development, with reproducible checks.** [Testing instructions](docs/TESTING.md) cover SQLite, PostgreSQL, browser workflows, exports, BYOK and process recovery. Hosted deployment and live-provider quality still need release validation.
 
 ## The clock starts before the code
 
@@ -225,9 +225,9 @@ Failed jobs retain the previous successful context. Stale tabs cannot overwrite 
 | Start here | Go deeper |
 | --- | --- |
 | [Configuration and environment variables](docs/CONFIGURATION.md) | [Architecture and directory map](docs/ARCHITECTURE.md) |
-| [Testing and browser workflows](docs/TESTING.md) | [Observed verification results](docs/VERIFICATION.md) |
+| [Testing and browser workflows](docs/TESTING.md) | [BYOK sessions and recovery](docs/BYOK.md) |
 | [Deployment and operations](docs/DEPLOYMENT.md) | [Security and privacy](SECURITY.md) |
-| [Contributing](CONTRIBUTING.md) | [BYOK sessions and recovery](docs/BYOK.md) |
+| [Contributing](CONTRIBUTING.md) | [MIT license](LICENSE) |
 
 <details>
 <summary><strong>Run the checks</strong></summary>
