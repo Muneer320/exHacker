@@ -1,14 +1,18 @@
 """Research/critique loops and dependent artifact generation."""
 
 import copy
+import hashlib
 import json
 import uuid
+from datetime import timedelta
+
+from sqlalchemy import select, update
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.studio import ai, demo, inference, research
 from app.studio.documents import compile_documents
-from app.studio.models import Artifact, now
+from app.studio.models import Artifact, Job, now
 from app.studio.schemas import CandidateBatch, Idea, RefinedIdea, Specification, Stack
 
 
@@ -61,17 +65,107 @@ def rank_idea(idea: Idea, sources: list[dict], intake: dict, *, idea_id=None):
     }
 
 
-async def checkpoint(project_id, revision, kind, content):
+async def checkpoint(project_id, revision, kind, content, *, progress=None):
     if session := inference.current.get():
         inference.ensure(*session)
     inference.reject_secrets(content)
     async with AsyncSessionLocal() as db:
+        if attempt := inference.current_job.get():
+            fenced = await db.execute(
+                update(Job)
+                .where(
+                    Job.id == attempt[0],
+                    Job.attempts == attempt[1],
+                    Job.status == "running",
+                )
+                .values(updated_at=now())
+            )
+            if fenced.rowcount != 1:
+                raise ai.StudioError(
+                    "This job attempt was superseded; its progress was not saved.", 409
+                )
         db.add(
             Artifact(
                 project_id=project_id, revision=revision, kind=kind, content=content
             )
         )
+        if progress is not None:
+            inference.reject_secrets(progress)
+            db.add(
+                Artifact(
+                    project_id=project_id,
+                    revision=revision,
+                    kind="idea_progress",
+                    content=progress,
+                )
+            )
         await db.commit()
+
+
+def idea_progress_key(project, payload, rounds):
+    inputs = {
+        "version": 1,
+        "intake": project.intake,
+        "revision": project.revision,
+        "kind": payload.get("kind", "ideas"),
+        "idea_id": payload.get("idea_id"),
+        "prompt": payload.get("prompt", ""),
+        "rounds": rounds,
+    }
+    return hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+
+
+def idea_progress(key, candidates, report, round_number, stage):
+    session = inference.current.get()
+    return {
+        "key": key,
+        "candidates": [c.model_dump() for c in candidates],
+        "report": report,
+        "round": round_number,
+        "stage": stage,
+        "inference": inference.public(session[1]) if session else {},
+    }
+
+
+async def saved_idea_progress(project, key, rounds, refinement):
+    async with AsyncSessionLocal() as db:
+        row = await db.scalar(
+            select(Artifact)
+            .where(
+                Artifact.project_id == project.id,
+                Artifact.revision == project.revision,
+                Artifact.kind == "idea_progress",
+                Artifact.content["key"].as_string() == key,
+                Artifact.created_at > now() - timedelta(hours=24),
+            )
+            .order_by(Artifact.created_at.desc(), Artifact.id.desc())
+            .limit(1)
+        )
+    if not row:
+        return None
+    saved = row.content
+    try:
+        if refinement:
+            if len(saved["candidates"]) != 1:
+                raise ValueError("Invalid candidate count")
+            RefinedIdea.model_validate({"idea": saved["candidates"][0]})
+        else:
+            CandidateBatch.model_validate({"ideas": saved["candidates"]})
+        if saved["stage"] not in ("research", "critique"):
+            raise ValueError("Invalid checkpoint stage")
+        if not isinstance(saved["round"], int) or not 1 <= saved["round"] <= rounds + 1:
+            raise ValueError("Invalid checkpoint round")
+        if not all(
+            isinstance(saved["report"][name], list)
+            for name in ("sources", "queries", "warnings")
+        ):
+            raise ValueError("Invalid checkpoint research")
+    except (ValueError, KeyError, TypeError):
+        raise ai.StudioError(
+            "Saved idea progress could not be validated. Edit the brief to start a fresh operation; existing artifacts are preserved.",
+            409,
+        ) from None
+    return saved
 
 
 async def generate_ideas(project, payload, emit):
@@ -95,6 +189,13 @@ async def generate_ideas(project, payload, emit):
         "feedback": prompt,
         "original_idea": source_idea,
     }
+    rounds = max(1, min(settings.STUDIO_IDEA_ROUNDS, 3))
+    key = idea_progress_key(project, payload, rounds)
+    saved = (
+        None
+        if settings.STUDIO_DEMO_MODE
+        else await saved_idea_progress(project, key, rounds, refinement)
+    )
     if settings.STUDIO_DEMO_MODE:
         candidates = demo.ideas(intake, prompt)
         if refinement:
@@ -107,6 +208,12 @@ async def generate_ideas(project, payload, emit):
             ],
             "demo": True,
         }
+    elif saved:
+        await emit(
+            "Reusing saved idea candidates and research from this unchanged input revision."
+        )
+        candidates = [Idea.model_validate(value) for value in saved["candidates"]]
+        report = copy.deepcopy(saved["report"])
     elif refinement:
         generated = await ai.generate(
             project.id,
@@ -127,29 +234,47 @@ async def generate_ideas(project, payload, emit):
         candidates = generated.ideas
         report = {"sources": [], "queries": [], "warnings": []}
 
-    rounds = max(1, min(settings.STUDIO_IDEA_ROUNDS, 3))
-    for round_number in range(1, rounds + 1):
+    if not settings.STUDIO_DEMO_MODE and not saved:
+        await checkpoint(
+            project.id,
+            project.revision,
+            "idea_progress",
+            idea_progress(key, candidates, report, 1, "research"),
+        )
+    first_round = saved["round"] if saved else 1
+    researched = bool(saved and saved["stage"] == "critique")
+    for round_number in range(first_round, rounds + 1):
         if not settings.STUDIO_DEMO_MODE:
-            await emit(
-                f"Round {round_number}/{rounds}: researching competitors and similar projects."
-            )
-            # Every candidate is researched; the bounded pool never exceeds seven.
-            queries = [
-                f"{idea.title} {idea.problem[:120]} similar products competitors github"
-                for idea in candidates
-            ]
-            fresh = await research.search(project.id, queries[:6])
-            if len(queries) > 6:
-                extra = await research.search(project.id, queries[6:])
-                fresh["sources"] += extra["sources"]
-                fresh["warnings"] += extra["warnings"]
-                fresh["queries"] += extra["queries"]
-            all_sources = {s["id"]: s for s in report["sources"] + fresh["sources"]}
-            report = {
-                "sources": list(all_sources.values()),
-                "queries": report["queries"] + fresh["queries"],
-                "warnings": list(dict.fromkeys(report["warnings"] + fresh["warnings"])),
-            }
+            if not researched:
+                await emit(
+                    f"Round {round_number}/{rounds}: researching competitors and similar projects."
+                )
+                # Every candidate is researched; the bounded pool never exceeds seven.
+                queries = [
+                    f"{idea.title} {idea.problem[:120]} similar products competitors github"
+                    for idea in candidates
+                ]
+                fresh = await research.search(project.id, queries[:6])
+                if len(queries) > 6:
+                    extra = await research.search(project.id, queries[6:])
+                    fresh["sources"] += extra["sources"]
+                    fresh["warnings"] += extra["warnings"]
+                    fresh["queries"] += extra["queries"]
+                all_sources = {s["id"]: s for s in report["sources"] + fresh["sources"]}
+                report = {
+                    "sources": list(all_sources.values()),
+                    "queries": report["queries"] + fresh["queries"],
+                    "warnings": list(
+                        dict.fromkeys(report["warnings"] + fresh["warnings"])
+                    ),
+                }
+                await checkpoint(
+                    project.id,
+                    project.revision,
+                    "idea_progress",
+                    idea_progress(key, candidates, report, round_number, "critique"),
+                )
+            researched = False
             await emit(
                 f"Round {round_number}/{rounds}: critiquing novelty, scope, evidence, and team fit; revising and rescoring."
             )
@@ -189,6 +314,9 @@ async def generate_ideas(project, payload, emit):
                 "ideas": [i.model_dump() for i in candidates],
                 "research": report,
             },
+            progress=None
+            if settings.STUDIO_DEMO_MODE
+            else idea_progress(key, candidates, report, round_number + 1, "research"),
         )
 
     ranked = [

@@ -8,6 +8,9 @@ from app.studio.errors import StudioError
 from app.studio.providers import model_spec
 
 current: ContextVar[tuple[str, dict] | None] = ContextVar("inference", default=None)
+current_job: ContextVar[tuple[str, int] | None] = ContextVar(
+    "job_attempt", default=None
+)
 
 
 def operator_spec():

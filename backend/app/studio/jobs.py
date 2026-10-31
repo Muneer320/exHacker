@@ -120,6 +120,7 @@ async def run_job(job):
     from app.studio.pipeline import execute
 
     token = None
+    job_token = None
     owner = ""
     spec = job.inference or {}
 
@@ -158,6 +159,7 @@ async def run_job(job):
         owner = project.owner
         inference.ensure(owner, spec)
         token = inference.current.set((owner, spec))
+        job_token = inference.current_job.set((job.id, job.attempts))
         if job.attempts - spec.get("recovery_base", 0) > 3:
             raise StudioError(
                 "This operation was interrupted repeatedly. Review the saved project and retry manually.",
@@ -289,6 +291,8 @@ async def run_job(job):
                 )
             await db.commit()
     finally:
+        if job_token is not None:
+            inference.current_job.reset(job_token)
         if token is not None:
             inference.current.reset(token)
         beat.cancel()
