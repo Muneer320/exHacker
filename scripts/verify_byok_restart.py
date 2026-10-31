@@ -25,7 +25,8 @@ def docker(*args, check=True):
     )
     if check and result.returncode:
         raise RuntimeError(result.stderr)
-    return result.stdout
+    # Uvicorn and Docker can send diagnostics to either stream.
+    return result.stdout + result.stderr
 
 
 def compose(*args):

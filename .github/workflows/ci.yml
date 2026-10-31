@@ -57,7 +57,12 @@ jobs:
         working-directory: backend
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm test
+      - name: Demonstration browser workflows
+        run: npm test -- --output=test-results/demo
+      - name: BYOK browser workflows
+        run: npm test -- --output=test-results/byok
+        env:
+          PLAYWRIGHT_BYOK: "true"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -77,6 +82,7 @@ jobs:
       - run: docker compose -p exhacker-verify -f compose.verify.yml up --build --wait --wait-timeout 180
       - run: docker compose -p exhacker-verify -f compose.verify.yml run --rm --build backend-tests
       - run: python scripts/verify_docker.py --restart
+      - run: python scripts/verify_byok_restart.py
       - run: npm ci
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
