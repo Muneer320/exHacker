@@ -6,7 +6,7 @@ import logging
 
 import httpx
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.config import settings
 from app.core.logging import PrivateFormatter, StructuredFormatter
@@ -272,4 +272,81 @@ async def test_entire_live_pipeline_on_all_providers(
     assert json.dumps(project["context"]["documents"]) == before
     assert (await client.get(path + "/export")).status_code == 200
     assert metadata["id"] not in json.dumps(project)
+    await assert_database_has_no_key(isolated_database)
+
+
+async def test_resumed_job_cannot_be_paused_by_a_stale_attempt(
+    client, intake, monkeypatch, isolated_database
+):
+    live(monkeypatch)
+    await connect(client)
+    project = (await client.post("/api/v1/projects", json=intake)).json()["data"]
+    path = f"/api/v1/projects/{project['id']}"
+    stale = await jobs.claim_next()
+    # A later worker attempt paused while the first worker was still delayed.
+    async with isolated_database() as db:
+        await db.execute(
+            update(Job)
+            .where(Job.id == stale.id)
+            .values(attempts=3, status="credentials_required", lease_until=None)
+        )
+        await db.commit()
+    leases.clear()
+    await connect(client, key="fresh-synthetic-resume-key")
+    response = await client.post(
+        path + f"/jobs/{stale.id}/resume", json={"revision": 1}
+    )
+    assert response.status_code == 202
+    resumed = await jobs.claim_next()
+    # The delayed attempt now notices its original credentials are gone. Its
+    # failure must not overwrite the newly running, explicitly resumed attempt.
+    await jobs.run_job(stale)
+    status = (await client.get(path + "/jobs")).json()["data"]["jobs"][0]
+    assert status["status"] == "running"
+
+    async def execute(project, payload, emit):
+        return {"verified": "resumed result"}, "ideas_ready"
+
+    monkeypatch.setattr(pipeline, "execute", execute)
+    await jobs.run_job(resumed)
+    saved = (await client.get(path)).json()["data"]
+    assert saved["context"] == {"verified": "resumed result"}
+    assert saved["active_job"] is None
+
+
+async def test_worker_shutdown_cancels_call_and_preserves_recoverable_job(
+    client, intake, monkeypatch, isolated_database
+):
+    live(monkeypatch)
+    await connect(client)
+    project = (await client.post("/api/v1/projects", json=intake)).json()["data"]
+    path = f"/api/v1/projects/{project['id']}"
+    started, closed = asyncio.Event(), asyncio.Event()
+
+    async def invoke(spec, secret, messages, max_tokens):
+        try:
+            started.set()
+            await asyncio.Future()
+        finally:
+            closed.set()
+
+    async def execute(project, payload, emit):
+        await ai.completion(project.id, [{"role": "user", "content": "hello"}])
+
+    monkeypatch.setattr(ai.transport, "invoke", invoke)
+    monkeypatch.setattr(pipeline, "execute", execute)
+    task = asyncio.create_task(jobs.run_job(await jobs.claim_next()))
+    await asyncio.wait_for(started.wait(), timeout=5)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert closed.is_set()
+    status = (await client.get(path + "/jobs")).json()["data"]["jobs"][0]
+    assert status["status"] == "queued"
+    assert (await client.get(path)).json()["data"]["active_job"] == status["id"]
+    leases.clear()  # The lifecycle clears RAM after the worker has shut down.
+    await drain()
+    status = (await client.get(path + "/jobs")).json()["data"]["jobs"][0]
+    assert status["status"] == "credentials_required"
+    assert (await client.get(path)).json()["data"]["context"] == {}
     await assert_database_has_no_key(isolated_database)

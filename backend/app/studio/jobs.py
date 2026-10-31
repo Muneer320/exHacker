@@ -158,7 +158,7 @@ async def run_job(job):
         owner = project.owner
         inference.ensure(owner, spec)
         token = inference.current.set((owner, spec))
-        if job.attempts > 3:
+        if job.attempts - spec.get("recovery_base", 0) > 3:
             raise StudioError(
                 "This operation was interrupted repeatedly. Review the saved project and retry manually.",
                 409,

@@ -442,8 +442,9 @@ async def resume_job(
         .values(
             status="queued",
             error=None,
-            attempts=0,
-            inference={**original, "lease": ai_lease},
+            # Attempt numbers fence stale workers and must never be reused.
+            # Explicit resume resets the interruption allowance separately.
+            inference={**original, "lease": ai_lease, "recovery_base": job.attempts},
             updated_at=now(),
             events=[
                 *job.events,

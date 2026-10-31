@@ -72,3 +72,30 @@ async def test_active_requests_close_on_revoke_expiry_or_shutdown(action):
         await task
     assert closed.is_set()
     assert not registry._entries
+
+
+async def test_renewal_during_request_replaces_the_original_deadline():
+    clock = [10.0]
+    registry = LeaseRegistry(clock=lambda: clock[0], ttl=0.02)
+    handle = registry.create("alice", "openai", "model", SecretStr("fixture-secret"))[
+        "id"
+    ]
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def request(key):
+        started.set()
+        await release.wait()
+        return "completed"
+
+    task = asyncio.create_task(registry.run("alice", handle, request))
+    await started.wait()
+    clock[0] += 0.015
+    registry.renew("alice", handle)
+    clock[0] += 0.01
+    # Let the original wait elapse; the renewed lease must remain usable.
+    await asyncio.sleep(0.03)
+    assert not task.done()
+    release.set()
+    assert await task == "completed"
+    assert registry.get("alice", handle).secret.get_secret_value() == "fixture-secret"
+    registry.clear()
