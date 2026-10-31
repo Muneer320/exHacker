@@ -52,6 +52,25 @@ test("BYOK switches providers and preserves documents after session loss", async
     page.getByRole("button", { name: "Edit technology choices" }),
   ).toBeEnabled();
   await connect(page, "gemini");
+  await page.getByLabel("AI session settings").click();
+  const dialog = page.getByRole("dialog");
+  const older = dialog.locator(".session-row").filter({ hasText: "anthropic" });
+  const selected = dialog.locator(".session-row").filter({ hasText: "gemini" });
+  const renewed = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/renew") &&
+      response.request().method() === "POST",
+  );
+  await older.getByRole("button", { name: "Extend", exact: true }).click();
+  expect((await renewed).ok()).toBeTruthy();
+  await expect(selected).toContainText("Selected");
+  await expect(
+    older.getByRole("button", { name: "Use", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    selected.getByRole("button", { name: "Use", exact: true }),
+  ).toBeDisabled();
+  await dialog.getByLabel("Close AI settings").click();
   await page
     .getByRole("button", { name: "Confirm stack & write documents" })
     .click();

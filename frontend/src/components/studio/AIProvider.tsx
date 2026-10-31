@@ -132,12 +132,12 @@ export default function AIProvider({
           notice={notice}
           close={() => setTarget(null)}
           choose={choose}
-          update={(session) => {
+          update={(session, activate = false) => {
             setSessions((previous) => [
               ...previous.filter((s) => s.id !== session.id),
               session,
             ]);
-            choose(session.id);
+            if (activate) choose(session.id);
             setNotice("");
           }}
           remove={(id) => {
@@ -173,7 +173,7 @@ function SessionDialog({
   notice: string;
   close: () => void;
   choose: (id: string | null) => void;
-  update: (session: AISession) => void;
+  update: (session: AISession, activate?: boolean) => void;
   remove: (id: string) => void;
   clear: () => void;
 }) {
@@ -277,7 +277,7 @@ function SessionDialog({
                     model: selectedModel?.id,
                     key,
                   });
-                  update(session);
+                  update(session, true);
                 } finally {
                   key = "";
                 }
