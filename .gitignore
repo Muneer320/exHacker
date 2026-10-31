@@ -60,6 +60,9 @@ playwright-report/
 
 # Project specific
 exports/
+# The legacy export-page redirect is source code, not generated output.
+!frontend/src/app/projects/*/exports/
+!frontend/src/app/projects/*/exports/page.tsx
 artifacts/
 generated/
 tmp/

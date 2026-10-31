@@ -76,6 +76,8 @@ test("complete a real persisted browser workflow, refine, export, and ask the as
     .getByRole("button", { name: "Confirm stack & write documents" })
     .click();
   await expect(page).toHaveURL(/\/docs$/);
+  await page.goto(page.url().replace(/\/docs$/, "/exports"));
+  await expect(page).toHaveURL(/\/docs$/);
   await expect(page.locator(".document-files button")).toHaveCount(10);
   await expect(page.locator(".markdown-preview")).toContainText(
     "Product Requirements Document",
