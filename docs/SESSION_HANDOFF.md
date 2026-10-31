@@ -1,43 +1,43 @@
-# End-of-day checkpoint
+# Verification checkpoint
 
-Date: 2026-10-31. Work paused at the user's request. Continue from this checkout and its focused Git commits; no branch or remote push was created.
+Updated: 2026-10-31 after resuming the end-of-day checkpoint. The previously unfinished container verification is complete. Changes are committed in focused units on the existing branch; no remote push or deployment was performed.
 
-## Completed
+## Completed on resumption
 
-- Original verified restoration state committed first (`e4094ca`).
-- Visual README refresh and Markdown punctuation cleanup (`9e7b288`), including generated handoff punctuation/hash checks.
-- Owner-bound expiring backend RAM credential registry (`8e7ea1e`).
-- Five request-scoped native HTTPX adapters; LiteLLM/cache and vulnerable dependency chain removed (`325c3c5`).
-- Additive job-routing migration, immutable provider/model capture, credential pause/resume/cancel, no operator fallback, safe errors and logging (`4655c0e`, `56abcc3`).
-- Global AI session UI, finite provider/model catalog, memory-only references, password clearing, explicit extension/removal and recovery controls (`65a4b06`). BYOK is now the default; Tavily remains operator-managed.
-- Setup, security, architecture and lifecycle documentation updated from proposal to implementation.
-- New isolated Docker BYOK SIGKILL/reentry script added. Container downloads encountered network timeouts; final container validation is recorded below.
+- Started Docker Desktop and rebuilt/started the isolated PostgreSQL verification stack successfully. Existing data was retained and migrated; no verification volume was deleted.
+- Reproduced and fixed a stale-worker race when a paused job resumed. Attempt numbers now remain monotonic, while explicit resume separately renews its interruption allowance (`e88c90d`).
+- Verified active-call lease renewal and true worker shutdown/requeue with credential loss on recovery.
+- Fixed extension of an older AI session so it preserves the currently selected provider/model (`91a4c7b`).
+- Verified preservation of all four studio tables during both versioned 0001 upgrades and adoption of unversioned development databases (`dd616dd`).
+- Added both BYOK browser journeys and the real SIGKILL/reentry check to CI, with separate browser output directories (`d2abe3e`).
+- Refreshed the visual assets and documentation to describe the implemented behavior and observed verification results.
 
-## Verification observed
+## Latest evidence
 
-- Backend: 65 SQLite tests pass, including full pipeline journeys through all five native adapters against synthetic external responses.
-- BYOK browser: 2 Chromium journeys pass against real local services and synthetic external providers.
-- Ruff, ESLint, TypeScript and native Next.js production build pass.
-- Frozen Python runtime and frontend advisory audits report zero known vulnerabilities. The temporary audit requirements file was removed; a stale IDE tab may still show it.
-- No paid inference/search evaluation was performed. No real user API key was added to Git.
+| Check | Result |
+| --- | --- |
+| SQLite backend suite | 70 passed |
+| PostgreSQL backend suite | 70 passed |
+| Native BYOK Chromium suite | 2 passed |
+| Chromium against standalone Docker frontend | 6 passed |
+| General Docker outage/recovery script | Passed |
+| BYOK Docker SIGKILL/reentry script | Passed |
+| Lint, format, TypeScript and production builds | Passed |
+| Frozen Python runtime and frontend audits | No known vulnerabilities at the recorded verification date |
 
-## Resume here
+Details and boundaries are recorded in [VERIFICATION.md](VERIFICATION.md). All inference/search protocol tests use controlled external responses. No paid provider access or live model quality is implied.
 
-1. Finish the final Docker rebuild/start if package downloads blocked it. The Dockerfile now uses a build-only uv cache and a 120-second package-download timeout. Keep TLS verification enabled.
-2. Run the expanded PostgreSQL suite: `docker compose -p exhacker-verify -f compose.verify.yml run --rm --build backend-tests`.
-3. Run `python scripts/verify_docker.py --restart`, then `python scripts/verify_byok_restart.py`, sequentially. They interrupt only the disposable verification API.
-4. Rerun the six demonstration Chromium tests on the new container image (`PLAYWRIGHT_BASE_URL=http://127.0.0.1:3200 npm test` from frontend). The two BYOK native browser checks already pass. Recheck the five documentation diagrams and mobile layout after the global session control change.
-5. Wire the BYOK browser run and new restart script into CI after their final container verification. CI currently retains the earlier demo/container jobs.
-6. Review small UI refinements: explicitly extending an older session currently also selects it for future jobs; decide whether to preserve the current selection. Add a screenshot of the real AI session UI if useful.
-7. Review migration of existing 0001 studio records, lease renewal during active calls, true worker shutdown cancellation, and credential-safe errors under unusual malformed input. Existing tests cover core properties; broaden only where the review identifies gaps.
-8. Update `VERIFICATION.md` with actual final counts/results, inspect the final diff and secret scan, and commit the verification unit.
+## Local state
 
-## Release boundaries
+The disposable demo stack remains available at `http://localhost:3200`, with its API on loopback port 8200 and PostgreSQL internal. It uses explicit offline fixtures, no real API keys, and its existing verification volume. `docker compose -p exhacker-verify -f compose.verify.yml down` stops it while retaining that volume.
 
-BYOK uses exactly one API process and its embedded worker. Separate workers or multiple replicas cannot access the RAM registry and are unsupported. Expiry/removal/restart requires a matching provider/model key before resume; interrupted provider work can be billed again. Existing artifacts remain available without credentials. Passwords never belong in ordinary persisted project fields.
+The temporary audit requirements export was removed in the previous session. A stale IDE tab may still display its name; it is not part of the repository.
 
-The catalog was reviewed against official provider documentation on 2026-10-31. Paid account access, real-model quality, latency/cost, hosted TLS/backups, load/abuse controls, CSP and runtime OS advisories still require release evaluation. Gemini's introductory model pricing ends 2026-12-31. Do not describe this checkpoint as a completed public-production release.
+## Release work that needs external evidence
 
-## Container status at pause
+1. Evaluate the six exposed models across five providers with real account access, representative briefs and Tavily results. Check output quality, account quotas, latency and actual spend.
+2. Exercise a hosted TLS/database setup, backup restoration, rate/concurrency controls and process failures on the intended deployment.
+3. Review CSP, logging/APM capture exclusions, swap/core-dump policy, retention and runtime OS advisories before collecting public user keys.
+4. Repeat locked dependency audits and review provider catalog IDs/prices at release time. Gemini's documented introductory price ends 2026-12-31.
 
-The final rebuild was deliberately cancelled when the user requested the end-of-day checkpoint: backend package downloads were still stalling despite the longer timeout. The new standalone frontend image built successfully, but Compose did not complete the combined rebuild/start. The prior verification containers remain running with their earlier images/data. No verification volume was removed, and no restart script was run against the incomplete rebuild. Resume with the rebuild, then run the listed checks.
+BYOK requires one persistent API process and its embedded worker. Multiple replicas and separate worker processes cannot access its RAM registry and are unsupported. Expiry/removal/restart requires matching provider/model credentials before resume; repeated work can repeat charges. Saved artifacts remain accessible without an AI session.

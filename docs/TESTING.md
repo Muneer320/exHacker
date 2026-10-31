@@ -56,7 +56,7 @@ npm test
 Remove-Item Env:PLAYWRIGHT_BYOK
 ```
 
-This starts `tests.byok_server:app`, a development-only test module that replaces external provider/Tavily HTTP responses with fixtures. The real API, credential registry, background worker, adapters, database, proxy and UI execute normally. No production test switch or paid key is used. Tests inspect browser storage, key-field clearing, provider switching, preserved documents and matching-session recovery.
+This starts `tests.byok_server:app`, a development-only test module that replaces external provider/Tavily HTTP responses with fixtures. The real API, credential registry, background worker, adapters, database, proxy and UI execute normally. No production test switch or paid key is used. Tests inspect browser storage, key-field clearing, provider switching, renewal without changing the selected session, preserved documents and matching-session recovery.
 
 ### Test the real container frontend
 
@@ -96,7 +96,7 @@ The BYOK-specific process-death check is:
 python scripts/verify_byok_restart.py
 ```
 
-It only targets the default loopback ports and the `exhacker-verify` project. It queues a job with a synthetic key in a worker-disabled API, kills that process, and checks that an empty-registry worker pauses it before any external call. Matching reentry/resubmission is tested with the worker disabled and cancelled before inference. Prior saved artifacts must remain unchanged. This script has been added and linted; consult [verification evidence](VERIFICATION.md) for whether the container run has completed.
+It only targets the default loopback ports and the `exhacker-verify` project. It queues a job with a synthetic key in a worker-disabled API, kills that process, and checks that an empty-registry worker pauses it before any external call. Matching reentry/resubmission is tested with the worker disabled and cancelled before inference. Prior saved artifacts must remain unchanged. Both Docker recovery scripts passed locally; see [verification evidence](VERIFICATION.md) for scope and limits.
 
 Only this verification API/container is deliberately interrupted. Do not run recovery and browser tests simultaneously. The script uses Python's standard library and requires the Docker CLI on PATH.
 
@@ -104,12 +104,12 @@ Stop without deleting data with `docker compose -p exhacker-verify -f compose.ve
 
 ## Screenshots and audits
 
-Set `CAPTURE_README=true` alongside the external base URL when running the browser suite. It writes actual screenshots to `docs/images/hero.png` and `docs/images/workspace.png`. Review them visually before committing. The displayed workspace must keep its offline-mode notice; screenshots are not live-provider evaluation evidence.
+Set `CAPTURE_README=true` alongside the external base URL when running the browser suite. The demo suite writes actual screenshots to `docs/images/hero.png` and `docs/images/workspace.png`. Running the BYOK suite with the same flag captures `docs/images/ai-session.png` before a key is entered. Review them visually before committing. The displayed workspace must keep its offline-mode notice; screenshots are not live-provider evaluation evidence.
 
 `npm audit` checks the frontend dependency tree against current advisories. A clean result is time-specific. Python dependency audits can run with `uvx pip-audit`; use an isolated tool environment and inspect results rather than adding audit tools to runtime dependencies. Container OS advisories and hosted infrastructure require their own release review.
 
 ## CI
 
-The workflow in `.github/workflows/ci.yml` blocks on backend lint/tests, frontend lint/types/build, a local browser workflow, and a container job. The container job builds the real images, migrates PostgreSQL, runs the backend suite there, checks outage/recovery, and runs Chromium against the standalone frontend. Failure logs/traces are uploaded. No paid keys are supplied to pull requests.
+The workflow in `.github/workflows/ci.yml` blocks on backend lint/tests, frontend lint/types/build, both local demo/BYOK browser workflows, and a container job. The container job builds the real images, migrates PostgreSQL, runs the backend suite there, checks general and BYOK credential-loss recovery, and runs Chromium against the standalone frontend. Failure logs/traces are uploaded. No paid keys are supplied to pull requests.
 
 Before shipping, evaluate real supported models with representative briefs, measure latency/spend, exercise actual provider failures and deployment restarts, test database backup restoration, and run representative load/concurrency checks. Do not replace these with offline fixture pass counts.

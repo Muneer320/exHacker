@@ -1,77 +1,50 @@
 # Verification evidence
 
-Verified locally on **2026-10-31**. This records observed behavior and known limits; it is not a production certification or a claim that remote CI has already run this local work.
+Verified locally on **2026-10-31** against the completed BYOK implementation. These results establish the behaviors below, not a production certification or a claim that remote CI has run.
 
-## Latest BYOK checkpoint
-
-Completed locally on 2026-10-31 before the requested end-of-day pause:
+## Results
 
 | Check | Observed result |
 | --- | --- |
-| Backend SQLite suite | **65 passed**, including the RAM registry, five native adapters, full synthetic live-pipeline journeys, credential isolation/disclosure checks and durable-job recovery. |
-| BYOK Chromium journeys | **2 passed** against the real API/worker/SQLite/Next.js with synthetic external HTTP responses: provider switching, cleared key input, no browser-storage key, document persistence, reload and reconnect/resume. |
-| Static checks | Ruff lint/format, ESLint, TypeScript and native production build passed. |
-| Frontend audit | **0 known vulnerabilities**. |
-| Locked Python runtime audit | **No known vulnerabilities found**, using an exported frozen requirements set and pip-audit. An initial PyPI timeout succeeded on retry. The temporary export was removed. |
-| New Docker verification | Frontend image built successfully; the combined rebuild was cancelled at the requested pause while backend package downloads stalled. The prior stack remains intact. See [session handoff](SESSION_HANDOFF.md). |
+| Backend SQLite suite | **70 passed** in isolated temporary databases, including credential lifecycle, all five adapters, full synthetic live-pipeline journeys, ownership and recovery. |
+| Backend PostgreSQL suite | **70 passed** in the Linux test image against PostgreSQL 16; each test owns a separate disposable schema. |
+| BYOK browser journeys | **2 passed** against the real local API, worker, database and Next.js with synthetic provider/search HTTP responses. Covers key clearing/storage, provider switching, extension without changing selection, document preservation, reload and matching-session resume. |
+| Browser against Docker | **6 passed** against the standalone frontend, real proxy, API, embedded worker and PostgreSQL: complete workflow, exports, workspace recovery/deletion, request limits, Markdown/Mermaid safety, mobile layout and visible outage. |
+| Container builds/startup | Backend and frontend built from locked dependencies, migrated the existing verification database and reached readiness/health gates. The previous package-download blockage is resolved. |
+| Legacy migration | Both versioned 0001 studio databases and unversioned development schemas upgrade to 0002 while preserving project context, queued jobs, artifact snapshots and messages. |
+| General outage/recovery | Real API stop produces proxy 503; SIGKILL after queued acceptance is recovered by the normal worker. Saved documents, exports and ordered chat remain unchanged. |
+| BYOK process restart | Real SIGKILL loses RAM credentials; the durable job pauses before external calls. Fresh matching credentials permit requeue; cancellation releases the project lock. Prior artifacts survive. |
+| Static checks | Ruff lint/format, ESLint, TypeScript, Prettier, native production build and Linux standalone build pass. CI YAML parses. |
+| Frontend dependency audit | **0 known vulnerabilities** in the locked tree at verification time. |
+| Frozen Python runtime audit | **No known vulnerabilities found**. LiteLLM and its vulnerable transitive filelock chain were removed; no override or scanner suppression was used. |
+| Documentation/assets | Local Markdown links and em-dash removal checked. All five repository Mermaid diagrams render in Chromium. Real application screenshots retain fixture/privacy disclosures and contain no entered provider key. |
 
-LiteLLM and its transitive filelock dependency were removed as part of the approved request-scoped HTTPX transport replacement. This resolves the earlier locked-tree advisory constraint without an override or scanner suppression. The new model catalog and five adapters are verified at controlled protocol boundaries, not with paid provider accounts.
+The CI workflow now runs the demo and BYOK browser suites separately and executes both Docker recovery scripts. Local equivalents passed; no Git push or remote workflow execution was performed.
 
-The expanded PostgreSQL suite, both process-restart scripts and the six-test demonstration browser suite must be rerun on the final BYOK images. The previously successful results below are retained as historical evidence, not substituted for that rerun.
+## Credential and workflow guarantees exercised
 
-## Earlier restoration baseline
+- Workspace-owned leases reject other owners, expire, renew explicitly, enforce capacity, clear on removal/restart and cancel active requests.
+- Keys do not appear in project/job/artifact/message records, public responses or formatter output in the covered tests. Malformed credential input uses safe validation errors. Unexpected job errors expose only safe messages/types.
+- Each new operation captures its provider/model/session. Switching future operations preserves existing artifacts. Missing BYOK credentials never fall back to the operator key.
+- Paused operations accept a fresh matching provider/model lease, or can be cancelled. Resume retains monotonically increasing attempt identities, preventing a delayed old worker from pausing or publishing over a resumed attempt. A regression reproduced the original race before the fix.
+- Extending an older session does not select it for future jobs. Renewal during an active call replaces its old deadline. Worker shutdown cancels the call and requeues the operation; loss of RAM on restart then requests credentials.
+- Five native HTTPX protocols verify authentication headers, fixed endpoints, response parsing, token accounting, no redirects and request-scoped client closure. Provider error bodies and credential-like output are discarded; oversize/malformed/truncated results fail safely.
+- Idea/stack approval and follow-up enqueue share a transaction. Stale revisions and superseded attempts cannot overwrite newer work. All ten Markdown files match their ZIP entries; reading/exporting never regenerates them.
+- Untrusted Markdown cannot execute raw HTML or load tracking images. Mermaid renders in strict mode and contains invalid-diagram errors.
 
-| Check | Result / scope |
-| --- | --- |
-| Backend SQLite suite | **34 passed** in isolated temporary databases. |
-| Backend PostgreSQL suite | **34 passed** in the Linux test image, using a unique schema per test in PostgreSQL 16. |
-| Container builds | Backend and standalone frontend built from locked dependencies on Linux, without host `.venv`, `node_modules`, or `.next` artifacts. |
-| Compose startup | PostgreSQL, Alembic migration, backend, and frontend started successfully and reached their applicable completion/health gates. |
-| Default SQLite Compose path | Passed the same HTTP workflow using the default Compose services with an isolated environment-file/port override and a new SQLite volume; the disposable test stack was removed afterward. |
-| Browser against Docker | **6 passed** in Chromium: complete persisted workflow, proxy limits, workspace restore/delete, Markdown safety/diagrams, mobile layout, and service failure. |
-| Browser against native servers | **6 passed** with the local Uvicorn/SQLite API and a freshly built Next.js server; document copy also verified with Windows clipboard line-ending normalization. |
-| Runtime HTTP workflow | Passed: selection of a specific candidate, ownership, stale-edit rejection, all ten Markdown downloads matching ZIP entries, reproducible ZIP, and two ordered chat turns. |
-| Outage/recovery | Passed: stopped API returns proxy 503; a worker-disabled API accepts a real queued job, is killed with SIGKILL, and the normal worker recovers the queue. Previously saved documents/chat remain unchanged. |
-| Static checks | Ruff lint/format, ESLint, TypeScript, Prettier, and production Next.js build passed. |
-| Frontend dependency audit | `npm audit` reports **0 known vulnerabilities** for the locked tree at verification time. |
-| Python dependency audit | **Open finding:** 13 advisories in transitive `filelock` 3.32.7. See below. The local editable application package is not a published PyPI package and is skipped by the package advisory scanner. |
-| Screenshots | Captured from the running application and visually inspected. Offline fixture labels are retained. |
-| Documentation | Relative Markdown links checked; all five Mermaid diagrams from the README, architecture, and BYOK proposal rendered in the real browser renderer. |
+## What this does not establish
 
-Runtime images were built with Node.js 22 and Python 3.12.16. Backend inference adapter tests also run natively on Python 3.12. A third-party Pydantic warning about a TypedDict `ReadOnly` qualifier is emitted by the updated provider dependency; it does not fail the suite and is not suppressed.
+**No paid AI or live research request was made.** Full workflow tests use synthetic external responses, clearly separated from normal production code. Tests establish wiring, persistence, validation, recovery and rendering. They do not establish provider account access, model originality, factual research quality, document quality, real latency or actual bills.
 
-## Bugs and configuration issues addressed
+The RAM-only architecture requires **one API process with its embedded worker**. Multiple replicas/separate workers are unsupported. A browser reload loses session references; expiry, removal or server restart requires credential reentry for affected work. Recovery can repeat external calls and charges. Physical byte zeroization, OS swap/core-dump behavior, hosting logs/APM and provider retention policies are outside application guarantees.
 
-- Idea/stack approval previously committed before enqueueing the next job. Both now share a transaction, with regression tests proving queue failures preserve the prior revision and documents.
-- Request-size checks previously relied on `Content-Length` or buffered the full proxy request. The proxy and API now bound actual streamed bytes before processing, including chunked requests.
-- Research cache lookup previously checked only the newest cache row. Matching batches can now be reused after other searches, reducing unnecessary requests and budget consumption. Tested on SQLite and PostgreSQL.
-- Model-generated Markdown images could trigger automatic external requests. They now render as deliberate external links; raw HTML/scripts and unsafe link protocols are checked in Chromium.
-- Invalid Mermaid input is contained in the document's error panel instead of injecting an extra global error diagram. Real README/architecture/BYOK diagrams are also exercised by the browser trust-boundary test.
-- Backend containers now run as a non-root user with a writable data directory; both runtime image user identities were inspected.
-- Docker context exclusions cover nested `.env` files, private PEM files, database journals, logs, and temporary/export artifacts.
-- Compatible dependency upgrades addressed frontend advisories and Python HTTP/TLS-related findings, including the CA bundle. An unused frontend dependency set was removed. No advisory-ignore flags were added.
-- The optional local LiteLLM public metadata setting now works for native `.env` launches as well as process/Docker environments.
+Still required for a public release:
 
-## Earlier dependency finding resolved
-
-The restoration baseline used LiteLLM 1.106.6, which constrained filelock below its patched 4.x line. The approved native HTTPX replacement removes both packages. The latest frozen-runtime audit reports no known advisories. Container OS scanning and hosted infrastructure review remain separate release checks.
-
-## What the tests do not prove
-
-The full UI and worker journeys deliberately use explicit offline fixtures. Provider request/response and Tavily protocol tests use controlled boundaries. **No paid live AI or research request was made.** This verifies wiring, persistence, constraints, error handling, and rendering; it does not validate real-model originality, evidence quality, generated document quality, latency, provider account access, or actual billing.
-
-Queued acceptance/recovery after process death is tested end to end. Expired running leases and superseded publication are tested in the backend suite. Unattended recovery can repeat external work; exactly-once inference billing is not established.
-
-Still required before a public release:
-
-- Scan actual runtime OS images and repeat locked dependency audits at release time.
-- Evaluate selected live models with representative briefs and real search evidence, including all providers advertised as supported.
-- Test a hosted TLS/database configuration, backup restoration, and deployment-specific process failures.
-- Measure load, queue age, concurrency, storage growth, latency, and costs; establish retention and perimeter abuse controls.
-- Review a public-hosting security policy and CSP before collecting any user keys.
-
-BYOK is implemented and documented in [the credential lifecycle guide](BYOK.md). Automated tests establish specific application properties; they do not establish physical memory zeroization, host security, provider policy compliance or live-model quality.
+- Evaluate every exposed live model and real Tavily evidence with representative briefs and provider account limits.
+- Verify hosted HTTPS/private backend links, database TLS, backup restoration and deployment-specific failures.
+- Review CSP, retention, perimeter abuse/rate limits, concurrency, storage growth and operating costs.
+- Scan actual runtime OS images and repeat dependency audits at release time.
 
 ## Reproduce
 
-Follow [TESTING.md](TESTING.md). The CI container job now reproduces PostgreSQL migration, backend tests, real HTTP outage/recovery, and browser checks against the standalone frontend. No external deployment, Git push, release publication, or paid provider evaluation was performed during this verification.
+Follow [TESTING.md](TESTING.md). Use only the disposable `exhacker-verify` stack for process-death checks. The default Compose file is a local SQLite setup, not production hosting. See [BYOK](BYOK.md), [deployment](DEPLOYMENT.md) and [security](../SECURITY.md) for operational boundaries.

@@ -49,7 +49,7 @@ A browser reload loses this tab's session references. Already accepted jobs may 
 
 A backend restart loses the entire credential registry. Queued/reclaimed BYOK jobs pause before inference or research starts. A paused job retains its project lock and original provider/model. Its previous successful project context, documents, exports and conversation remain readable. Supply a fresh matching session and **Resume operation**, or cancel the paused/queued job to release the project. Cancellation does not delete artifacts. For a running job, remove its session and wait for it to pause before cancellation.
 
-Resume reruns the operation from saved inputs; it does not continue inside a partially completed model request. Completed idea-round snapshots remain an audit trail. Repeated work can incur repeated charges. A key rejected with HTTP 401/403 is removed and the job requests credentials again. Other request/model/quota failures are safe visible errors; transient 429/5xx/network failures have one bounded retry.
+Attempt identities never reset, so stale workers cannot overwrite a resumed operation. Explicit resume separately resets its bounded interruption allowance. Resume reruns the operation from saved inputs; it does not continue inside a partially completed model request. Completed idea-round snapshots remain an audit trail. Repeated work can incur repeated charges. A key rejected with HTTP 401/403 is removed and the job requests credentials again. Other request/model/quota failures are safe visible errors; transient 429/5xx/network failures have one bounded retry.
 
 ## Deployment boundary
 
