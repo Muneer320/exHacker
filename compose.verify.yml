@@ -28,7 +28,6 @@ services:
       STUDIO_DEMO_MODE: "true"
       FREE_TIER_PROJECTS_PER_DAY: "50"
       STUDIO_JOB_LEASE_SECONDS: "15"
-      LITELLM_LOCAL_MODEL_COST_MAP: "True"
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
@@ -78,7 +77,6 @@ services:
       target: tests
     environment:
       TEST_DATABASE_URL: postgresql+asyncpg://studio:verification-only@postgres:5432/studio_verification
-      LITELLM_LOCAL_MODEL_COST_MAP: "True"
     depends_on:
       postgres:
         condition: service_healthy
