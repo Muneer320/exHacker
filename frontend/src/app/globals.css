@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   exHacker — Design System v3 (Awwwards-Level)
-   Palette: Black · Grey · Blue · Lime · Sky
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* exHacker: design tokens and shared primitives. */
 /* ─── Google Fonts ─────────────────────────────────────────────────────── */
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
@@ -229,13 +225,6 @@ body {
   line-height: 0.92;
   letter-spacing: -0.04em;
 }
-.d2 {
-  font-family: var(--font-display);
-  font-size: clamp(40px, 7vw, 88px);
-  font-weight: 800;
-  line-height: 0.94;
-  letter-spacing: -0.03em;
-}
 .d3 {
   font-family: var(--font-display);
   font-size: clamp(28px, 4vw, 52px);
@@ -243,33 +232,10 @@ body {
   line-height: 1;
   letter-spacing: -0.02em;
 }
-.d4 {
-  font-family: var(--font-display);
-  font-size: clamp(18px, 2.5vw, 32px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-.h5 {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
 
 .body-lg {
   font-size: 17px;
   line-height: 1.7;
-  color: var(--text-2);
-}
-.body-md {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--text-2);
-}
-.body-sm {
-  font-size: 13px;
-  line-height: 1.6;
   color: var(--text-2);
 }
 
@@ -425,11 +391,6 @@ textarea.field {
   background: var(--lime-dim);
   color: #a8de30;
 }
-.badge-sky {
-  border-color: rgba(168, 216, 255, 0.22);
-  background: var(--sky-dim);
-  color: var(--sky);
-}
 
 /* ─── Cards ───────────────────────────────────────────────────────────── */
 .card {
@@ -449,33 +410,6 @@ textarea.field {
   background: var(--surface-3);
   overflow: hidden;
   border-radius: 1px;
-}
-.score-fill {
-  height: 100%;
-  background: var(--blue);
-  border-radius: 1px;
-  transition: width 1s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* ─── Accent bars ─────────────────────────────────────────────────────── */
-.accent-left-blue {
-  border-left: 2px solid var(--blue);
-}
-.accent-left-lime {
-  border-left: 2px solid var(--lime);
-}
-.accent-left-sky {
-  border-left: 2px solid var(--sky);
-}
-
-/* ─── Section number ──────────────────────────────────────────────────── */
-.sec-num {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-3);
-  letter-spacing: 0.08em;
-  margin-bottom: 24px;
-  display: block;
 }
 
 /* ─── Tag chip ────────────────────────────────────────────────────────── */
@@ -503,12 +437,6 @@ textarea.field {
 }
 
 /* ─── Terminal window ─────────────────────────────────────────────────── */
-.term-window {
-  background: var(--surface-0);
-  border: 1px solid var(--border-mid);
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
 .term-bar {
   display: flex;
   align-items: center;
@@ -531,28 +459,6 @@ textarea.field {
 .term-dot-g {
   background: #28c840;
 }
-.term-body {
-  padding: 20px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.9;
-}
-
-.term-dim {
-  color: var(--text-3);
-}
-.term-key {
-  color: var(--sky);
-}
-.term-val {
-  color: var(--lime);
-}
-.term-run {
-  color: var(--blue-light);
-}
-.term-done {
-  color: #4ade80;
-}
 
 /* ─── Animations ──────────────────────────────────────────────────────── */
 @keyframes fadeUp {
@@ -565,92 +471,15 @@ textarea.field {
     transform: translateY(0);
   }
 }
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-@keyframes glowPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(61, 124, 246, 0);
-  }
-  50% {
-    box-shadow: 0 0 24px 4px rgba(61, 124, 246, 0.18);
-  }
-}
 
 .anim-fade-up {
   animation: fadeUp 0.5s ease both;
-}
-.anim-fade-up-1 {
-  animation: fadeUp 0.5s 0.1s ease both;
-}
-.anim-fade-up-2 {
-  animation: fadeUp 0.5s 0.2s ease both;
-}
-.anim-fade-up-3 {
-  animation: fadeUp 0.5s 0.3s ease both;
-}
-.anim-fade-up-4 {
-  animation: fadeUp 0.5s 0.4s ease both;
-}
-.anim-fade-up-5 {
-  animation: fadeUp 0.5s 0.5s ease both;
-}
-.anim-fade-in {
-  animation: fadeIn 0.4s ease both;
-}
-
-/* ─── Loading spinner ─────────────────────────────────────────────────── */
-.spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--border-mid);
-  border-top-color: var(--blue);
-  animation: spin 0.8s linear infinite;
 }
 
 /* ─── Divider ─────────────────────────────────────────────────────────── */
 .rule {
   border: none;
   border-top: 1px solid var(--border);
-}
-
-/* ─── Rank number ─────────────────────────────────────────────────────── */
-.rank-num {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-3);
-  letter-spacing: 0.05em;
-  min-width: 20px;
-}
-
-/* ─── Prose (markdown preview) ────────────────────────────────────────── */
-.prose {
-  color: var(--text-2);
-  font-size: 13px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  font-family: var(--font-mono);
 }
 
 /* ─── Navbar ──────────────────────────────────────────────────────────── */
@@ -666,31 +495,6 @@ textarea.field {
   background: rgba(8, 8, 8, 0.5);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-}
-
-/* ─── Tab strip ───────────────────────────────────────────────────────── */
-.tab-btn {
-  padding: 14px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-3);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-  margin-bottom: -1px;
-}
-.tab-btn:hover {
-  color: var(--text-2);
-}
-.tab-btn.active {
-  color: var(--blue-light);
-  border-bottom-color: var(--blue);
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────────────────── */
@@ -725,80 +529,4 @@ button:focus:not(:focus-visible),
 a:focus:not(:focus-visible),
 input:focus:not(:focus-visible) {
   outline: none;
-}
-
-/* ─── Step sidebar ────────────────────────────────────────────────────── */
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-left: 2px solid transparent;
-  cursor: default;
-  transition: all 0.15s;
-}
-.step-item.done {
-  border-left-color: var(--blue);
-}
-.step-item.active {
-  border-left-color: var(--lime);
-  background: var(--lime-dim);
-}
-.step-item.active .step-label {
-  color: var(--text-1);
-  font-weight: 600;
-}
-
-.step-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--surface-3);
-  flex-shrink: 0;
-  transition: background 0.2s;
-}
-.step-item.done .step-dot {
-  background: var(--blue);
-}
-.step-item.active .step-dot {
-  background: var(--lime);
-  animation: pulse 1.5s infinite;
-}
-
-.step-label {
-  font-size: 12px;
-  color: var(--text-3);
-  font-weight: 400;
-  transition: color 0.15s;
-}
-.step-item.done .step-label {
-  color: var(--text-2);
-}
-
-/* ─── Number rings (SVG scores) ───────────────────────────────────────── */
-.ring-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ─── Deprecated exHacker legacy tokens (kept for backward compat) ────── */
-:root {
-  --color-app-bg: var(--black);
-  --color-surface-0: var(--surface-0);
-  --color-surface-1: var(--surface-1);
-  --color-surface-2: var(--surface-2);
-  --color-border-default: var(--border);
-  --color-text-primary: var(--text-1);
-  --color-text-secondary: var(--text-2);
-  --color-text-tertiary: var(--text-3);
-  --color-accent-500: var(--blue);
-  --color-accent-400: var(--blue-light);
-  --color-accent-300: var(--sky);
-  --color-accent-200: var(--sky);
-  --color-info: var(--sky);
-  --color-success: var(--lime);
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
 }

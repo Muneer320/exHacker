@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "exhacker-backend"
 version = "0.1.0"
-description = "exHacker — AI Product Studio backend"
+description = "exHacker: hackathon product studio backend"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.111.0",
@@ -26,7 +26,6 @@ dev = [
     "pytest-asyncio>=0.23",
     "pytest-cov>=5.0",
     "ruff>=0.5.0",
-    "mypy>=1.10.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -39,12 +38,6 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "B", "ARG", "C4", "SIM"]
 ignore = ["B008", "ARG001", "E402", "E501"]
-
-[tool.mypy]
-python_version = "3.11"
-strict = true
-ignore_missing_imports = true
-disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

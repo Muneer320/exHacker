@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import logging
 
 from pydantic import ValidationError
 from sqlalchemy import update
@@ -15,8 +14,6 @@ from app.studio.errors import CredentialsRequiredError, StudioError
 from app.studio.models import Project
 from app.studio.providers import catalog
 from app.studio.schemas import SCORE_WEIGHTS
-
-logger = logging.getLogger(__name__)
 
 
 def provider_key(provider=None):
