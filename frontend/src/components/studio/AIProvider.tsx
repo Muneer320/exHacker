@@ -326,6 +326,11 @@ function SessionDialog({
                 may differ from billing.
               </p>
             )}
+            {config.providers.find((p) => p.id === provider)?.note && (
+              <p className="notice warning">
+                {config.providers.find((p) => p.id === provider)?.note}
+              </p>
+            )}
             <label>
               Provider API key
               <input

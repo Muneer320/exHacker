@@ -59,6 +59,7 @@ CATALOG = {
     },
     "groq": {
         "name": "Groq",
+        "note": "Groq's free-plan token limits can be much smaller than the model's context window. Full research reviews, documents and chat may require higher account limits.",
         "models": [
             {
                 "id": "openai/gpt-oss-120b",

@@ -64,6 +64,14 @@ Start with a concrete challenge, a 24- or 48-hour deadline, two teammates with d
 
 Review output quality manually; successful JSON validation alone does not make an idea original or a specification useful. Check the provider and Tavily dashboards for real usage, latency, quota failures and charges. Begin with one complete journey, then repeat for every provider/model you intend to advertise, including briefs with tighter time budgets and beginner skill levels.
 
+### Diagnose a failed generation
+
+Tavily and the AI provider are separate services. Search usage confirms research ran; an initial AI call can succeed and a later critique fail when it includes candidates and research. The saved job events identify the failing stage.
+
+Provider rejection errors include a numeric HTTP status without exposing raw provider messages or credentials. HTTP 413 means the request is too large; account token/request limits can be smaller than a model's advertised context window. Groq's free-plan allowance may not fit full research, document or chat context. Use account limits sufficient for the workflow or select another provider; retrying an unchanged oversized request does not increase its allowance. HTTP 429 indicates a cooldown/rate limit; the app respects short numeric Retry-After values and leaves longer waits for an explicit retry.
+
+New idea jobs save candidates and completed research before critique. A retry of unchanged inputs within 24 hours reuses saved progress, including when the selected provider changes. Completed rounds also survive recovery. Older failed jobs created before these checkpoints were implemented may still need candidate regeneration and new searches if the cached queries do not match. An interrupted external call can still repeat and incur charges.
+
 ### Verify key lifecycle and recovery
 
 | Check | Expected behavior |

@@ -151,6 +151,7 @@ export type Configuration = {
   providers: {
     id: string;
     name: string;
+    note?: string;
     models: {
       id: string;
       name: string;
