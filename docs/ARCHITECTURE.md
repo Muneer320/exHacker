@@ -10,7 +10,7 @@ flowchart LR
     Next --> API[FastAPI API]
     API --> DB[(SQLAlchemy database)]
     Worker[Embedded async worker] --> DB
-    Worker --> LLM[LiteLLM / text provider]
+    Worker --> LLM[Scoped HTTPX / text providers]
     Worker --> Search[Tavily search]
     Worker --> Compiler[Markdown compiler]
     Compiler --> DB
@@ -19,9 +19,9 @@ flowchart LR
 
 ## Runtime boundaries
 
-The browser has no provider credentials in the current release. It creates a random workspace bearer key with Web Crypto and stores that key locally. The API stores its SHA-256 hash as the owner scope. A Next.js route forwards the workspace authorization header and bounded JSON bodies to FastAPI. Provider credentials remain operator-managed backend configuration.
+The browser creates a random workspace bearer key with Web Crypto and stores that workspace token locally. The API stores its SHA-256 hash as the owner scope. Provider keys use a separate dedicated form and credential endpoint. The password field clears on submission; only opaque expiring lease metadata remains in browser memory. The Next.js proxy forwards bounded JSON, workspace authorization and a separate `X-AI-Lease` routing header.
 
-The API validates input, checks workspace ownership, checks optimistic revisions, and persists jobs. It returns promptly; model calls happen in the embedded worker after the original HTTP request ends. Frontend polling reports persisted events and results. Closing the browser does not cancel an accepted job in today's operator-key architecture.
+The API validates ownership/revisions and captures immutable provider/model/source metadata with an opaque RAM-lease reference outside the job payload. Its single embedded worker resolves credentials from the same process immediately before each AI call. Closing a browser does not cancel an accepted job while its lease is valid. Expiry, removal, rejected credentials or restart pauses a job as `credentials_required`; matching reentry resumes from saved inputs. Prior artifacts remain readable. Explicit operator mode never acts as a fallback for BYOK jobs.
 
 The backend is a persistent process. A request-only serverless function cannot host this embedded worker reliably. The frontend can run independently as a standalone Node server or on a compatible Next.js host.
 
@@ -64,7 +64,7 @@ Stack generation uses the exact confirmed idea. Manual technology substitutions 
 | Table | Holds |
 | --- | --- |
 | `studio_projects` | Owner hash, intake, current context/revision, active job, usage counters. |
-| `studio_jobs` | Operation input/revision, status, lease, attempts, events, safe error message. |
+| `studio_jobs` | Operation input/revision, provider/model/source and opaque reference, status, worker lease, attempts, events, safe error message. Never an API key. |
 | `studio_artifacts` | Historical snapshots, idea-round audit records, research cache. |
 | `studio_messages` | User/assistant messages and their context revisions. |
 
@@ -78,7 +78,7 @@ Workers atomically claim queued or expired jobs, increment attempts, and renew l
 
 On graceful shutdown an owned running job returns to the queue. Following an abrupt process death, its lease eventually expires. Recovery reruns the operation from its saved input; idea-round records currently provide an audit trail, **not step-by-step resumable execution**. Provider work can repeat and incur charges. After three interrupted attempts, the job fails for manual review rather than retrying forever.
 
-One worker loop runs per backend process. Start with one process. Database claiming supports competing workers, but production load, fairness, throughput, multiple replicas, and failure timing still need deployment-specific validation. This is not an exactly-once paid-inference system.
+BYOK requires one API process and its embedded worker because the credential registry is process-local. Separate workers and multiple replicas are unsupported. Database claiming alone does not distribute RAM credentials. Production load, fairness, throughput and failure timing need deployment-specific validation. This is not an exactly-once paid-inference system.
 
 ## Important code
 
@@ -92,7 +92,12 @@ backend/app/
     models.py             Four additive studio tables
     routes.py             Ownership, revisions, approvals, downloads
     jobs.py               Queue, leases, recovery, atomic publication
-    ai.py                 Provider adapter, validation, spend reservation
+    credentials.py        Owner-bound RAM leases and active-call cancellation
+    credential_routes.py  Dedicated nonpersistent key endpoint
+    inference.py          Captured routing and per-call credential checks
+    providers.py          Finite model catalog and budget-rate snapshot
+    transport.py          Five request-scoped native HTTPX adapters
+    ai.py                 Schema validation and spend reservation
     research.py           Tavily requests, source filtering and caching
     pipeline.py           Idea, stack, documentation, and chat workflows
     documents.py          Deterministic Markdown compiler
@@ -105,4 +110,4 @@ frontend/src/
   services/api.ts         Typed requests and workspace access
 ```
 
-See [security](../SECURITY.md), [deployment](DEPLOYMENT.md), and the unimplemented [BYOK proposal](BYOK.md) for the boundaries of this design.
+See [security](../SECURITY.md), [deployment](DEPLOYMENT.md), and the implemented [BYOK lifecycle](BYOK.md) for the boundaries of this design.

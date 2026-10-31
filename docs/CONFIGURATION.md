@@ -10,21 +10,22 @@ The Next.js server uses its own process environment or `frontend/.env.local`. Th
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `AI_MODEL` | `openai/gpt-4o-mini` | LiteLLM provider-qualified text model. Model access, context, output limits, and quality must be evaluated with your account. |
-| `AI_API_KEY` | empty | Operator's key for the selected provider; takes priority over aliases. |
-| `OPENAI_API_KEY` | empty | Alternative for an OpenAI or unprefixed OpenAI model. |
-| `ANTHROPIC_API_KEY` | empty | Alternative when `AI_MODEL` starts with `anthropic/`. |
-| `AI_BASE_URL` | unset | Administrator-controlled compatible endpoint. Never expose this as an unrestricted user input. |
-| `TAVILY_API_KEY` | empty | Separate live web-search credential; an AI key does not replace it. |
-| `AI_TIMEOUT_SECONDS` | `120` | Per-provider-call timeout, between 10 and 300 seconds. |
-| `AI_MAX_OUTPUT_TOKENS` | `12000` | Global ceiling. Each stage also requests its own limit. Must fit the chosen model. |
-| `AI_INPUT_USD_PER_MILLION` | `3.0` | Configured input pricing, **not a live price quote**. |
-| `AI_OUTPUT_USD_PER_MILLION` | `15.0` | Configured output pricing, **not a live price quote**. |
-| `LITELLM_LOCAL_MODEL_COST_MAP` | `true` | Uses LiteLLM's bundled public model metadata rather than fetching that map at import. Forwarded from Python settings before the first LiteLLM import, including native `.env` launches. This does not turn inference offline. |
+| `AI_ACCESS_MODE` | `byok` | User RAM leases by default. `operator` explicitly uses server AI credentials. A BYOK job never falls back to them. |
+| `AI_LEASE_SECONDS` | `1800` | RAM credential lifetime, 60–3600 seconds. Explicit extension starts a fresh interval; no automatic renewal. |
+| `AI_MODEL` | `openai/gpt-6-luna` | Operator mode only. Provider-qualified native ID, including `groq/openai/gpt-oss-120b` for Groq. |
+| `AI_API_KEY` | empty | Operator mode only; selected provider's credential. |
+| `OPENAI_API_KEY` | empty | Operator OpenAI alias. |
+| `ANTHROPIC_API_KEY` | empty | Operator Anthropic alias. |
+| `AI_BASE_URL` | unset | Operator OpenAI Responses base URL only. Never used for BYOK; no user-supplied endpoints. |
+| `TAVILY_API_KEY` | empty | Operator-managed live web search, required in both live modes. |
+| `AI_TIMEOUT_SECONDS` | `120` | Per-call timeout, 10–300 seconds; BYOK also ends at lease expiry/revocation. |
+| `AI_MAX_OUTPUT_TOKENS` | `12000` | Global output ceiling; each stage and catalog model may impose a lower limit. |
+| `AI_INPUT_USD_PER_MILLION` | `3.0` | Operator input estimate. BYOK uses the captured catalog rate. |
+| `AI_OUTPUT_USD_PER_MILLION` | `15.0` | Operator output estimate. BYOK uses the captured catalog rate. |
 
-Only operator-managed credentials exist today. The [BYOK assessment](BYOK.md) describes a proposed design awaiting approval. There is no user key form or session credential service yet.
+Use **Connect AI** in the UI to select a supported provider/model and supply a temporary key. Browser memory keeps only the opaque session reference after submission. The password field is cleared immediately. Nothing from the credential form enters the local intake draft. See [BYOK](BYOK.md) for lease limits, endpoints, model limitations, and restart recovery.
 
-The adapter passes a key directly to each LiteLLM call. No native web-search tools, model-side agents, or provider-hosted conversation IDs are required by the current workflow. JSON is validated by Pydantic with one repair attempt. A provider supporting ordinary text generation may still be unsuitable for the size and structure of the artifacts.
+Request-scoped HTTPX adapters use fixed HTTPS provider endpoints and no shared authenticated-client cache. No native search tools or hosted conversation IDs are used. OpenAI/xAI Responses requests set `store: false`. JSON is validated by Pydantic with one repair attempt; protocol support does not establish model quality. Catalog models and conservative rates live in `backend/app/studio/providers.py`, reviewed against provider documentation on 2026-10-31. Review that snapshot when prices/models change; Gemini's current introductory price ends 2026-12-31.
 
 ## Workflow limits
 
@@ -48,7 +49,7 @@ Research searches up to six queries concurrently per batch, keeps up to four res
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ENV` | `development` | `development`, `staging`, or `production`. Production requires provider credentials and explicit migrations; development/staging create missing studio tables. |
+| `ENV` | `development` | `development`, `staging`, or `production`. Production requires Tavily, plus AI credentials in operator mode, and explicit migrations. Development/staging apply Alembic migrations automatically. |
 | `EXHACKER_DEBUG` | `false` | Parsed debug setting; no public exception-detail mode is enabled. Generic system `DEBUG` variables are ignored. |
 | `LOG_LEVEL` | `INFO` | Python root logger level. Avoid debug logging in shared deployments. |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./exhacker.db` | Async SQLite or PostgreSQL connection. Relative SQLite paths are relative to the backend process's working directory. |
@@ -67,6 +68,7 @@ Research searches up to six queries concurrently per batch, keeps up to four res
 | `VERIFY_FRONTEND_PORT` | `3200` | Host port for the standalone frontend. |
 | `VERIFY_BACKEND_PORT` | `8200` | Host port for the verification API. |
 | `PLAYWRIGHT_BASE_URL` | unset | Test an already-running site instead of starting local servers. Use only a disposable demo installation. |
+| `PLAYWRIGHT_BYOK` | unset | `true` runs BYOK browser journeys against a development-only synthetic provider server. Never a production fallback. |
 | `CAPTURE_README` | unset | `true` saves actual desktop screenshots to `docs/images/`. |
 | `TEST_DATABASE_URL` | unset | Dedicated PostgreSQL URL ending in `_verification`; fixtures create and drop a unique schema per test. Otherwise tests use temporary SQLite databases. |
 

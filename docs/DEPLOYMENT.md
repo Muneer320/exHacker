@@ -2,7 +2,7 @@
 
 [Back to the project](../README.md)
 
-The frontend runs as a standalone Next.js Node server. The FastAPI backend needs a persistent process because it owns an embedded background worker. Use one Uvicorn worker initially and PostgreSQL for a public installation. Hosted infrastructure, paid-provider quality, and load under a real workload remain release checks; a green local container run is not proof of those properties.
+The frontend runs as a standalone Next.js Node server. The FastAPI backend needs a persistent process because it owns an embedded background worker. BYOK requires exactly one Uvicorn process with its embedded worker; use PostgreSQL for a public installation. Hosted infrastructure, paid-provider quality, and load under a real workload remain release checks; a green local container run is not proof of those properties.
 
 ## Local Docker evaluation
 
@@ -14,7 +14,7 @@ docker compose -p exhacker-verify -f compose.verify.yml up --build --wait
 
 Open <http://localhost:3200>. This runs the standalone frontend, backend, PostgreSQL 16, and an initial Alembic migration. No `.env` or real key is used. The UI and documents explicitly identify offline demonstration mode. The verification database has its own named volume; normal development data is not shared. Only loopback ports 3200 and 8200 are published; PostgreSQL is internal.
 
-For the separate local live/development stack, copy `.env.example` to `.env`, supply real operator credentials, and run:
+For the separate local live/development stack, copy `.env.example` to `.env`, supply the operator Tavily credential and connect an AI key through the app, and run:
 
 ```sh
 docker compose up --build --wait
@@ -27,7 +27,7 @@ Both runtime images use non-root users. The backend image has a `tests` target w
 ## Production setup
 
 1. Provision PostgreSQL with a private/restricted network, backups, and tested TLS settings. Establish a restore procedure before accepting user data.
-2. Configure backend process secrets: `ENV=production`, `STUDIO_DEMO_MODE=false`, `DATABASE_URL`, `AI_MODEL`, the selected AI credential, `TAVILY_API_KEY`, and verified pricing/budget limits. Provider keys are operator-managed in the current release; user BYOK is still a proposal.
+2. Configure backend process secrets: `ENV=production`, `STUDIO_DEMO_MODE=false`, `DATABASE_URL`, `AI_ACCESS_MODE=byok`, `AI_LEASE_SECONDS`, `TAVILY_API_KEY`, and verified budget limits. For explicit operator mode, also configure `AI_MODEL`, its AI credential and pricing. BYOK keys are entered through the UI and never configured as deployment secrets.
 3. Back up existing data, then run migrations once as a release job using the same application image and database configuration:
 
    ```sh
@@ -46,7 +46,7 @@ Both runtime images use non-root users. The backend image has a `tests` target w
 6. Put HTTPS and request/rate/concurrency limits in front of the public frontend. Restrict direct backend access where practical. Configure exact CORS origins only if browsers must call the API directly.
 7. Verify readiness, a real paid workflow, exports, ownership, provider failure, and recovery on that installation. Run a representative load test before scaling or publishing throughput claims.
 
-Do not run the verification Compose file in production. Production rejects demo mode and absent provider configuration, but a nonempty API-key string is not proof of valid provider access. Startup does not send billable validation calls.
+Do not run the verification Compose file in production. Production rejects demo mode and missing Tavily (or missing AI credentials in operator mode), but a nonempty API-key string is not proof of valid provider access. Startup does not send billable validation calls.
 
 ### Container commands
 
@@ -62,7 +62,7 @@ Supply backend configuration through the host's secret mechanism or a protected 
 | Endpoint / signal | Meaning |
 | --- | --- |
 | `GET /health` or `/api/v1/health` | Process responds; not a provider or database check. |
-| `GET /ready` | Can query the studio project schema; exposes whether the worker is enabled. |
+| `GET /ready` | Can query the project and job-routing schema; exposes whether the worker is enabled. |
 | Job events/status | Saved operation progress, failures, and retry attempts. No fabricated percentages. |
 | `ai_cost`, `search_count` | Configured-rate accounting and attempted search count; not provider invoices. |
 
@@ -70,14 +70,20 @@ Watch database errors, queue age, repeatedly expired leases, failure rates, dura
 
 Graceful shutdown requeues the worker's current owned job. Abrupt shutdown requires lease expiry before a running job can be reclaimed. Recovery can repeat paid work; do not advertise exactly-once external calls. Keep the application alive long enough to shut down cleanly and use deployment readiness gates.
 
-Production logging is structured JSON. Do not enable verbose HTTP, provider SDK tracing, request body capture, or session replay around sensitive data. Application exception traces may contain project data from failed persistence operations; treat operational logs as sensitive and apply an appropriate retention/access policy.
+Production logging is structured JSON. Do not enable verbose HTTP, provider SDK tracing, request body capture, or session replay around sensitive data. Unexpected errors log safe identifiers/types, and provider error bodies are discarded. Treat operational logs as sensitive; external middleware/tracing must not capture credential bodies, headers or process dumps.
 
 ## Migrations and data
 
-Development and staging create missing `studio_*` tables automatically. Production never automatically applies DDL. The initial migration creates four additive tables or adopts the matching development studio schema. Old prototype tables are not rewritten or assigned to anonymous workspaces. Test restoration and migration on a copy before touching valuable data.
+Development and staging apply Alembic migrations automatically, including the additive nullable job inference metadata column. Production never automatically applies DDL. The initial migration creates four additive tables or adopts the matching development studio schema. Old prototype tables are not rewritten or assigned to anonymous workspaces. Test restoration and migration on a copy before touching valuable data.
 
 Keep the database across container recreation. `docker compose down` stops services without deleting named volumes. Adding `-v` deletes the named volumes for that Compose project; use it only for deliberately disposable verification data. There is no application-level soft-delete or undo for project deletion.
 
 ## Release boundaries
 
-Anonymous workspace keys provide resource isolation, not registered accounts, team collaboration, account recovery, or reliable abuse prevention. New keys can bypass per-workspace quotas. Public launch requires perimeter controls and a deliberate account/abuse policy. [SECURITY.md](../SECURITY.md) describes the current privacy model; [BYOK.md](BYOK.md) describes a proposed change that has not shipped.
+Anonymous workspace keys provide resource isolation, not registered accounts, team collaboration, account recovery, or reliable abuse prevention. New keys can bypass per-workspace quotas. Public launch requires perimeter controls and a deliberate account/abuse policy. [SECURITY.md](../SECURITY.md) describes the current privacy model; [BYOK.md](BYOK.md) documents the implemented lifecycle and its single-process boundary.
+
+## RAM-lease deployment constraints
+
+Use one API process and embedded worker with no replica overlap. Do not split workers, increase `--workers`, or scale behind a load balancer under BYOK: credentials live in one process. Restarting safely pauses BYOK jobs until users reenter a matching provider/model key. Existing artifacts stay available. Recovery repeats the operation and can repeat charges. Database queue claims do not solve cross-process secret access.
+
+Apply the host controls in [BYOK](BYOK.md): TLS, private proxy/backend links, no credential-route request capture or session replay, restricted process/debug access, controlled swap/core dumps, provider spending limits and perimeter rate/concurrency limits. Default leases last 30 minutes, with explicit extension and removal in the UI.

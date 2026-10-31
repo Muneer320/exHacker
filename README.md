@@ -139,11 +139,11 @@ docker compose -p exhacker-verify -f compose.verify.yml down
 <details>
 <summary><strong>Run with live AI and web research</strong></summary>
 
-Copy `.env.example` to `.env` at the repository root. Use `cp .env.example .env` on macOS/Linux or `Copy-Item .env.example .env` in PowerShell. Configure a suitable provider-qualified text model, its API key, verified pricing, and Tavily:
+Copy `.env.example` to `.env` at the repository root. Use `cp .env.example .env` on macOS/Linux or `Copy-Item .env.example .env` in PowerShell. Configure Tavily for web research. Users supply their AI keys through the app:
 
 ```dotenv
-AI_MODEL=openai/gpt-4o-mini
-AI_API_KEY=your-provider-api-key
+AI_ACCESS_MODE=byok
+AI_LEASE_SECONDS=1800
 TAVILY_API_KEY=your-search-api-key
 STUDIO_DEMO_MODE=false
 ```
@@ -152,7 +152,7 @@ STUDIO_DEMO_MODE=false
 docker compose up --build --wait
 ```
 
-Open [localhost:3000](http://localhost:3000). This development stack persists SQLite in its own volume. Missing providers produce visible errors and preserve saved work. Model account access and quality need validation. User BYOK is being implemented under the approved [credential design](docs/BYOK.md).
+Open [localhost:3000](http://localhost:3000). This development stack persists SQLite in its own volume. Missing providers produce visible errors and preserve saved work. Click **Connect AI**, choose a provider/model, and start a temporary session with your key. OpenAI, Claude, Gemini, Grok, and Groq are supported through fixed provider endpoints. Keys stay in backend RAM for the lease; project data and generated artifacts persist. Read the [credential design and limits](docs/BYOK.md).
 
 </details>
 
@@ -179,6 +179,17 @@ The frontend proxy defaults to `http://127.0.0.1:8000`. Set server-side `BACKEND
 
 </details>
 
+## Your choice of intelligence
+
+| OpenAI | Anthropic | Google | xAI | Groq |
+| --- | --- | --- | --- | --- |
+| GPT-6 Luna | Claude Haiku 5.5 | Gemini 3.8 Flash | Grok 4.7 | GPT OSS 120B / 20B |
+
+**Choose a model · Connect a temporary key · Switch future operations · Keep your artifacts**
+
+> [!IMPORTANT]
+> AI keys are never intentionally saved to browser storage, project records, files, or job payloads. A default 30-minute backend RAM lease supports background work while valid. Expiry, removal, or a server restart pauses affected jobs for credential reentry. Reloading clears this tab's session references; saved projects remain available. [Security boundaries and provider limitations](docs/BYOK.md).
+
 ## Decisions survive the page
 
 ```mermaid
@@ -187,7 +198,7 @@ flowchart LR
     Proxy --> API[FastAPI]
     API --> DB[(Projects / jobs / artifacts / chat)]
     Worker[Database-backed worker] <--> DB
-    Worker --> LLM[Configured text provider]
+    Worker --> LLM[Request-scoped HTTPX / five AI providers]
     Worker --> Web[Tavily research]
     Worker --> MD[Validated specification / Markdown compiler]
     MD --> DB
@@ -207,7 +218,7 @@ Failed jobs retain the previous successful context. Stale tabs cannot overwrite 
 | [Configuration and environment variables](docs/CONFIGURATION.md) | [Architecture and directory map](docs/ARCHITECTURE.md) |
 | [Testing and browser workflows](docs/TESTING.md) | [Observed verification results](docs/VERIFICATION.md) |
 | [Deployment and operations](docs/DEPLOYMENT.md) | [Security and privacy](SECURITY.md) |
-| [Contributing](CONTRIBUTING.md) | [Approved BYOK architecture](docs/BYOK.md) |
+| [Contributing](CONTRIBUTING.md) | [BYOK sessions and recovery](docs/BYOK.md) |
 
 <details>
 <summary><strong>Run the checks</strong></summary>
@@ -236,7 +247,7 @@ See [testing](docs/TESTING.md) for container browser targeting, screenshots, iso
 </details>
 
 > [!WARNING]
-> **Review the release gates before public hosting.** The backend needs a persistent process, PostgreSQL, HTTPS, backups, and abuse controls. Live-provider evaluation and the [upstream dependency advisory review](docs/VERIFICATION.md#remaining-python-advisory-constraint) remain open. The default Compose file is a local SQLite setup.
+> **Review the release gates before public hosting.** The backend needs a persistent process, PostgreSQL, HTTPS, backups, and abuse controls. Live-provider evaluation, hosted security review, and load checks remain open. BYOK requires exactly one API process with its embedded worker. The default Compose file is a local SQLite setup.
 
 > [!CAUTION]
 > **Save your workspace key privately.** Anyone holding it can access the workspace; losing it loses access. Project text and chat persist and may be sent to the configured AI/search providers. Never paste credentials into those fields. Read [SECURITY.md](SECURITY.md) before using sensitive data.
