@@ -138,9 +138,9 @@ async def completion(
             if spec["source"] == "byok":
                 leases._drop(spec["lease"])
             raise
-        except transport.TransientProviderError:
-            if attempt == 0:
-                await asyncio.sleep(1)
+        except transport.TransientProviderError as exc:
+            if attempt == 0 and exc.retry_after is not None:
+                await asyncio.sleep(exc.retry_after)
                 continue
             raise
     raise StudioError("AI request failed.", 502)

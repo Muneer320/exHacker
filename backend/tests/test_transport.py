@@ -140,3 +140,39 @@ async def test_response_size_and_malformed_json_fail_closed(monkeypatch):
             )
         assert clients[0].is_closed
         monkeypatch.undo()
+
+
+async def test_request_limit_is_actionable_without_exposing_provider_details(
+    monkeypatch, caplog
+):
+    spec = {"source": "byok", "provider": "groq", "model": "openai/gpt-oss-120b"}
+    clients = mock_clients(
+        monkeypatch,
+        lambda _: httpx.Response(
+            413,
+            json={
+                "error": {
+                    "message": f"Request too large for organization private-account: {SECRET}"
+                }
+            },
+        ),
+    )
+    with pytest.raises(StudioError) as caught:
+        await transport.invoke(
+            spec, SECRET, [{"role": "user", "content": "review"}], 11000
+        )
+    assert "Groq" in str(caught.value)
+    assert "HTTP 413" in str(caught.value)
+    assert "account" in str(caught.value)
+    assert "private-account" not in str(caught.value) + caplog.text
+    assert SECRET not in str(caught.value) + caplog.text
+    assert "HTTP 413" in caplog.text
+    assert clients[0].is_closed
+
+
+@pytest.mark.parametrize(
+    "header,expected",
+    [("7.5", 7.5), ("0", 1), (None, 1), ("bad", 1), ("120", None), ("nan", None)],
+)
+def test_provider_cooldowns_are_bounded_without_retrying_too_early(header, expected):
+    assert transport.retry_delay(header) == expected

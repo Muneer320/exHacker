@@ -1,11 +1,16 @@
 """Request-scoped HTTPX adapters: no SDK caches, redirects, proxies or response storage."""
 
+import logging
+import math
 from dataclasses import dataclass
 
 import httpx
 
 from app.core.config import settings
 from app.studio.errors import CredentialsRequiredError, StudioError
+from app.studio.providers import CATALOG
+
+logger = logging.getLogger(__name__)
 
 ENDPOINTS = {
     "openai": "https://api.openai.com/v1/responses",
@@ -17,11 +22,44 @@ ENDPOINTS = {
 
 
 class TransientProviderError(StudioError):
-    def __init__(self):
+    def __init__(self, message=None, retry_after=1):
+        self.retry_after = retry_after
         super().__init__(
-            "The provider is temporarily unavailable or rate limited. Retry shortly.",
+            message or "The provider is temporarily unavailable. Retry shortly.",
             502,
         )
+
+
+def retry_delay(value):
+    """Respect short provider cooldowns; leave longer waits to an explicit retry."""
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        return 1
+    if not math.isfinite(seconds) or seconds > 60:
+        return None
+    return max(1, seconds)
+
+
+def rejection(provider, status):
+    # Only our catalog label and numeric HTTP status are exposed. Never copy a
+    # provider's error message, body, headers, account IDs or credential values.
+    name = CATALOG[provider]["name"]
+    if status == 413:
+        return StudioError(
+            f"{name} rejected this request as too large (HTTP 413). Your account's request/token allowance can be smaller than the model's context window. "
+            "Check the provider account limits or choose another provider with sufficient capacity. Retrying unchanged input will not resolve this limit.",
+            502,
+        )
+    if status == 402:
+        detail = "Check the provider account's billing or available credit."
+    elif status == 404:
+        detail = (
+            "Check whether the selected model is available to your provider account."
+        )
+    else:
+        detail = "Check model access, request parameters and provider account limits."
+    return StudioError(f"{name} rejected the request (HTTP {status}). {detail}", 502)
 
 
 @dataclass
@@ -159,13 +197,21 @@ async def invoke(spec, key, messages, max_tokens):
                 raise StudioError(
                     "The operator's provider credentials were rejected.", 502
                 )
-            if response.status_code == 429 or response.status_code >= 500:
+            if response.status_code != 200:
+                logger.warning(
+                    "AI request rejected (provider=%s, HTTP %s)",
+                    spec["provider"],
+                    response.status_code,
+                )
+            if response.status_code == 429:
+                raise TransientProviderError(
+                    f"{CATALOG[spec['provider']]['name']} rate limited the request (HTTP 429). Wait for the provider cooldown or review your account limits.",
+                    retry_after=retry_delay(response.headers.get("retry-after")),
+                )
+            if response.status_code >= 500:
                 raise TransientProviderError()
             if response.status_code != 200:
-                raise StudioError(
-                    "The provider rejected the request. Check model access, quotas and provider limits.",
-                    502,
-                )
+                raise rejection(spec["provider"], response.status_code)
             buffer = bytearray()
             async for chunk in response.aiter_bytes():
                 buffer.extend(chunk)

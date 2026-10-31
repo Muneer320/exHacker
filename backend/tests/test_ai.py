@@ -85,3 +85,41 @@ async def test_provider_configuration_requires_a_key_for_the_selected_provider(
         await ai.completion("unused", [{"role": "user", "content": "Hello"}])
     monkeypatch.setattr(settings, "AI_API_KEY", "explicit-provider-key")
     assert ai.configuration()["ai_configured"] is True
+
+
+@pytest.mark.parametrize("cooldown,requests,delays", [("2", 2, [2]), ("120", 1, [])])
+async def test_provider_cooldown_controls_actual_retries(
+    client, intake, monkeypatch, cooldown, requests, delays
+):
+    from tests.test_transport import mock_clients, provider_response
+
+    project = await create(client, intake)
+    monkeypatch.setattr(settings, "AI_API_KEY", "synthetic-cooldown-key")
+    monkeypatch.setattr(settings, "AI_MODEL", "openai/gpt-6-luna")
+    calls, sleeps = [], []
+
+    def respond(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(
+                429,
+                headers={"retry-after": cooldown},
+                json={"error": "private provider body"},
+            )
+        return httpx.Response(200, json=provider_response("openai"))
+
+    async def sleep(seconds):
+        sleeps.append(seconds)
+
+    mock_clients(monkeypatch, respond)
+    monkeypatch.setattr(ai.asyncio, "sleep", sleep)
+    if requests == 1:
+        with pytest.raises(transport.TransientProviderError, match="HTTP 429"):
+            await ai.completion(project["id"], [{"role": "user", "content": "hello"}])
+    else:
+        assert (
+            await ai.completion(project["id"], [{"role": "user", "content": "hello"}])
+            == "A useful response"
+        )
+    assert len(calls) == requests
+    assert sleeps == delays
