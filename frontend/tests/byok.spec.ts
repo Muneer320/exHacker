@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
 
 const key = "synthetic-browser-key-never-real";
 
@@ -8,6 +10,12 @@ async function connect(page: Page, provider: string) {
   await dialog
     .getByRole("combobox", { name: "AI provider", exact: true })
     .selectOption(provider);
+  if (process.env.CAPTURE_README === "true" && provider === "anthropic") {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await mkdir(resolve("../docs/images"), { recursive: true });
+    // Capture before a credential is entered, never a filled password field.
+    await page.screenshot({ path: resolve("../docs/images/ai-session.png") });
+  }
   await dialog.getByLabel("Provider API key", { exact: true }).fill(key);
   await dialog
     .getByRole("button", { name: "Start AI session", exact: true })

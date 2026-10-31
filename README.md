@@ -187,6 +187,15 @@ The frontend proxy defaults to `http://127.0.0.1:8000`. Set server-side `BACKEND
 
 **Choose a model · Connect a temporary key · Switch future operations · Keep your artifacts**
 
+<details>
+<summary><strong>See the AI session controls</strong></summary>
+
+![The actual AI session settings, captured before any key is entered](docs/images/ai-session.png)
+
+*Real application interface. This capture contains no entered API key and does not establish paid-provider access.*
+
+</details>
+
 > [!IMPORTANT]
 > AI keys are never intentionally saved to browser storage, project records, files, or job payloads. A default 30-minute backend RAM lease supports background work while valid. Expiry, removal, or a server restart pauses affected jobs for credential reentry. Reloading clears this tab's session references; saved projects remain available. [Security boundaries and provider limitations](docs/BYOK.md).
 
