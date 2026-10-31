@@ -10,6 +10,13 @@
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache
+**/.mypy_cache
+**/dist
+**/build
+**/coverage
+**/htmlcov
+**/.coverage*
+**/*.tsbuildinfo
 **/test-results
 **/playwright-report
 **/*.db
@@ -20,3 +27,4 @@
 tmp
 exports
 artifacts
+.codex-audit-*
