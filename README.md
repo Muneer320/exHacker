@@ -154,6 +154,8 @@ docker compose up --build --wait
 
 Open [localhost:3000](http://localhost:3000). This development stack persists SQLite in its own volume. Missing providers produce visible errors and preserve saved work. Click **Connect AI**, choose a provider/model, and start a temporary session with your key. OpenAI, Claude, Gemini, Grok, and Groq are supported through fixed provider endpoints. Keys stay in backend RAM for the lease; project data and generated artifacts persist. Read the [credential design and limits](docs/BYOK.md).
 
+Follow the [live API-key testing walkthrough](docs/TESTING.md#live-testing-with-your-api-keys) for the full workflow, provider switching, expiry and restart checks. Port **3000** uses your live configuration; the separate verification app on port **3200** uses offline fixtures.
+
 </details>
 
 <details>
